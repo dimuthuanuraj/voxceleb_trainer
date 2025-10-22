@@ -68,7 +68,7 @@ parser.add_argument("--hard_rank",      type=int,   default=10,     help='Hard n
 parser.add_argument('--margin',         type=float, default=0.1,    help='Loss margin, only for some loss functions')
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
 parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
-parser.add_argument('--nClasses',       type=int,   default=5994,   help='Number of speakers in the softmax layer, only for softmax-based losses')
+parser.add_argument('--nClasses',       type=int,   default=5991,   help='Number of speakers in the softmax layer, only for softmax-based losses')
 
 ## Evaluation parameters
 parser.add_argument('--dcf_p_target',   type=float, default=0.05,   help='A priori probability of the specified target speaker')
@@ -84,8 +84,8 @@ parser.add_argument('--train_list',     type=str,   default="data/train_list.txt
 parser.add_argument('--test_list',      type=str,   default="data/test_list.txt",   help='Evaluation list')
 parser.add_argument('--train_path',     type=str,   default="data/voxceleb2", help='Absolute path to the train set')
 parser.add_argument('--test_path',      type=str,   default="data/voxceleb1", help='Absolute path to the test set')
-parser.add_argument('--musan_path',     type=str,   default="data/musan_split", help='Absolute path to the test set')
-parser.add_argument('--rir_path',       type=str,   default="data/RIRS_NOISES/simulated_rirs", help='Absolute path to the test set')
+parser.add_argument('--musan_path',     type=str,   default="", help='Absolute path to the test set')
+parser.add_argument('--rir_path',       type=str,   default="", help='Absolute path to the test set')
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')
