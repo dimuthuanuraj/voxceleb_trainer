@@ -23,7 +23,7 @@ nClasses: 5991
 
 ## Training and test data
 train_list: /mnt/ricproject3/2025/data/train_list.txt
-test_list: /mnt/ricproject3/2025/data/test2_list_formated.txt
+test_list: /mnt/ricproject3/2025/data/list_test_all_formated_cleaned.txt
 train_path : /mnt/ricproject3/2025/data/rearranged_voxceleb2
 test_path : /mnt/ricproject3/2025/data/rearranged_voxceleb1
 musan_path: /mnt/ricproject3/2025/data/musan
