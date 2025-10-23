@@ -10,7 +10,7 @@ This will verify:
 import os
 import sys
 import torch
-import torchaudio
+import soundfile  # Use soundfile instead of torchaudio for better compatibility
 
 def test_file_paths(test_list, test_path):
     """Test if all files in the test list exist"""
@@ -83,9 +83,9 @@ def test_audio_loading(test_list, test_path, num_samples=10):
             path1 = os.path.join(test_path, wav1)
             path2 = os.path.join(test_path, wav2)
             
-            # Try to load audio
-            audio1, sr1 = torchaudio.load(path1)
-            audio2, sr2 = torchaudio.load(path2)
+            # Try to load audio using soundfile (more compatible)
+            audio1, sr1 = soundfile.read(path1)
+            audio2, sr2 = soundfile.read(path2)
             
             print(f"  Sample {idx}:")
             print(f"    ✓ {wav1} - Shape: {audio1.shape}, SR: {sr1}")
