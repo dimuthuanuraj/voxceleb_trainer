@@ -22,8 +22,8 @@ import zipfile
 import warnings
 import datetime
 from tuneThreshold import *
-from SpeakerNet import *
-from DatasetLoader import *
+from SpeakerNet_performance_updated import *
+from DatasetLoader_performance_updated import *
 import torch.distributed as dist
 import torch.multiprocessing as mp
 warnings.simplefilter("ignore")
@@ -128,7 +128,14 @@ args = parser.parse_args()
 def find_option_type(key, parser):
     for opt in parser._get_optional_actions():
         if ('--' + key) in opt.option_strings:
-           return opt.type
+           # Handle store_true/store_false actions which have no type
+           if isinstance(opt, argparse._StoreTrueAction) or isinstance(opt, argparse._StoreFalseAction):
+               return bool
+           # Handle actions with explicit types
+           if opt.type is not None:
+               return opt.type
+           # Default to str if no type specified
+           return str
     raise ValueError
 
 if args.config is not None:
