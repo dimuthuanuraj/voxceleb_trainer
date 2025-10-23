@@ -352,16 +352,23 @@ def main_worker(gpu, ngpus_per_node, args):
             if args.gpu == 0:
                 
                 result = tuneThresholdfromScore(sc, lab, [1, 0.1])
-                current_eer = result[1]
+                current_eer = float(result[1])  # Convert to float to avoid numpy array formatting issues
                 current_threshold = result[2]
 
                 fnrs, fprs, thresholds = ComputeErrorRates(sc, lab)
                 mindcf, threshold = ComputeMinDcf(fnrs, fprs, thresholds, args.dcf_p_target, args.dcf_c_miss, args.dcf_c_fa)
+                mindcf = float(mindcf)  # Convert to float to avoid numpy array formatting issues
                 
                 eers.append(current_eer)
                 
-                print(f'\n{time.strftime("%Y-%m-%d %H:%M:%S")} Epoch {it}, VEER {current_eer:2.4f}, MinDCF {mindcf:2.5f}, Threshold {current_threshold:f}')
-                scorefile.write(f"Epoch {it}, VEER {current_eer:2.4f}, MinDCF {mindcf:2.5f}, Threshold {current_threshold:f}\n")
+                # Handle threshold which might be an array or tuple
+                if hasattr(current_threshold, '__iter__') and not isinstance(current_threshold, str):
+                    threshold_val = float(current_threshold[0]) if len(current_threshold) > 0 else 0.0
+                else:
+                    threshold_val = float(current_threshold)
+                
+                print(f'\n{time.strftime("%Y-%m-%d %H:%M:%S")} Epoch {it}, VEER {current_eer:2.4f}, MinDCF {mindcf:2.5f}, Threshold {threshold_val:f}')
+                scorefile.write(f"Epoch {it}, VEER {current_eer:2.4f}, MinDCF {mindcf:2.5f}, Threshold {threshold_val:f}\n")
 
                 # Log validation stats to Tensorboard
                 if writer is not None:
