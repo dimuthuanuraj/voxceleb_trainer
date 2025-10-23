@@ -123,21 +123,25 @@ def benchmark_dataloader(config_path, num_batches=100):
     print(f"Batch size: {config.get('batch_size', 100)}")
     print(f"Workers: {config.get('nDataLoaderThread', 5)}")
     
+    # Add missing parameters with defaults
+    dataset_config = config.copy()
+    if 'max_frames' not in dataset_config:
+        dataset_config['max_frames'] = 200  # Default value
+    if 'max_seg_per_spk' not in dataset_config:
+        dataset_config['max_seg_per_spk'] = 500  # Default value
+    if 'seed' not in dataset_config:
+        dataset_config['seed'] = 10  # Default value
+    if 'nPerSpeaker' not in dataset_config:
+        dataset_config['nPerSpeaker'] = 1  # Default value
+    if 'distributed' not in dataset_config:
+        dataset_config['distributed'] = False  # Default value
+    
     # Create dataset
     print("\nCreating dataset...")
-    dataset = train_dataset_loader(**config)
+    dataset = train_dataset_loader(**dataset_config)
     
-    # Add missing parameters for sampler
-    sampler_config = config.copy()
-    if 'max_seg_per_spk' not in sampler_config:
-        sampler_config['max_seg_per_spk'] = 500  # Default value
-    if 'seed' not in sampler_config:
-        sampler_config['seed'] = 10  # Default value
-    if 'nPerSpeaker' not in sampler_config:
-        sampler_config['nPerSpeaker'] = 1  # Default value
-    if 'distributed' not in sampler_config:
-        sampler_config['distributed'] = False  # Default value
-    
+    # Create sampler
+    sampler_config = dataset_config.copy()
     sampler = train_dataset_sampler(dataset, **sampler_config)
     
     # Create dataloader with appropriate settings
