@@ -12,6 +12,8 @@ batch_size: 128  # Increased from 100 to 128 for better GPU utilization
 max_frames: 200  # Keep same
 eval_frames: 300  # Keep same
 nDataLoaderThread: 8  # Increased from 5 to 8 for faster data loading
+max_seg_per_spk: 500  # Maximum segments per speaker
+seed: 10  # Random seed for reproducibility
 
 ## Training details - OPTIMIZED
 test_interval: 3  # Reduced from 5 to 3 for faster feedback

@@ -126,7 +126,19 @@ def benchmark_dataloader(config_path, num_batches=100):
     # Create dataset
     print("\nCreating dataset...")
     dataset = train_dataset_loader(**config)
-    sampler = train_dataset_sampler(dataset, **config)
+    
+    # Add missing parameters for sampler
+    sampler_config = config.copy()
+    if 'max_seg_per_spk' not in sampler_config:
+        sampler_config['max_seg_per_spk'] = 500  # Default value
+    if 'seed' not in sampler_config:
+        sampler_config['seed'] = 10  # Default value
+    if 'nPerSpeaker' not in sampler_config:
+        sampler_config['nPerSpeaker'] = 1  # Default value
+    if 'distributed' not in sampler_config:
+        sampler_config['distributed'] = False  # Default value
+    
+    sampler = train_dataset_sampler(dataset, **sampler_config)
     
     # Create dataloader with appropriate settings
     dataloader_kwargs = {
