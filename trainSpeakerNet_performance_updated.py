@@ -390,7 +390,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     
                     # Save the best threshold
                     with open(best_threshold_path, 'w') as f:
-                        f.write(f'{current_threshold:f}')
+                        f.write(f'{threshold_val:f}')  # Use threshold_val (converted to float) instead of current_threshold
 
                     print(f'SAVING BEST MODEL (Epoch {it}) to {best_model_path}')
                     print(f'SAVING BEST THRESHOLD ({current_threshold:f}) to {best_threshold_path}')
