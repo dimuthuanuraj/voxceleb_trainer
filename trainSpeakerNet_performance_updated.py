@@ -98,6 +98,7 @@ parser.add_argument('--train_path',     type=str,   default="data/voxceleb2", he
 parser.add_argument('--test_path',      type=str,   default="data/voxceleb1", help='Absolute path to the test set')
 parser.add_argument('--musan_path',     type=str,   default="", help='Absolute path to the test set')
 parser.add_argument('--rir_path',       type=str,   default="", help='Absolute path to the test set')
+parser.add_argument('--max_test_pairs', type=int,   default=0,  help='Maximum number of test pairs to use (0 = use all)')
 
 ## Model definition
 parser.add_argument('--n_mels',         type=int,   default=40,     help='Number of mel filterbanks')

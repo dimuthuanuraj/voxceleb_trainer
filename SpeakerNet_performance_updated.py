@@ -173,7 +173,7 @@ class ModelTrainer(object):
     ## Evaluate from list - OPTIMIZED
     ## ===== ===== ===== ===== ===== ===== ===== =====
 
-    def evaluateFromList(self, test_list, test_path, nDataLoaderThread, distributed, print_interval=100, num_eval=10, **kwargs):
+    def evaluateFromList(self, test_list, test_path, nDataLoaderThread, distributed, print_interval=100, num_eval=10, max_test_pairs=0, **kwargs):
 
         if distributed:
             rank = torch.distributed.get_rank()
@@ -190,6 +190,12 @@ class ModelTrainer(object):
         ## Read all lines
         with open(test_list) as f:
             lines = f.readlines()
+
+        ## Limit test pairs if max_test_pairs is specified (NEW FEATURE)
+        if max_test_pairs > 0 and max_test_pairs < len(lines):
+            if rank == 0:
+                print(f"⚠️  Using first {max_test_pairs} test pairs out of {len(lines)} total pairs")
+            lines = lines[:max_test_pairs]
 
         ## Get a list of unique file names
         files = list(itertools.chain(*[x.strip().split()[-2:] for x in lines]))

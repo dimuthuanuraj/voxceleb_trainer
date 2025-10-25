@@ -39,6 +39,12 @@ train_list: /mnt/ricproject3/2025/data/train_list.txt
 test_list: /mnt/ricproject3/2025/data/list_test_all_formated_cleaned.txt
 train_path: /mnt/ricproject3/2025/data/rearranged_voxceleb2
 test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
+
+# NEW: Limit test pairs for faster validation (0 = use all pairs)
+# Examples: 1000 for quick test (~7-10 seconds), 10000 for medium (~70-100 seconds)
+# Full dataset has 553,550 pairs (~70 minutes)
+max_test_pairs: 10000  # Use 10000 pairs for faster validation (~75 seconds)
+test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
 musan_path: /mnt/ricproject3/2025/data/musan
 rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
 
