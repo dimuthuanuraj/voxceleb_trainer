@@ -50,6 +50,7 @@ parser.add_argument('--test_interval',  type=int,   default=3,      help='Test i
 parser.add_argument('--max_epoch',      type=int,   default=500,    help='Maximum epochs')
 parser.add_argument('--nDataLoaderThread', type=int, default=8,     help='Number of loader threads')
 parser.add_argument('--distributed',    dest='distributed', action='store_true', help='Enable distributed training')
+parser.add_argument('--eval_batch_size', type=int,  default=128,    help='Evaluation batch size for faster processing')
 
 args = parser.parse_args()
 

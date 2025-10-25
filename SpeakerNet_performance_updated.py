@@ -210,33 +210,40 @@ class ModelTrainer(object):
         else:
             sampler = None
 
-        # OPTIMIZATION: Better DataLoader config for evaluation
+        # OPTIMIZATION: Larger batch size for faster evaluation on GPU
+        eval_batch_size = kwargs.get('eval_batch_size', 32)  # NEW: Configurable eval batch size
+        
         test_loader = torch.utils.data.DataLoader(
             test_dataset, 
-            batch_size=1, 
+            batch_size=eval_batch_size,  # OPTIMIZATION: Increased from 1 to 32 (or configurable)
             shuffle=False, 
             num_workers=nDataLoaderThread, 
             drop_last=False, 
             sampler=sampler,
             pin_memory=True,  # OPTIMIZATION: Faster CPU->GPU
-            prefetch_factor=2  # OPTIMIZATION: Prefetch for evaluation
+            prefetch_factor=3  # OPTIMIZATION: Increased prefetch for evaluation
         )
 
-        ## Extract features for every image
+        ## Extract features for every batch
         for idx, data in enumerate(test_loader):
-            inp1 = data[0][0].cuda(non_blocking=True)  # OPTIMIZATION: Non-blocking transfer
+            inp1 = data[0].cuda(non_blocking=True)  # OPTIMIZATION: Non-blocking transfer (batch now)
             
             # OPTIMIZATION: Use inference mode instead of no_grad for better performance
             with torch.inference_mode():
                 ref_feat = self.__model__(inp1).detach().cpu()
             
-            feats[data[1][0]] = ref_feat
+            # Store features for each file in the batch
+            for batch_idx in range(ref_feat.size(0)):
+                file_idx = idx * eval_batch_size + batch_idx
+                if file_idx < len(setfiles):
+                    feats[setfiles[file_idx]] = ref_feat[batch_idx]
+            
             telapsed = time.time() - tstart
 
             if idx % print_interval == 0 and rank == 0:
                 sys.stdout.write(
                     "\rReading {:d} of {:d}: {:.2f} Hz, embedding size {:d}".format(
-                        idx, test_loader.__len__(), idx / telapsed, ref_feat.size()[1]
+                        idx * eval_batch_size, len(setfiles), (idx * eval_batch_size) / telapsed, ref_feat.size()[1]
                     )
                 )
 
@@ -275,13 +282,14 @@ class ModelTrainer(object):
                 # OPTIMIZATION: Use inference mode
                 with torch.inference_mode():
                     if self.__model__.module.__L__.test_normalize:
-                        ref_feat = F.normalize(ref_feat, p=2, dim=1)
-                        com_feat = F.normalize(com_feat, p=2, dim=1)
+                        # Normalize - features are already 1D vectors from batch processing
+                        ref_feat = F.normalize(ref_feat.unsqueeze(0), p=2, dim=1).squeeze(0)
+                        com_feat = F.normalize(com_feat.unsqueeze(0), p=2, dim=1).squeeze(0)
 
-                    # OPTIMIZATION: Use torch.cdist with faster dtype if possible
+                    # Compute distance - expand to proper shape for cdist
                     dist = torch.cdist(
-                        ref_feat.reshape(num_eval, -1), 
-                        com_feat.reshape(num_eval, -1)
+                        ref_feat.unsqueeze(0).unsqueeze(0), 
+                        com_feat.unsqueeze(0).unsqueeze(0)
                     ).detach().cpu().numpy()
 
                 score = -1 * numpy.mean(dist)

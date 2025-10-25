@@ -122,6 +122,7 @@ parser.add_argument('--persistent_workers', dest='persistent_workers', action='s
 parser.add_argument('--gradient_accumulation_steps', type=int, default=1, help='Gradient accumulation steps (1=disabled)')
 parser.add_argument('--enable_profiling', dest='enable_profiling', action='store_true', help='Enable PyTorch profiler')
 parser.add_argument('--compile_model',  dest='compile_model', action='store_true', help='Use torch.compile for faster execution (PyTorch 2.0+)')
+parser.add_argument('--eval_batch_size', type=int, default=32, help='Batch size for evaluation (NEW: larger = faster)')
 
 args = parser.parse_args()
 

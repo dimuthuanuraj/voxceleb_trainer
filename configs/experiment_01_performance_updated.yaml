@@ -44,6 +44,11 @@ test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
 # Examples: 1000 for quick test (~7-10 seconds), 10000 for medium (~70-100 seconds)
 # Full dataset has 553,550 pairs (~70 minutes)
 max_test_pairs: 10000  # Use 10000 pairs for faster validation (~75 seconds)
+
+# NEW: Evaluation batch size for faster GPU utilization
+# Larger batch = faster evaluation, more GPU memory
+# Examples: 16 (safe), 32 (default), 64 (faster), 128 (fastest if memory permits)
+eval_batch_size: 64  # Increased for faster evaluation
 test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
 musan_path: /mnt/ricproject3/2025/data/musan
 rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
