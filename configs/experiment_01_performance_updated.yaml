@@ -16,7 +16,7 @@ max_seg_per_spk: 500  # Maximum segments per speaker
 seed: 10  # Random seed for reproducibility
 
 ## Training details - OPTIMIZED
-test_interval: 3  # Reduced from 5 to 3 for faster feedback
+test_interval: 1  # Reduced from 5 to 3 for faster feedback
 trainfunc: aamsoftmax
 patience: 15
 max_epoch: 500
@@ -43,12 +43,12 @@ test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
 # NEW: Limit test pairs for faster validation (0 = use all pairs)
 # Examples: 1000 for quick test (~7-10 seconds), 10000 for medium (~70-100 seconds)
 # Full dataset has 553,550 pairs (~70 minutes)
-max_test_pairs: 10000  # Use 10000 pairs for faster validation (~75 seconds)
+max_test_pairs: 50000 # Use 50000 pairs for faster validation (~75 seconds)
 
 # NEW: Evaluation batch size for faster GPU utilization
 # Larger batch = faster evaluation, more GPU memory
 # Examples: 16 (safe), 32 (default), 64 (faster), 128 (fastest if memory permits)
-eval_batch_size: 64  # Increased for faster evaluation
+eval_batch_size: 128  # Increased for faster evaluation
 test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
 musan_path: /mnt/ricproject3/2025/data/musan
 rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
