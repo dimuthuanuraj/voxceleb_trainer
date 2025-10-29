@@ -6,7 +6,7 @@
 augment: true
 batch_size: 32  # Reduced for smaller dataset
 max_frames: 200
-eval_frames: 300
+eval_frames: 0  # 0 = use full audio length (no truncation)
 nDataLoaderThread: 4  # Reduced for smaller dataset
 max_seg_per_spk: 500
 seed: 42  # Same seed as dataset creation
@@ -28,9 +28,9 @@ weight_decay: 0
 margin: 0.2
 scale: 30
 nPerSpeaker: 1
-nClasses: 50  # IMPORTANT: Changed to 50 for mini VoxCeleb1 dataset
+nClasses: 140  # IMPORTANT: 140 speakers in mini VoxCeleb2 dataset
 
-## Training and test data - MINI VOXCELEB1 PATHS
+## Training and test data - MINI VOXCELEB2 FOR TRAINING, MINI VOXCELEB1 FOR TESTING
 train_list: /mnt/ricproject3/2025/data/mini_voxceleb2_train_list.txt
 test_list: /mnt/ricproject3/2025/data/mini_test_list.txt
 train_path: /mnt/ricproject3/2025/data/mini_voxceleb2
@@ -41,21 +41,22 @@ test_path: /mnt/ricproject3/2025/data/mini_voxceleb1
 max_test_pairs: 0  # 0 = use all pairs (~12,559 pairs, ~2 minutes)
 
 # Evaluation batch size
-eval_batch_size: 64
+# IMPORTANT: Must be 1 when eval_frames=0 (variable length audio)
+eval_batch_size: 1  # Process one audio at a time for variable-length evaluation
 
 # Augmentation paths (optional - set to empty if not using)
 musan_path: /mnt/ricproject3/2025/data/musan
 rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
 
 ## Model definition
-n_mels: 64
+n_mels: 80
 model: ResNetSE34L
 encoder_type: SAP
-nOut: 512
+nOut: 256
 log_input: false
 
 ## Load and save paths
-save_path: exps/mini_voxceleb1_experiment
+save_path: exps/mini_voxceleb1_experiment_10
 initial_model: ""
 
 ## Performance optimization settings

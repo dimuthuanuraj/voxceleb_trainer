@@ -393,18 +393,23 @@ def main_worker(gpu, ngpus_per_node, args):
                         f.write(f'{threshold_val:f}')  # Use threshold_val (converted to float) instead of current_threshold
 
                     print(f'SAVING BEST MODEL (Epoch {it}) to {best_model_path}')
-                    print(f'SAVING BEST THRESHOLD ({current_threshold:f}) to {best_threshold_path}')
+                    print(f'SAVING BEST THRESHOLD ({threshold_val:.6f}) to {best_threshold_path}')
 
                     # Plot and save ROC curve
                     if plt is not None:
                         try:
-                            tprs = 1 - fnrs
+                            # Ensure fprs and fnrs are numpy arrays
+                            fprs_array = numpy.array(fprs, dtype=numpy.float64)
+                            fnrs_array = numpy.array(fnrs, dtype=numpy.float64)
+                            tprs = 1.0 - fnrs_array
+                            
                             fig = plt.figure()
-                            plt.plot(fprs, tprs, label=f'ROC (EER = {current_eer:2.2f}%)')
+                            plt.plot(fprs_array, tprs, label=f'ROC (EER = {current_eer:2.2f}%)')
                             plt.plot([0, 1], [0, 1], 'k--', label='Random Guess')
                             
-                            eer_fpr = fprs[numpy.nanargmin(numpy.abs(fnrs - fprs))]
-                            eer_tpr = tprs[numpy.nanargmin(numpy.abs(fnrs - fprs))]
+                            eer_idx = numpy.nanargmin(numpy.abs(fnrs_array - fprs_array))
+                            eer_fpr = fprs_array[eer_idx]
+                            eer_tpr = tprs[eer_idx]
                             plt.plot(eer_fpr, eer_tpr, 'ro', label=f'EER Point ({eer_fpr:.2f}, {eer_tpr:.2f})')
 
                             plt.xlabel('False Positive Rate')
