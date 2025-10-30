@@ -52,11 +52,11 @@ rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
 n_mels: 80
 model: ResNetSE34L
 encoder_type: SAP
-nOut: 256
+nOut: 512
 log_input: false
 
 ## Load and save paths
-save_path: exps/mini_voxceleb1_experiment_10
+save_path: exps/mini_voxceleb1_experiment_12
 initial_model: ""
 
 ## Performance optimization settings
