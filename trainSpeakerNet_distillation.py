@@ -128,6 +128,31 @@ parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true',
 parser.add_argument('--prefetch_factor', type=int,  default=3,      help='Prefetch batches per worker (NEW)')
 parser.add_argument('--persistent_workers', dest='persistent_workers', action='store_true', default=True, help='Keep workers alive (DEFAULT: True)')
 parser.add_argument('--gradient_accumulation_steps', type=int, default=1, help='Gradient accumulation steps (1=disabled)')
+
+## MLP-Mixer specific parameters
+parser.add_argument('--hidden_dim',     type=int,   default=256,    help='MLP-Mixer hidden dimension')
+parser.add_argument('--num_blocks',     type=int,   default=8,      help='Number of MLP-Mixer blocks')
+parser.add_argument('--expansion_factor', type=int, default=4,      help='MLP expansion factor')
+parser.add_argument('--groups',         type=int,   default=4,      help='Grouped projection groups')
+
+## Knowledge Distillation parameters
+parser.add_argument('--teacher_model',  type=str,   default=None,   help='Teacher model name for distillation')
+parser.add_argument('--teacher_checkpoint', type=str, default=None, help='Teacher model checkpoint path')
+parser.add_argument('--distillation_alpha', type=float, default=0.5, help='Distillation loss weight (0-1)')
+parser.add_argument('--distillation_temperature', type=float, default=4.0, help='Distillation temperature')
+parser.add_argument('--distillation_type', type=str, default='cosine', help='Distillation loss type: mse, cosine, or kl')
+parser.add_argument('--freeze_teacher', dest='freeze_teacher', action='store_true', default=True, help='Freeze teacher weights')
+
+## LSTM+Autoencoder specific parameters
+parser.add_argument('--ae_latent_dim',  type=int,   default=128,    help='Autoencoder latent dimension')
+parser.add_argument('--lstm_hidden',    type=int,   default=256,    help='LSTM hidden dimension')
+parser.add_argument('--lstm_layers',    type=int,   default=2,      help='Number of LSTM layers')
+parser.add_argument('--pooling_type',   type=str,   default='ASP',  help='Pooling type (SAP or ASP)')
+
+## Additional config options
+parser.add_argument('--gpu',            type=int,   default=0,      help='GPU device ID')
+parser.add_argument('--save_every_epoch', dest='save_every_epoch', action='store_true', default=False, help='Save model every epoch')
+parser.add_argument('--num_workers_persistent', dest='num_workers_persistent', action='store_true', default=True, help='Persistent workers (alias)')
 parser.add_argument('--enable_profiling', dest='enable_profiling', action='store_true', help='Enable PyTorch profiler')
 parser.add_argument('--compile_model',  dest='compile_model', action='store_true', help='Use torch.compile for faster execution (PyTorch 2.0+)')
 parser.add_argument('--eval_batch_size', type=int, default=32, help='Batch size for evaluation (NEW: larger = faster)')
@@ -176,20 +201,9 @@ def main_worker(gpu, ngpus_per_node, args):
         torch.backends.cudnn.allow_tf32 = True
 
     ## Load models (with distillation support)
-    # Check if knowledge distillation is requested
-    use_distillation = (
-        DISTILLATION_AVAILABLE and 
-        hasattr(args, 'teacher_model') and args.teacher_model and
-        hasattr(args, 'teacher_checkpoint') and args.teacher_checkpoint
-    )
-    
-    if use_distillation:
-        print('\n' + '='*70)
-        print('KNOWLEDGE DISTILLATION MODE ENABLED')
-        print('='*70)
-        s = DistillationSpeakerNet(**vars(args))
-    else:
-        s = SpeakerNet(**vars(args))
+    # Distillation is handled automatically by SpeakerNet_distillation
+    # It detects teacher_model and teacher_checkpoint in kwargs
+    s = SpeakerNet(**vars(args))
     
     # OPTIMIZATION: Compile model with torch.compile (PyTorch 2.0+)
     if args.compile_model and hasattr(torch, 'compile'):

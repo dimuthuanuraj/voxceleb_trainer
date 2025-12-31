@@ -33,9 +33,9 @@ class DistillationLoss(nn.Module):
     Args:
         alpha: Weight for distillation loss (0.0 = no distillation, 1.0 = only distillation)
         temperature: Temperature for softening outputs (higher = softer)
-        distillation_type: 'mse' or 'kl' (MSE for embeddings, KL for logits)
+        distillation_type: 'mse', 'cosine', or 'kl' (MSE/Cosine for embeddings, KL for logits)
     """
-    def __init__(self, alpha=0.5, temperature=4.0, distillation_type='mse'):
+    def __init__(self, alpha=0.5, temperature=4.0, distillation_type='cosine'):
         super(DistillationLoss, self).__init__()
         self.alpha = alpha
         self.temperature = temperature
@@ -59,9 +59,9 @@ class DistillationLoss(nn.Module):
             total_loss: Combined loss
             distillation_loss: Distillation component (for logging)
         """
-        # Distillation loss: MSE between normalized embeddings
+        # Distillation loss: Choose between MSE, Cosine, or KL
         if self.distillation_type == 'mse':
-            # Normalize embeddings (L2 normalization)
+            # MSE between normalized embeddings (original implementation)
             student_norm = F.normalize(student_embeddings, p=2, dim=1)
             teacher_norm = F.normalize(teacher_embeddings, p=2, dim=1)
             
@@ -70,6 +70,14 @@ class DistillationLoss(nn.Module):
                 student_norm / self.temperature,
                 teacher_norm / self.temperature
             )
+            
+        elif self.distillation_type == 'cosine':
+            # Cosine similarity loss (RECOMMENDED - fixes magnitude issue)
+            # Cosine similarity ranges from [-1, 1]
+            # Loss = 1 - cosine_similarity ranges from [0, 2]
+            cos_sim = F.cosine_similarity(student_embeddings, teacher_embeddings, dim=1)
+            distillation_loss = (1 - cos_sim).mean()
+            
         elif self.distillation_type == 'kl':
             # KL divergence (if using logits instead of embeddings)
             student_soft = F.log_softmax(student_embeddings / self.temperature, dim=1)
@@ -157,7 +165,7 @@ class DistillationSpeakerNet(nn.Module):
     def __init__(self, student_model, teacher_model, teacher_checkpoint,
                  optimizer, trainfunc, nPerSpeaker,
                  distillation_alpha=0.5, distillation_temperature=4.0,
-                 freeze_teacher=True, **kwargs):
+                 distillation_type='cosine', freeze_teacher=True, **kwargs):
         super(DistillationSpeakerNet, self).__init__()
         
         print('\n' + '='*60)
@@ -191,7 +199,7 @@ class DistillationSpeakerNet(nn.Module):
             self.__D__ = DistillationLoss(
                 alpha=distillation_alpha,
                 temperature=distillation_temperature,
-                distillation_type='mse'
+                distillation_type=distillation_type
             )
         
         self.nPerSpeaker = nPerSpeaker

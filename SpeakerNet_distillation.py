@@ -65,6 +65,13 @@ class SpeakerNet(nn.Module):
             print('\n' + '='*60)
             print('🎓 DISTILLATION MODE ENABLED')
             print('='*60)
+            
+            # Remove teacher params from kwargs to avoid duplication
+            kwargs_clean = {k: v for k, v in kwargs.items() if k not in [
+                'teacher_model', 'teacher_checkpoint', 'distillation_alpha', 
+                'distillation_temperature', 'distillation_type', 'freeze_teacher'
+            ]}
+            
             self.__impl__ = DistillationSpeakerNet(
                 student_model=model,
                 teacher_model=teacher_model,
@@ -74,8 +81,9 @@ class SpeakerNet(nn.Module):
                 nPerSpeaker=nPerSpeaker,
                 distillation_alpha=kwargs.get('distillation_alpha', 0.5),
                 distillation_temperature=kwargs.get('distillation_temperature', 4.0),
+                distillation_type=kwargs.get('distillation_type', 'cosine'),
                 freeze_teacher=kwargs.get('freeze_teacher', True),
-                **kwargs
+                **kwargs_clean
             )
             self.use_distillation = True
         else:
@@ -352,7 +360,14 @@ class ModelTrainer(object):
 
                 # OPTIMIZATION: Use inference mode
                 with torch.inference_mode():
-                    if self.__model__.module.__L__.test_normalize:
+                    # Check if test_normalize is available (handles both standard and distillation mode)
+                    try:
+                        test_normalize = self.__model__.module.__L__.test_normalize
+                    except AttributeError:
+                        # Distillation mode - always normalize embeddings
+                        test_normalize = True
+                    
+                    if test_normalize:
                         # Normalize - features are already 1D vectors from batch processing
                         ref_feat = F.normalize(ref_feat.unsqueeze(0), p=2, dim=1).squeeze(0)
                         com_feat = F.normalize(com_feat.unsqueeze(0), p=2, dim=1).squeeze(0)
