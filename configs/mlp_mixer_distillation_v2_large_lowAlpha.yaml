@@ -98,10 +98,10 @@ eval_frames: 0             # Use full utterance for evaluation
 eval_batch_size: 1         # Batch size 1 for variable-length test audio
 
 ## Data paths (MINI DATASET - same as V2)
-train_list: /mnt/ricproject3/2025/data/mini_voxceleb2_train_list.txt
-test_list: /mnt/ricproject3/2025/data/mini_test_list.txt
-train_path: /mnt/ricproject3/2025/data/mini_voxceleb2
-test_path: /mnt/ricproject3/2025/data/mini_voxceleb1
+train_list: ${SL_SPV_DATA_ROOT}/mini_voxceleb2_train_list.txt
+test_list: ${SL_SPV_DATA_ROOT}/mini_test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb2
+test_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb1
 
 ## Model checkpointing
 score_save_epoch: 5        # Save scores every 5 epochs

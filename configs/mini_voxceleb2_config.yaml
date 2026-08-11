@@ -31,10 +31,10 @@ nPerSpeaker: 1
 nClasses: 140  # IMPORTANT: Changed from 5991 to 140 for mini dataset
 
 ## Training and test data - MINI DATASET PATHS
-train_list: /mnt/ricproject3/2025/data/mini_train_list.txt
-test_list: /mnt/ricproject3/2025/data/list_test_all_formated_cleaned.txt
-train_path: /mnt/ricproject3/2025/data/mini_voxceleb2
-test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
+train_list: ${SL_SPV_DATA_ROOT}/mini_train_list.txt
+test_list: ${SL_SPV_DATA_ROOT}/list_test_all_formated_cleaned.txt
+train_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb2
+test_path: ${SL_SPV_DATA_ROOT}/rearranged_voxceleb1
 
 # Test pairs for validation
 # Using 10000 pairs for reasonable validation speed (~75 seconds)
@@ -44,8 +44,8 @@ max_test_pairs: 10000
 eval_batch_size: 64
 
 # Augmentation paths (optional - set to empty if not using)
-musan_path: /mnt/ricproject3/2025/data/musan
-rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path: ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
 
 ## Model definition
 n_mels: 64

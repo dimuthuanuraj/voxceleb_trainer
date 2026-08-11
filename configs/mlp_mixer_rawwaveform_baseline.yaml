@@ -39,14 +39,14 @@ groups: 4                # Grouped projections for efficiency
 nOut: 512
 
 ## Training data (start with mini dataset for faster iteration)
-train_list: /mnt/ricproject2/voxceleb_new/train_list.txt
-train_path: /mnt/ricproject2/voxceleb_new/voxceleb2
-musan_path: /mnt/ricproject/data/musan
-rir_path: /mnt/ricproject/data/RIRS_NOISES/simulated_rirs
+train_list: ${SL_SPV_VOX_FULL_ROOT}/train_list.txt
+train_path: ${SL_SPV_VOX_FULL_ROOT}/voxceleb2
+musan_path: ${SL_SPV_AUGMENT_ROOT}/musan
+rir_path: ${SL_SPV_AUGMENT_ROOT}/RIRS_NOISES/simulated_rirs
 
 ## Validation data
-test_list: /mnt/ricproject2/voxceleb_new/test_list.txt
-test_path: /mnt/ricproject2/voxceleb_new/voxceleb1
+test_list: ${SL_SPV_VOX_FULL_ROOT}/test_list.txt
+test_path: ${SL_SPV_VOX_FULL_ROOT}/voxceleb1
 
 ## Data loader - No augmentation for initial test
 max_frames: 200          # 2 seconds @ 10ms frames

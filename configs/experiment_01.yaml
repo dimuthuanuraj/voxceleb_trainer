@@ -1,4 +1,4 @@
-# /mnt/ricproject3/2025/Colvaiai/voxceleb_trainer/configs/experiment_01.yaml
+# configs/experiment_01.yaml
 #experiment
 #name: experiment_01
 
@@ -22,12 +22,12 @@ nPerSpeaker: 1
 nClasses: 5991
 
 ## Training and test data
-train_list: /mnt/ricproject3/2025/data/train_list.txt
-test_list: /mnt/ricproject3/2025/data/list_test_all_formated_cleaned.txt
-train_path : /mnt/ricproject3/2025/data/rearranged_voxceleb2
-test_path : /mnt/ricproject3/2025/data/rearranged_voxceleb1
-musan_path: /mnt/ricproject3/2025/data/musan
-rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
+train_list: ${SL_SPV_DATA_ROOT}/train_list.txt
+test_list: ${SL_SPV_DATA_ROOT}/list_test_all_formated_cleaned.txt
+train_path : ${SL_SPV_DATA_ROOT}/rearranged_voxceleb2
+test_path : ${SL_SPV_DATA_ROOT}/rearranged_voxceleb1
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path: ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
 
 ## Model definition
 n_mels: 64

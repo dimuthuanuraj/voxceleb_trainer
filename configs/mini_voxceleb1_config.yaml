@@ -31,10 +31,10 @@ nPerSpeaker: 1
 nClasses: 140  # IMPORTANT: 140 speakers in mini VoxCeleb2 dataset
 
 ## Training and test data - MINI VOXCELEB2 FOR TRAINING, MINI VOXCELEB1 FOR TESTING
-train_list: /mnt/ricproject3/2025/data/mini_voxceleb2_train_list.txt
-test_list: /mnt/ricproject3/2025/data/mini_test_list.txt
-train_path: /mnt/ricproject3/2025/data/mini_voxceleb2
-test_path: /mnt/ricproject3/2025/data/mini_voxceleb1
+train_list: ${SL_SPV_DATA_ROOT}/mini_voxceleb2_train_list.txt
+test_list: ${SL_SPV_DATA_ROOT}/mini_test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb2
+test_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb1
 
 # Test pairs for validation
 # Using all available pairs (12,559) for this small test set
@@ -45,8 +45,8 @@ max_test_pairs: 0  # 0 = use all pairs (~12,559 pairs, ~2 minutes)
 eval_batch_size: 1  # Process one audio at a time for variable-length evaluation
 
 # Augmentation paths (optional - set to empty if not using)
-musan_path: /mnt/ricproject3/2025/data/musan
-rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path: ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
 
 ## Model definition
 n_mels: 80

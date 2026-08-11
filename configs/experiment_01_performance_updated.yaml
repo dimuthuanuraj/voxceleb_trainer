@@ -35,10 +35,10 @@ nPerSpeaker: 1
 nClasses: 5991
 
 ## Training and test data
-train_list: /mnt/ricproject3/2025/data/train_list.txt
-test_list: /mnt/ricproject3/2025/data/list_test_all_formated_cleaned.txt
-train_path: /mnt/ricproject3/2025/data/rearranged_voxceleb2
-test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
+train_list: ${SL_SPV_DATA_ROOT}/train_list.txt
+test_list: ${SL_SPV_DATA_ROOT}/list_test_all_formated_cleaned.txt
+train_path: ${SL_SPV_DATA_ROOT}/rearranged_voxceleb2
+test_path: ${SL_SPV_DATA_ROOT}/rearranged_voxceleb1
 
 # NEW: Limit test pairs for faster validation (0 = use all pairs)
 # Examples: 1000 for quick test (~7-10 seconds), 10000 for medium (~70-100 seconds)
@@ -49,9 +49,9 @@ max_test_pairs: 50000 # Use 50000 pairs for faster validation (~75 seconds)
 # Larger batch = faster evaluation, more GPU memory
 # Examples: 16 (safe), 32 (default), 64 (faster), 128 (fastest if memory permits)
 eval_batch_size: 128  # Increased for faster evaluation
-test_path: /mnt/ricproject3/2025/data/rearranged_voxceleb1
-musan_path: /mnt/ricproject3/2025/data/musan
-rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
+test_path: ${SL_SPV_DATA_ROOT}/rearranged_voxceleb1
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path: ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
 
 ## Model definition
 n_mels: 64
