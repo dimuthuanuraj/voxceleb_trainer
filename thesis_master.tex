@@ -1,0 +1,102 @@
+% ====================================================================
+%  SL-SPV — MPhil thesis master file
+% --------------------------------------------------------------------
+%  Compile with:
+%      cd voxceleb_trainer
+%      lualatex thesis_master
+%      bibtex  thesis_master
+%      lualatex thesis_master
+%      lualatex thesis_master
+%  Or use latexmk:
+%      latexmk -xelatex thesis_master.tex
+%
+%  Uses DejaVu Serif (system font) to match the look of the audit PDF.
+%  Switch to your institution's required class file at submission time;
+%  the chapter sources require only \chapter / \section / \cite, all
+%  of which are provided by `report` and any thesis-class derivative.
+% ====================================================================
+
+\documentclass[12pt,a4paper,openany]{report}
+
+% Engine-adaptive font setup. The May 2026 build used xelatex +
+% fontspec (DejaVu Serif); this machine's TeX Live has since lost
+% xetex and its OpenType font support, so the pdfLaTeX branch (Latin
+% Modern) is the working path. The fontspec branch is kept for
+% submission-time builds on a full TeX Live.
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{lmodern}
+\else
+  \usepackage{fontspec}
+  \setmainfont{DejaVu Serif}
+  \setsansfont{DejaVu Sans}
+  \setmonofont{DejaVu Sans Mono}
+\fi
+
+\usepackage{geometry}
+\geometry{margin=1in}
+
+\usepackage[bookmarks=true,colorlinks=false]{hyperref}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{parskip}
+
+\title{Low-Resource Speaker Verification for Sinhala and Tamil\\
+\large An open-source toolkit, a reproducible benchmark, and a
+single-corpus empirical study}
+\author{[Your Name]}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+Speaker verification (SV) systems have converged on architectures and
+training recipes optimised for high-resource English benchmarks;
+Sinhala and Tamil, spoken by over 22 million Sri Lankans, have no
+published SV baselines. This thesis contributes (i) a reproducible
+527-speaker Sinhala/Tamil benchmark built from public read-speech
+corpora (OpenSLR SLR52/SLR65), with an in-the-wild extension via our
+group's 280-speaker SLCeleb corpus; (ii) the first zero-shot SV
+baseline table for Sinhala: four modern VoxCeleb-trained
+architectures degrade $2$--$8\times$ in EER under the language shift,
+with badly calibrated scores throughout; (iii) a training-free
+adaptation study showing AS-Norm alone recovers up to 39\% relative EER
+(best training-free system: ReDimNet-B6 + AS-Norm at 2.07\%/0.90\%
+EER si/ta), that PLDA's value is condition-dependent, and that
+cross-language calibrator transfer inflates $C_{\mathrm{llr}}$ up to
+$5.7\times$ — per-language calibration is mandatory; and (iv) a
+four-policy fine-tuning comparison of the WavLM-base+ foundation
+model in which full fine-tuning (1.69\%/1.41\% EER over three seeds)
+decisively beats LoRA on this benchmark, contrary to recent PEFT
+findings, with the closed-set caveat analysed. The underlying
+toolkit extends the open-source \texttt{voxceleb\_trainer} codebase
+with eleven feature modules and twenty-six bug fixes, and all trial
+lists, configurations, and result artifacts are released for
+downstream Sri Lankan SV research.
+\end{abstract}
+
+\tableofcontents
+
+\include{thesis_chapters/01_introduction}
+\include{thesis_chapters/02_related_work}
+\include{thesis_chapters/03_methods}
+\include{thesis_chapters/04_results}
+
+% ---- Chapter 5 — Discussion (not yet scaffolded) ----
+% \include{thesis_chapters/05_discussion}
+
+% ---- Chapter 6 — Conclusion (not yet scaffolded) ----
+% \include{thesis_chapters/06_conclusion}
+
+\bibliographystyle{plain}
+\bibliography{thesis_chapters/references}
+
+\end{document}

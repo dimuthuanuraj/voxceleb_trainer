@@ -1,0 +1,154 @@
+% ====================================================================
+%  Chapter 1 — Introduction
+% --------------------------------------------------------------------
+%  Template chapter. Replace every bracketed [LIKE_THIS] placeholder
+%  with the actual value before submission. The chapter sections follow
+%  the standard MPhil/journal-paper introduction structure:
+%    1.1 Motivation
+%    1.2 Problem statement
+%    1.3 Research questions
+%    1.4 Contributions
+%    1.5 Thesis structure
+%  Citations resolve against the .bib block in RUN_GUIDE.md §16.
+% ====================================================================
+
+\chapter{Introduction}
+\label{ch:introduction}
+
+\section{Motivation}
+\label{sec:motivation}
+
+Speaker verification (SV) — the task of deciding whether two audio
+recordings come from the same speaker — is a foundational biometric
+technology underpinning voice authentication, forensic audio analysis,
+and conversational-AI personalisation. The dominant publicly available
+benchmarks (VoxCeleb1 \cite{nagrani2017voxceleb}, VoxCeleb2, NIST SRE
+series) are constructed almost exclusively from English speech. As a
+result, the state-of-the-art has converged on architectures and
+training recipes that, while highly effective on English, are not
+guaranteed to generalise to low-resource languages.
+
+Sri Lanka presents a particularly underserved case. The country's two
+primary languages —~Sinhala (an Indo-Aryan language with roughly
+17 million speakers) and Tamil (a Dravidian language with roughly
+5 million Sri Lankan speakers) —~have, prior to this work and our
+group's SLCeleb corpus \cite{slceleb2025}, no publicly catalogued SV
+benchmarks and no published SV baselines. Existing
+multilingual self-supervised speech encoders cover them only as part
+of broader low-resource batches \cite{chen2022wavlm,
+baevski2020wav2vec2}, with no targeted SV evaluation. The Sri Lankan
+deployment context further compounds the difficulty: bilingual and
+code-switched speech is normal in everyday usage, telephony channels
+dominate practical deployment, and labelled speakers are expensive to
+collect.
+
+\section{Problem statement}
+\label{sec:problem}
+
+This thesis addresses the question of how to construct a speaker
+verification system that performs reliably on Sinhala, Tamil, and
+code-switched audio when only a small labelled corpus is available.
+We frame the problem along three dimensions:
+
+\begin{enumerate}
+    \item \textbf{Architectural choice.} Modern SV architectures
+    (ECAPA-TDNN \cite{desplanques2020ecapa}, ResNet-SE variants,
+    self-supervised front-ends) were validated on English VoxCeleb
+    scale. Whether their inductive biases hold for low-resource
+    Sinhala/Tamil is an open empirical question.
+    \item \textbf{Cross-lingual transfer.} When a target-language
+    corpus is small ($\leq$~10\,000 utterances), training from
+    scratch overfits. Cross-lingual fine-tuning from an English-
+    pretrained checkpoint is the natural alternative; the right
+    freezing, learning-rate, and regularisation policy for SV
+    fine-tuning specifically remains under-studied.
+    \item \textbf{Calibration and operating point.} Per-language
+    decision thresholds, score normalisation (AS-Norm
+    \cite{matejka2017analysis}), generative scoring backends (PLDA),
+    and language-aware regularisation (domain adversarial training
+    \cite{ganin2015dann}) are standard tools for cross-lingual SV in
+    the literature, but their interactions on Sinhala/Tamil data
+    are not characterised.
+\end{enumerate}
+
+\section{Research questions}
+\label{sec:rqs}
+
+We address the following research questions:
+
+\begin{description}
+    \item[\textbf{RQ1}] How well do released, English/VoxCeleb-trained
+    SV models transfer \emph{zero-shot} to Sinhala and Tamil, and how
+    large is the degradation relative to their published English
+    benchmarks?
+    \item[\textbf{RQ2}] Which fine-tuning policy — frozen-encoder
+    probing, parameter-efficient adaptation (LoRA), full fine-tuning,
+    or layer-wise LR decay — best adapts a pretrained speech
+    foundation model to Sinhala/Tamil per trainable parameter?
+    \item[\textbf{RQ3}] Does language-adversarial training (gradient
+    reversal / DANN \cite{ganin2015dann}) improve cross-lingual
+    verification of bilingual speakers, and by how much?
+    \item[\textbf{RQ4}] At eval time, do score normalisation (AS-Norm)
+    and a generative scoring backend (PLDA) compose constructively, or
+    do they redundantly model the same residual variance?
+    \item[\textbf{RQ5}] How large is the gap between monolingual
+    (Sinhala-only, Tamil-only) and cross-lingual EER for a single
+    trained model, and can it be closed via threshold calibration
+    alone or does it require architectural intervention?
+\end{description}
+
+\section{Contributions}
+\label{sec:contributions}
+
+The contributions of this thesis are:
+
+\begin{enumerate}
+    \item \textbf{A reproducible Sinhala/Tamil SV benchmark.}
+    Benchmark v0 covers 527 speakers (478 Sinhala from OpenSLR SLR52,
+    49 Tamil from OpenSLR SLR65) with seed-reproducible monolingual
+    trial lists (12{,}000 trials per language, gender-controlled
+    impostors where metadata permits), produced by a released
+    deterministic pipeline; benchmark v1 extends the evaluation to
+    SLCeleb \cite{slceleb2025}, our group's 280-speaker in-the-wild
+    corpus with multi-session and bilingual speakers.
+    \item \textbf{A comprehensive empirical study} of cross-lingual
+    transfer for SV under low-resource constraints, in three suites:
+    the first zero-shot baseline table for Sinhala (four modern
+    architectures); a training-free adaptation ablation (AS-Norm,
+    PLDA, per-language calibration) that quantifies how much of the
+    cross-lingual degradation is a fixable score-domain problem; and
+    a four-policy fine-tuning comparison (frozen / LoRA / full /
+    layer-wise LR decay) of a WavLM foundation model, replicated
+    over three seeds.
+    \item \textbf{Per-language and pooled evaluation infrastructure}
+    that supports principled comparison of Sinhala-only,
+    Tamil-only, and cross-lingual trial sets in a single trainer
+    invocation, with paper-grade statistical reporting
+    (mean$\pm$std over three random seeds).
+    \item \textbf{A practical open-source toolkit} extending the
+    \texttt{voxceleb\_trainer} codebase \cite{slspv2026repo} with
+    eleven new features (FEATURE-001..FEATURE-011) and twenty-six
+    bug fixes (BUGFIX-001..BUGFIX-026). Each feature ships with a
+    design document and is selectable via a single YAML key, enabling
+    independent ablation.
+\end{enumerate}
+
+\section{Thesis structure}
+\label{sec:structure}
+
+The remainder of the thesis is organised as follows.
+Chapter~\ref{ch:related} reviews prior work on speaker verification
+architectures, cross-lingual transfer, score normalisation, and
+language-aware modelling.
+Chapter~\ref{ch:methods} describes the corpus, architectures, training
+recipe, scoring backends, and evaluation protocol.
+Chapter~\ref{ch:results} reports the headline and ablation results.
+% Chapters 5 (Discussion) and 6 (Conclusion) are not scaffolded yet;
+% switch the plain numbers below back to \ref{ch:discussion} /
+% \ref{ch:conclusion} once those files exist.
+Chapter~5 analyses the findings, addresses the
+research questions of Section~\ref{sec:rqs}, and discusses limitations.
+Chapter~6 summarises the contributions and outlines
+future work, including the SLCeleb (v1) open-set benchmark, the
+bilingual cross-lingual study, and self-supervised pretraining on
+unlabelled Sri Lankan audio.

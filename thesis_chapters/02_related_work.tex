@@ -1,0 +1,193 @@
+% ====================================================================
+%  Chapter 2 — Related Work
+% --------------------------------------------------------------------
+%  Template chapter. The section headings cover the four sub-fields
+%  the thesis touches:
+%    2.1 Speaker verification architectures
+%    2.2 Loss functions for speaker discrimination
+%    2.3 Cross-lingual / low-resource transfer
+%    2.4 Score normalisation and calibration
+%    2.5 Multilingual self-supervised speech representation
+%    2.6 Positioning of this work
+%  Citations resolve against the .bib block in RUN_GUIDE.md §16.
+%  Add references to .bib as you cite them; bracketed placeholders
+%  like [CITE_DESPLANQUES_PAPER_PAGE] mark spots where a specific page
+%  number or quoted figure should be added during the lit-review pass.
+% ====================================================================
+
+\chapter{Related Work}
+\label{ch:related}
+
+\section{Speaker verification architectures}
+\label{sec:related-architectures}
+
+The dominant architectures for modern speaker verification fall into
+three families. The first is the residual convolutional family,
+typified by ResNet-SE34V2 with squeeze-and-excitation blocks and
+self-attentive pooling. The second is the time-delay neural network
+(TDNN) family, dominated since 2020 by ECAPA-TDNN
+\cite{desplanques2020ecapa}. ECAPA-TDNN introduced three key
+ingredients: (i) Res2Net-style multi-scale convolutions with
+hierarchical accumulation, (ii) squeeze-and-excite channel
+re-weighting at each block, and (iii) multi-layer feature
+aggregation followed by channel-attentive statistical pooling.
+ECAPA-TDNN consistently reports 0.8--1.5\,\% EER on VoxCeleb1-O and
+has become the de-facto reference architecture in subsequent SV
+papers. The third family is self-supervised, replacing the
+mel-front-end with a frozen pretrained transformer encoder such as
+WavLM \cite{chen2022wavlm}, XLS-R, or mHuBERT-147; these models
+typically outperform mel-based architectures on low-resource
+language data by 30--50\,\% relative EER, at the cost of significant
+parameter count (95M--300M).
+
+% [CITE_OR_EXPAND: brief mention of x-vector / i-vector predecessors
+% to ground the field's evolution; one paragraph is enough for an
+% MPhil chapter.]
+
+\section{Loss functions for speaker discrimination}
+\label{sec:related-loss}
+
+Speaker-verification training has progressively replaced cross-entropy
+softmax with margin-based variants. AM-Softmax and Additive Angular
+Margin Softmax (AAM-Softmax) \cite{deng2019arcface} reshape the
+classification objective to produce more discriminative embeddings
+on the hypersphere by adding a margin to the cosine similarity
+between the embedding and the target-class weight vector. The
+margin-based losses became standard in SV largely because they
+produce embeddings that score well under cosine distance at eval
+time — a closer match to how SV systems are actually used than the
+intra-class compactness produced by plain softmax.
+
+% [CITE_OR_EXPAND: mention sub-centre AAM-Softmax (\S 3.2 \#10 of the
+% analysis doc) as a recent refinement; one paragraph if the SC-AAM
+% ablation is included, omit otherwise.]
+
+Auxiliary use of language information has also proven productive,
+either during training via multi-task language-ID heads, or at
+decision time via language-aware scoring and calibration
+\cite{thienpondt2022calibration}.
+Adversarial counterparts — Domain-Adversarial Neural Networks
+\cite{ganin2015dann} attached to a language or channel classifier
+through a gradient-reversal layer — pursue the opposite goal: forcing
+the embedding to be \emph{uninformative} about the domain. Both
+approaches appear in the SV literature; their relative effectiveness
+depends on whether language is a useful signal (multi-task wins)
+or a confound (adversarial wins).
+
+\section{Cross-lingual and low-resource transfer}
+\label{sec:related-crosslingual}
+
+When a target-language SV corpus is small ($\leq$~10k utterances),
+training a deep architecture from scratch overfits catastrophically.
+The standard remedy is cross-lingual fine-tuning from a checkpoint
+pretrained on a high-resource corpus (typically VoxCeleb1 or
+VoxCeleb2). Three knobs control how aggressively the target
+language overwrites the pretrained representation:
+
+\begin{enumerate}
+    \item \textbf{Selective freezing.} Freezing the front-end
+    (SincConv or mel-filterbank parameters) preserves the
+    acoustic-feature extractor learned on the source language. For
+    very small corpora, freezing the entire encoder and training
+    only the projection head is the safest option, and already
+    captures most of the self-supervised representation's value
+    \cite{chen2022wavlm,sang2025unipet}.
+    \item \textbf{Learning-rate scaling.} A standard
+    multiplier of 0.1$\times$ to 0.01$\times$ the from-scratch LR
+    avoids destabilising the prior.
+    \item \textbf{Layer-wise learning-rate decay (LLRD).} A decay
+    factor $\gamma \in [0.8, 0.95]$ applied per layer from the
+    encoder top to the input front-end, so that deeper layers carry
+    transferable acoustic priors while shallower (closer-to-output)
+    layers adapt more aggressively. LLRD is universal in the BERT
+    and WavLM fine-tuning literature; its application to SV
+    fine-tuning is less systematically reported, motivating one of
+    this thesis's ablations.
+\end{enumerate}
+
+% [CITE_OR_EXPAND: position prior cross-lingual SV papers — e.g. NIST
+% SRE multilingual evaluations, MLS, MUSAN-based low-resource SV
+% work — relative to the SL setting.]
+
+\section{Score normalisation and calibration}
+\label{sec:related-scoring}
+
+Two eval-time mechanisms address the gap between training-time and
+deployment-time score distributions. Adaptive Symmetric Score
+Normalisation (AS-Norm) \cite{matejka2017analysis} computes
+per-trial-side cohort statistics from a fixed set of impostor
+embeddings and normalises trial scores against those statistics.
+It is universal in the NIST SRE pipeline and typically yields
+5--20\,\% relative MinDCF reduction at zero training cost.
+
+Probabilistic Linear Discriminant Analysis (PLDA) \cite{kenny2010,
+sizov2014unifying} models the embedding distribution generatively
+and replaces cosine scoring with a likelihood ratio test under
+``same speaker'' vs ``different speaker'' hypotheses. PLDA was the
+dominant SV backend in the i-vector era and remains useful for
+short-utterance and channel-mismatched trials, although on modern
+discriminatively-trained embeddings the marginal gain over cosine is
+smaller. The two-covariance simplification of PLDA
+\cite{sizov2014unifying} provides nearly identical EER to the full
+formulation at half the computational complexity.
+
+Score normalisation and PLDA compose: AS-Norm normalises against
+cohort statistics regardless of whether the underlying score is
+cosine or PLDA. The NIST SRE pipeline order is PLDA $\to$ AS-Norm.
+
+% [CITE_OR_EXPAND: per-language threshold calibration is a separate
+% research direction (Platt scaling, isotonic regression). One short
+% paragraph for completeness.]
+
+\section{Multilingual self-supervised speech representation}
+\label{sec:related-ssl}
+
+Self-supervised models trained on large multilingual audio corpora
+(wav2vec 2.0 \cite{baevski2020wav2vec2}, WavLM
+\cite{chen2022wavlm}, XLS-R, mHuBERT-147 \cite{boito2024mhubert})
+provide speech-aware embeddings without language-specific labelling.
+mHuBERT-147 is particularly relevant to the Sri Lankan setting: it
+deliberately upweights low-resource languages including Sinhala and
+Tamil in its pretraining corpus.
+
+There are three ways to use such models for low-resource SV:
+(i) load an off-the-shelf checkpoint, freeze it, and train only a
+pooling head and projection on the target-language labelled data
+% [CITE_OR_EXPAND: typical SV-on-WavLM results]; (ii) continue
+pretraining (CPT) on unlabelled target-language audio before
+SV-fine-tuning, which adds 5--15\,\% relative EER on top of (i)
+when sufficient unlabelled audio ($\geq$~500\,h) is available
+\cite{pratap2024mms}; (iii) pretrain from scratch on
+target-language-only audio, which requires thousands of hours and
+rarely outperforms (ii). This thesis evaluates option (i) as the
+SSL baseline; option (ii) is documented as future work.
+
+\section{Positioning of this work}
+\label{sec:positioning}
+
+The contributions outlined in
+Section~\ref{sec:contributions} sit at the intersection of three
+otherwise separately-developed lines of work:
+
+\begin{itemize}
+    \item \textbf{Architectures and losses} for English-scale SV
+    (\S~\ref{sec:related-architectures}, \S~\ref{sec:related-loss})
+    are applied to low-resource Sinhala/Tamil with no targeted
+    benchmark in the literature.
+    \item \textbf{Cross-lingual transfer techniques}
+    (\S~\ref{sec:related-crosslingual}) are widely studied for ASR
+    and translation but less so for SV; their interaction with
+    SV-specific losses (AAM-Softmax) and SV-specific eval backends
+    (PLDA, AS-Norm) has not been systematically ablated.
+    \item \textbf{Multilingual SSL encoders}
+    (\S~\ref{sec:related-ssl}) cover Sinhala and Tamil only as part
+    of broader low-resource batches, with no published SV evaluation
+    on either language.
+\end{itemize}
+
+To the best of our knowledge, this is the first study to provide a
+reproducible SV benchmark on Sinhala and Tamil with full ablation
+isolation of the cross-lingual transfer levers. The benchmark, the
+corpus preparation pipeline, and the open-source toolkit
+(\S~\ref{sec:contributions}) are released to support future work in
+this direction.

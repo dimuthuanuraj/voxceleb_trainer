@@ -1,0 +1,277 @@
+% ====================================================================
+%  Chapter 4 — Results
+% --------------------------------------------------------------------
+%  Rewritten 2026-07-03 with the completed benchmark-v0 results.
+%  Every number is sourced from:
+%    research_logs/2026-07-03-zeroshot-baseline-table.md   (Table A)
+%    research_logs/2026-07-03-p2-backend-adaptation.md     (Tables B, C, E)
+%    research_logs/2026-07-03-p3-peft-finetuning.md        (Table D)
+%  Raw JSONs: /home/anuraj/sl_spv_bench/results/ and runs/p3_*/.
+%  All numbers carry the v0 caveat of Section 3.2 (read speech,
+%  session-uncontrolled targets, closed-set): valid for relative
+%  comparison; v1 (SLCeleb) supplies the open-set condition.
+% ====================================================================
+
+\chapter{Results}
+\label{ch:results}
+
+\section{Zero-shot baselines (suite A)}
+\label{sec:zeroshot-results}
+
+Table~\ref{tab:zeroshot} reports, to our knowledge, the first
+published speaker-verification results for Sinhala. All four
+VoxCeleb-trained checkpoints transfer at usable but clearly degraded
+accuracy: relative to each model's published VoxCeleb1-O EER, Sinhala
+EER inflates by $4.9$--$8.0\times$ and Tamil by $2.3$--$4.0\times$ —
+Tamil within the $2$--$4\times$ band the CN-Celeb cross-domain
+literature reports, Sinhala well above it, even though v0 is clean
+read speech. The VoxCeleb ranking is mostly
+preserved (ReDimNet-B6 best, ECAPA worst) with one inversion:
+ReDimNet-B1 beats the nominally stronger B2 on both languages, and
+with 2.2M parameters also beats the $\approx$20M-parameter ECAPA —
+parameter count does not monotonically buy language robustness.
+Across all systems minDCF($10^{-2}$) is poor (0.24--0.48) while EERs
+look usable: the signature of badly scaled scores in a mismatched
+domain, which motivates suite B.
+
+\begin{table}[t]
+\centering
+\caption{Zero-shot transfer of VoxCeleb-trained checkpoints to
+benchmark v0. EER$_{\mathrm{avg}}$\,\% and minDCF at
+$p_{\mathrm{t}}{=}0.01/0.05$; 12{,}000 trials per language.
+$\times$Vox1-O = SL EER divided by the checkpoint's published
+VoxCeleb1-O EER.}
+\label{tab:zeroshot}
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{3}{c}{\textbf{Sinhala}} & \multicolumn{3}{c}{\textbf{Tamil}} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+\textbf{Model} & EER & minDCF & $\times$Vox1-O & EER & minDCF & $\times$Vox1-O \\
+\midrule
+ECAPA-TDNN (SpeechBrain) & 4.78 & 0.471/0.291 & 6.0 & 3.21 & 0.482/0.207 & 4.0 \\
+ReDimNet-B1              & 3.57 & 0.306/0.209 & 4.9 & 1.67 & 0.406/0.162 & 2.3 \\
+ReDimNet-B2              & 4.17 & 0.422/0.244 & 8.0 & 1.97 & 0.454/0.170 & 3.8 \\
+ReDimNet-B6              & \textbf{2.71} & 0.238/0.153 & 7.3 & \textbf{1.48} & 0.422/0.160 & 4.0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Training-free backend adaptation (suite B)}
+\label{sec:backend-results}
+
+Table~\ref{tab:backend} crosses the scoring backend (cosine vs PLDA)
+with AS-Norm for three encoders. Three findings:
+
+\begin{enumerate}
+\item \textbf{AS-Norm delivers 12--39\% relative EER reduction}
+(Sinhala: 33/33/23\% for ECAPA/B1/B6; Tamil: 30/12/39\%), bracketing
+the 20--30\% band reported by \cite{matejka2017analysis}, and
+improves minDCF($10^{-2}$) in five of the six model--language cells
+(best: B6 Sinhala $0.238\!\rightarrow\!0.167$; the exception is B1
+Tamil, $0.406\!\rightarrow\!0.433$). It is the most cost-effective
+lever in this study: no training, one cohort file.
+\item \textbf{PLDA hurts Sinhala but helps Tamil.} PLDA increases
+Sinhala EER for every encoder (B6: $2.71\!\rightarrow\!3.84$) while
+reducing Tamil EER for two of the three encoders (ECAPA:
+$3.21\!\rightarrow\!2.46$; B6: $1.48\!\rightarrow\!1.11$; B1 worsens
+slightly, $1.67\!\rightarrow\!1.77$). Our working hypothesis is a benchmark
+artifact: the PLDA fit is dominated by the 478 Sinhala speakers of
+near-single-session crowdsourced audio, so its within-class
+covariance underestimates true channel variability, whereas the
+studio-recorded Tamil fits the model. The v1 multi-session rerun is
+the decisive test before dismissing the ``PLDA wins under shift''
+claim of \cite{wang2022plda}.
+\item \textbf{RQ4 (composition):} at v0, AS-Norm dominates PLDA and
+the composed stack does not beat cosine{+}AS-Norm on Sinhala, though
+it yields the best Tamil minDCF. The answer is
+condition-dependent; both levers stay in the v1 protocol.
+\end{enumerate}
+
+The best training-free v0 system is
+\textbf{ReDimNet-B6 + AS-Norm: 2.07\% (si), 0.90\% (ta)}.
+
+\begin{table}[t]
+\centering
+\caption{Suite B ablation: EER\,\% (minDCF at $10^{-2}$).
+Cosine rows reproduce Table~\ref{tab:zeroshot} exactly (sanity
+check). Bold = best per encoder and language.}
+\label{tab:backend}
+\begin{tabular}{llcc}
+\toprule
+\textbf{Encoder} & \textbf{Backend} & \textbf{Sinhala} & \textbf{Tamil} \\
+\midrule
+ECAPA-TDNN & cosine          & 4.78 (0.471) & 3.21 (0.482) \\
+           & cosine+AS-Norm  & \textbf{3.19} (0.330) & 2.24 (0.480) \\
+           & PLDA            & 6.00 (0.598) & 2.46 (0.495) \\
+           & PLDA+AS-Norm    & 5.80 (0.482) & \textbf{2.06} (0.374) \\
+\midrule
+ReDimNet-B1 & cosine         & 3.57 (0.306) & 1.67 (0.406) \\
+            & cosine+AS-Norm & \textbf{2.38} (0.245) & 1.47 (0.433) \\
+            & PLDA           & 5.34 (0.452) & 1.77 (0.419) \\
+            & PLDA+AS-Norm   & 5.23 (0.382) & \textbf{1.49} (0.297) \\
+\midrule
+ReDimNet-B6 & cosine         & 2.71 (0.238) & 1.48 (0.422) \\
+            & cosine+AS-Norm & \textbf{2.07} (0.167) & \textbf{0.90} (0.376) \\
+            & PLDA           & 3.84 (0.293) & 1.11 (0.340) \\
+            & PLDA+AS-Norm   & 3.56 (0.254) & 1.16 (0.314) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cross-lingual score shift and calibration}
+\label{sec:calibration-results}
+
+Table~\ref{tab:crosscal} fits an affine logistic calibrator per
+language and then transplants it across languages (ReDimNet-B6).
+Self-calibration achieves good $C_{\mathrm{llr}}$ (0.066--0.171), but
+the cross-language transplant inflates $C_{\mathrm{llr}}$ by up to
+$5.7\times$ (Sinhala scored with a Tamil-fit calibrator, cosine
+{+}AS-Norm). The cross-lingual score shift is therefore large and
+real, extending \cite{thienpondt2022calibration} to Sinhala/Tamil,
+and \textbf{per-language calibration is mandatory for deployment}.
+A publishable nuance: PLDA scores are the most \emph{transportable}
+across languages (penalty only $1.2$--$2.7\times$) even where PLDA's
+EER is worse — the generative backend produces more
+language-homogeneous score scales than cosine.
+
+\begin{table}[t]
+\centering
+\caption{Language-aware calibration, ReDimNet-B6:
+$C_{\mathrm{llr}}$ with a self-language-fit calibrator vs a
+calibrator transplanted from the other language.}
+\label{tab:crosscal}
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{2}{c}{\textbf{Sinhala}} & \multicolumn{2}{c}{\textbf{Tamil}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Backend} & self & ta-fit & self & si-fit \\
+\midrule
+cosine          & 0.129 & 0.489 ($3.8\times$) & 0.095 & 0.149 ($1.6\times$) \\
+cosine+AS-Norm  & 0.099 & 0.565 ($5.7\times$) & 0.071 & 0.167 ($2.4\times$) \\
+PLDA            & 0.171 & 0.390 ($2.3\times$) & 0.073 & 0.084 ($1.2\times$) \\
+PLDA+AS-Norm    & 0.163 & 0.442 ($2.7\times$) & 0.066 & 0.094 ($1.4\times$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Parameter-efficient fine-tuning (suite C)}
+\label{sec:peft-results}
+
+Table~\ref{tab:peft} compares the four fine-tuning policies.
+Accuracy is monotone in encoder freedom: frozen $\prec$ LoRA
+$\prec$ LLRD $\prec$ full. Full fine-tuning of WavLM-base+ on 31k
+in-language utterances is the best system in this thesis —
+\textbf{1.69$\pm$0.06\% (si) / 1.41$\pm$0.10\% (ta)} over three
+seeds — beating the best zero-shot supervised model by 38\% relative
+on Sinhala (2.71\% $\rightarrow$ 1.69\%) and matching it within noise
+on Tamil.
+
+Two observations qualify the PEFT narrative:
+
+\begin{enumerate}
+\item \textbf{The ``PEFT $\geq$ full fine-tuning under shift''
+prediction \cite{sang2025unipet} does not reproduce here}: full
+fine-tuning beats LoRA at every seed, with a $2.2\times$ mean EER
+gap (si 1.69 vs 3.73). A plausible explanation is the closed-set v0
+protocol (Section~\ref{ssec:peft}): full fine-tuning's usual
+penalty — overfitting the adaptation speakers at the cost of unseen
+speakers — is not measured when the evaluation speakers \emph{are}
+the training speakers. The open-set v1 rerun arbitrates. Secondary
+factors: LoRA $r{=}8$ may be undersized and its head LR untuned.
+\item \textbf{LoRA is high-variance across seeds}
+($\pm$0.49--0.61 EER, vs $\pm$0.06--0.10 for full): single-seed
+PEFT-vs-full comparisons on corpora of this size are unsound, and
+the seed-42-only column would have flattered LoRA with its best
+draw.
+\end{enumerate}
+
+Even the frozen probe (0.5\% of parameters) lands within
+$\approx$1 EER point of zero-shot ReDimNet-B6 on Sinhala — the
+pretrained WavLM features already carry most of the speaker signal,
+and everything beyond frozen is adaptation gain.
+
+\begin{table}[t]
+\centering
+\caption{Suite C: fine-tuning policy comparison on benchmark v0
+(EER$_{\mathrm{avg}}$\,\%, full 12{,}000-pair lists, cosine scoring).
+Seed-42 column for all arms; mean$\pm$std over seeds 42/43/44 for
+LoRA and full. Zero-shot reference: ReDimNet-B6 2.71 (si) / 1.48 (ta).}
+\label{tab:peft}
+\begin{tabular}{lccccc}
+\toprule
+& & \multicolumn{2}{c}{\textbf{seed 42}} & \multicolumn{2}{c}{\textbf{mean$\pm$std (3 seeds)}} \\
+\cmidrule(lr){3-4}\cmidrule(lr){5-6}
+\textbf{Arm} & \textbf{Trainable} & si & ta & si & ta \\
+\midrule
+frozen & 0.5\%  & 3.74 & 3.13 & --- & --- \\
+LoRA   & 1.1\%  & 3.17 & 2.44 & 3.73$\pm$0.49 & 3.11$\pm$0.61 \\
+LLRD   & 95.6\% & 2.40 & 1.81 & --- & --- \\
+full   & 95.6\% & \textbf{1.63} & \textbf{1.30} & \textbf{1.69$\pm$0.06} & \textbf{1.41$\pm$0.10} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Composing backend adaptation with fine-tuning
+(suite B$\times$C)}
+\label{sec:composition-results}
+
+Re-applying the suite-B stack to the fine-tuned (full, seed 42)
+embeddings tests whether backend adaptation survives encoder
+adaptation (Table~\ref{tab:composition}). AS-Norm's EER gain
+saturates (si $-0.07$ absolute; ta still $+13\%$ relative) but it
+keeps improving the operating-point metrics — minDCF($10^{-2}$)
+si $0.180\!\rightarrow\!0.144$, ta $0.175\!\rightarrow\!0.149$, and
+$C_{\mathrm{llr}}$ down $\approx$15\% on both — so it remains worth
+deploying even with an in-domain encoder. PLDA, by contrast, is now
+clearly redundant-to-harmful on both languages, exactly the
+in-domain prediction of \cite{wang2022plda}: fine-tuning moved the
+embedding distribution in-domain, and the v0 PLDA story is coherent
+before and after. The best overall v0 operating system is
+\textbf{fine-tuned WavLM (full) + AS-Norm}: si 1.71\%/0.144, ta
+1.13\%/0.149 (or plain cosine when EER is the sole criterion).
+
+\begin{table}[t]
+\centering
+\caption{Suite B backends applied to fine-tuned WavLM embeddings
+(full arm, seed 42): EER\,\% (minDCF at $10^{-2}$).}
+\label{tab:composition}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Backend} & \textbf{Sinhala} & \textbf{Tamil} \\
+\midrule
+cosine          & \textbf{1.63} (0.180) & 1.30 (0.175) \\
+cosine+AS-Norm  & 1.71 (\textbf{0.144}) & \textbf{1.13} (\textbf{0.149}) \\
+PLDA            & 2.46 (0.258) & 1.57 (0.234) \\
+PLDA+AS-Norm    & 2.37 (0.197) & 1.43 (0.201) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Per-language analysis}
+\label{sec:per-lang}
+
+Tamil EER is uniformly lower than Sinhala (studio recordings, 49
+speakers, gender-controlled impostors), yet Tamil
+minDCF($10^{-2}$) is uniformly \emph{worse} for the ReDimNet family
+(e.g.\ B6: 0.238 si vs 0.422 ta). With only 49 speakers the impostor
+pool is small, and a few hard same-genre impostors dominate the
+low-false-alarm operating region. Two methodological consequences:
+EER alone overstates how ``solved'' the Tamil condition is, and both
+metrics must be read against the corpus asymmetry (478 crowdsourced
+phone-quality Sinhala speakers vs 49 studio Tamil speakers) rather
+than interpreted as a property of the languages themselves.
+Cross-lingual (enrol-in-one-language, test-in-the-other) trials
+require bilingual speakers and therefore await benchmark v1.
+
+\section{Statistical reporting}
+\label{sec:significance}
+
+Multi-seed replication (42/43/44) covers the two arms whose ordering
+constitutes the headline claim (LoRA vs full); their separation
+(at least 1.1 EER points at every matched seed, and non-overlapping
+seed ranges on both languages) makes the verdict robust without
+interval estimation. The frozen and LLRD
+arms, and all training-free results, are deterministic given the
+seed-42 lists. For the journal version, bootstrap confidence
+intervals over trial pairs (1{,}000 resamples, 2.5/97.5 quantiles)
+remain planned once the v1 benchmark is in place.

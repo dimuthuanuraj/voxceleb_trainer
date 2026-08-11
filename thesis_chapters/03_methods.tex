@@ -1,0 +1,152 @@
+% ====================================================================
+%  Chapter 3 — Methods
+% --------------------------------------------------------------------
+%  Rewritten 2026-07-03 to describe the experiments actually run
+%  (benchmark v0 + zero-shot baselines + training-free backend
+%  adaptation + WavLM PEFT). Sources of record:
+%    research_logs/2026-07-03-sl-benchmark-v0-design.md
+%    research_logs/2026-07-03-zeroshot-baseline-table.md
+%    research_logs/2026-07-03-p2-backend-adaptation.md
+%    research_logs/2026-07-03-p3-peft-finetuning.md
+%  The v1 (SLCeleb) protocol will be added once the corpus is staged.
+% ====================================================================
+
+\chapter{Methods}
+\label{ch:methods}
+
+\section{Corpus and benchmark construction}
+\label{ssec:corpus}
+
+We evaluate on a two-tier benchmark. \textbf{Benchmark v0}, used for
+all experiments in this thesis, is built from two public read-speech
+corpora: OpenSLR SLR52 \cite{kjartansson2018slr52} contributes 478
+Sinhala speakers ($\approx$185k crowdsourced utterances, 16\,kHz FLAC,
+minimum 10 utterances per speaker), and OpenSLR SLR65
+\cite{he2020opensource} contributes 49 Tamil speakers (4{,}286 studio
+utterances, 48\,kHz resampled at load). Speaker identities come from
+the corpora's published metadata; gender labels exist only for SLR65.
+A deterministic ingestion script (\texttt{tools/ingest\_openslr.py})
+lays the corpus out as
+\texttt{<lang>/<speaker>/<utterance>} symlinks and emits a manifest
+and speaker-metadata table. \textbf{Benchmark v1}, pending data
+staging, replaces the evaluation side with SLCeleb
+\cite{slceleb2025}, our group's 280-speaker in-the-wild
+Sinhala/Tamil celebrity corpus, which adds multi-genre audio,
+multi-session speakers, and bilingual speakers for true
+cross-lingual trials.
+
+\section{Trial construction}
+\label{ssec:trials}
+
+Utterances are split 80/20 per speaker into train and test partitions
+(seed 42, \texttt{tools/sl\_dataprep.py}). From the test partition we
+sample, per language, 3{,}000 same-speaker target pairs and 9{,}000
+same-language impostor pairs (1:3 ratio), with unordered-pair
+deduplication and attempt-bounded sampling. Impostor pairs are
+same-gender whenever both speakers' genders are known; this holds for
+all Tamil trials but cannot be enforced for Sinhala (SLR52 has no
+gender metadata). Cross-session targets are enforced when session
+keys are derivable; the OpenSLR layouts carry no session metadata, so
+v0 targets are not session-controlled. Consequently v0 absolute error
+rates are optimistic and are valid for \emph{relative} comparison
+between systems, not for comparison against in-the-wild benchmarks;
+we state this caveat wherever v0 numbers are reported. The
+cross-lingual trial list is empty at v0 (the OpenSLR corpora contain
+no bilingual speakers) and becomes meaningful at v1.
+
+\section{Metrics}
+\label{ssec:metrics}
+
+We report equal error rate computed as the mean of the false-positive
+and false-negative rates at the crossing point (EER$_{\mathrm{avg}}$),
+and minimum detection cost (minDCF) at two operating points,
+$p_{\mathrm{target}} \in \{0.01, 0.05\}$ with
+$C_{\mathrm{miss}}=C_{\mathrm{fa}}=1$, following NIST and VoxCeleb
+practice. Calibration quality is measured with $C_{\mathrm{llr}}$ and
+actual DCF after logistic calibration. Unlabeled trials are treated
+as a hard error by the evaluation harness.
+
+\section{Experiment suite A: zero-shot baselines}
+\label{ssec:zeroshot}
+
+Four released, VoxCeleb-trained checkpoints are evaluated with no
+adaptation of any kind: ECAPA-TDNN \cite{desplanques2020ecapa} as
+distributed by SpeechBrain \cite{ravanelli2021speechbrain}
+($\approx$20M parameters), and ReDimNet-B1/B2/B6
+\cite{yakovlev2024redimnet} (2.2M/4.7M/15M). Scoring is cosine
+similarity on L2-normalised full-utterance embeddings, with no score
+normalisation and no calibration; this table is the raw-transfer
+reference that all adaptation levers are measured against.
+
+\section{Experiment suite B: training-free backend adaptation}
+\label{ssec:backend}
+
+On top of cached suite-A embeddings we ablate three eval-time levers,
+none of which updates the encoder:
+(i)~\textbf{AS-Norm} \cite{matejka2017analysis}: adaptive symmetric
+score normalisation with a 527-utterance in-language cohort (one
+utterance per training-pool speaker), top-$K{=}300$;
+(ii)~\textbf{PLDA} \cite{sizov2014unifying,kenny2010}: a
+two-covariance model ($d{=}150$) trained on 10{,}480 utterances
+($\leq$20 per speaker) from the training partition, preceded by
+centering, LDA, and length normalisation;
+(iii)~\textbf{language-aware logistic calibration}: an affine
+score-to-LLR map fitted per language on half the trials and evaluated
+on the other half, plus the cross-language transplant of each
+calibrator to quantify the cross-lingual score shift
+\cite{thienpondt2022calibration}. The grid crosses
+$\{$cosine, PLDA$\}\times\{$raw, AS-Norm$\}$ for three encoders,
+answering RQ4 directly. The PLDA fit necessarily sees the trial
+speakers (utterance-disjoint, standard for domain-adaptation PLDA);
+we flag this closed-set property explicitly.
+
+\section{Experiment suite C: parameter-efficient fine-tuning}
+\label{ssec:peft}
+
+Suite C fine-tunes WavLM-base+ \cite{chen2022wavlm} (94.4M
+parameters, English-pretrained) for Sinhala/Tamil speaker
+verification. The 13 hidden states are combined by a learnable
+softmax-weighted sum, pooled by attentive statistics pooling (128-d
+bottleneck), and projected to a 192-d embedding trained with
+AAM-Softmax \cite{deng2019arcface} (margin 0.2, scale 30) over the
+527 training speakers. The CNN feature extractor stays frozen in all
+arms. Four fine-tuning policies are compared:
+
+\begin{description}
+  \item[frozen] encoder frozen; only the pooling/embedding head and
+  layer weights train ($\approx$0.5\% of parameters);
+  \item[LoRA] rank-8 adapters ($\alpha{=}16$) \cite{hu2022lora} on the
+  query/key/value/output projections of every attention block, plus
+  the head (1.08M trainable, 1.1\%);
+  \item[full] all encoder parameters unfrozen (encoder LR $10^{-5}$,
+  head LR $10^{-3}$);
+  \item[LLRD] full fine-tuning with layer-wise learning-rate decay
+  ($\gamma{=}0.9$ per layer from the top).
+\end{description}
+
+Training uses the v0 train split capped at 60 utterances per speaker
+(31{,}049 utterances), random 2.0\,s crops, batch 64, AdamW (weight
+decay $2{\times}10^{-5}$), exponential LR decay ($\gamma{=}0.95$),
+mixed precision, gradient clipping at 5.0, and 15 epochs. Model
+selection uses per-epoch pooled EER on stratified 2{,}000-pair
+subsamples; the selected checkpoint is finally evaluated on the full
+12{,}000-pair lists, making suite-C numbers directly comparable to
+suites A and B. Because the evaluation speakers are the training
+speakers (utterance-disjoint split), suite C measures
+\emph{representation adaptation} rather than open-set
+generalisation; the v1 rerun provides the open-set condition.
+Finally, the suite-B backend stack is re-applied to the fine-tuned
+embeddings (suite B$\times$C composition) to test whether backend
+adaptation retains value once the encoder is in-domain
+\cite{wang2022plda}.
+
+\section{Reproducibility}
+\label{ssec:repro}
+
+Trial lists, cohort lists, and PLDA training lists are reproducible
+from seed 42. The LoRA and full arms of suite C are replicated with
+three seeds (42/43/44) and reported as mean$\pm$std; the frozen and
+LLRD arms use seed 42 only, as both sit far from the decision
+boundary between policies. All runs, configurations, per-epoch
+histories, and raw result JSONs are archived with the research logs
+listed in the chapter header.
