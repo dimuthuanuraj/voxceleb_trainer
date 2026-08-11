@@ -34,6 +34,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
+from models._frontend import make_mel_frontend  # BUGFIX-025
 
 
 class MaxFeatureMap(nn.Module):
@@ -243,23 +244,20 @@ class MLPMixerSpeakerNet(nn.Module):
         log_input: Apply log to mel-spectrogram (default: True)
     """
     def __init__(self, nOut=512, n_mels=80, hidden_dim=256, num_blocks=8,
-                 expansion_factor=4, groups=4, log_input=True, **kwargs):
+                 expansion_factor=4, groups=4, log_input=True, sample_rate=16000, **kwargs):
         super(MLPMixerSpeakerNet, self).__init__()
-        
+
         self.n_mels = n_mels
         self.hidden_dim = hidden_dim
         self.num_blocks = num_blocks
         self.log_input = log_input
-        
-        # Mel-spectrogram extraction (consistent with other models)
-        self.instancenorm = nn.InstanceNorm1d(n_mels)
-        self.torchfb = torchaudio.transforms.MelSpectrogram(
-            sample_rate=16000,
-            n_fft=512,
-            win_length=400,
-            hop_length=160,
-            window_fn=torch.hamming_window,
-            n_mels=n_mels
+        self.sample_rate = sample_rate
+
+        # BUGFIX-025: mel + instance-norm frontend pulled to
+        # models/_frontend.py. n_fft / win_length / hop_length stay at the
+        # 16 kHz-derived 512/400/160 inside the factory; see BUGFIX-006.
+        self.torchfb, self.instancenorm = make_mel_frontend(
+            sample_rate=sample_rate, n_mels=n_mels, pre_emphasis=False,
         )
         
         # CNN Front-end: Projects mel-spectrogram to hidden dimension

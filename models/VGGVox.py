@@ -8,13 +8,33 @@ import torch.nn.functional as F
 from torch.nn import Parameter
 
 class MainModel(nn.Module):
-    def __init__(self, nOut = 1024, encoder_type='SAP', log_input=True, **kwargs):
+    # The CNN stack ends with Conv2d(256, 512, kernel_size=(4,1), padding=(0,0));
+    # for that final 4-tall kernel to collapse the height to 1, the input mel
+    # bin count must reduce to exactly 4 through the preceding strided convs and
+    # max-pools. The original VGGVox design was tuned for n_mels=40 and the
+    # arithmetic only works at that value — other values crash at the final
+    # conv with a shape mismatch. We honour the parameter (per BUGFIX-014) but
+    # reject incompatible values explicitly instead of silently ignoring them.
+    _SUPPORTED_N_MELS = 40
+
+    def __init__(self, nOut = 1024, encoder_type='SAP', n_mels=40, log_input=True, sample_rate=16000, **kwargs):
         super(MainModel, self).__init__();
 
+        if n_mels != self._SUPPORTED_N_MELS:
+            raise ValueError(
+                f"VGGVox requires n_mels={self._SUPPORTED_N_MELS}; got n_mels={n_mels}. "
+                f"The final Conv2d(kernel_size=(4,1)) layer expects the mel "
+                f"dimension to reduce to 4 before the last conv, which is only "
+                f"true for n_mels={self._SUPPORTED_N_MELS}. Use a different "
+                f"model (ResNetSE34L / ResNetSE34V2) for other n_mels values."
+            )
+
         print('Embedding size is %d, encoder %s.'%(nOut, encoder_type))
-        
+
         self.encoder_type = encoder_type
+        self.n_mels       = n_mels
         self.log_input    = log_input
+        self.sample_rate  = sample_rate
 
         self.netcnn = nn.Sequential(
             nn.Conv2d(1, 96, kernel_size=(5,7), stride=(1,2), padding=(2,2)),
@@ -61,8 +81,10 @@ class MainModel(nn.Module):
 
         self.fc = nn.Linear(out_dim, nOut)
 
-        self.instancenorm   = nn.InstanceNorm1d(40)
-        self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=8000, pad=0, n_mels=40)
+        self.instancenorm   = nn.InstanceNorm1d(n_mels)
+        # n_fft/win_length/hop_length kept at 16 kHz-derived 512/400/160 by design — see BUGFIX-006.
+        # f_max scales to Nyquist (sample_rate/2) so the upper mel bin lands at the actual band edge.
+        self.torchfb        = torchaudio.transforms.MelSpectrogram(sample_rate=sample_rate, n_fft=512, win_length=400, hop_length=160, f_min=0.0, f_max=sample_rate/2, pad=0, n_mels=n_mels)
 
     def new_parameter(self, *size):
         out = nn.Parameter(torch.FloatTensor(*size))

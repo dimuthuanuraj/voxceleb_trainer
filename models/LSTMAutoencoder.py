@@ -28,6 +28,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchaudio
 import math
+from models._frontend import make_mel_frontend  # BUGFIX-025
 
 
 class SpectrogramAutoencoder(nn.Module):
@@ -202,29 +203,26 @@ class LSTMAutoencoderSpeakerNet(nn.Module):
         4. Attentive pooling
         5. Speaker embedding projection
     """
-    def __init__(self, nOut=512, n_mels=80, log_input=True, 
-                 ae_latent_dim=128, lstm_hidden=256, lstm_layers=2, 
-                 pooling_type='ASP', **kwargs):
+    def __init__(self, nOut=512, n_mels=80, log_input=True,
+                 ae_latent_dim=128, lstm_hidden=256, lstm_layers=2,
+                 pooling_type='ASP', sample_rate=16000, **kwargs):
         super(LSTMAutoencoderSpeakerNet, self).__init__()
-        
+
         print(f'LSTM + Autoencoder Speaker Network: {nOut}-dim embedding, pooling: {pooling_type}')
         print(f'  - Autoencoder latent dim: {ae_latent_dim}')
         print(f'  - LSTM hidden dim: {lstm_hidden}, layers: {lstm_layers}')
-        
+
         self.n_mels = n_mels
         self.log_input = log_input
         self.pooling_type = pooling_type
-        
-        # Mel-spectrogram preprocessing
-        self.torchfb = torchaudio.transforms.MelSpectrogram(
-            sample_rate=16000,
-            n_fft=512,
-            win_length=400,
-            hop_length=160,
-            window_fn=torch.hamming_window,
-            n_mels=n_mels
+        self.sample_rate = sample_rate
+
+        # BUGFIX-025: mel + instance-norm frontend pulled to
+        # models/_frontend.py. n_fft/win_length/hop_length stay at the
+        # 16 kHz-derived 512/400/160 inside the factory; see BUGFIX-006.
+        self.torchfb, self.instancenorm = make_mel_frontend(
+            sample_rate=sample_rate, n_mels=n_mels, pre_emphasis=False,
         )
-        self.instancenorm = nn.InstanceNorm1d(n_mels)
         
         # Autoencoder for denoising
         self.autoencoder = SpectrogramAutoencoder(
