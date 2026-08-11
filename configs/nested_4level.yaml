@@ -1,9 +1,21 @@
+# ⚠️ QUARANTINED CONFIG — TRAINS A NON-CONVERGENT MODEL ⚠️
+# ----------------------------------------------------------------------
+# This config targets models/experimental/NestedSpeakerNet.py, which has
+# been moved to the experimental directory because three independent
+# stabilisation attempts ended in NaN-cascade failures.
+# See models/experimental/README.md and BUGFIX-010 for the full story.
+# Kept here as a research artifact to reproduce the documented negative
+# result, NOT as a recommended training config.
+# ----------------------------------------------------------------------
+#
 # NESTED SPEAKER NETWORK - 4 Levels
 # Based on "Nested Learning: The Illusion of Deep Learning Architecture"
-# Expected: 8-13% EER improvement + 2× faster than ResNetSE34L
+# Original design hypothesis (NOT achieved in practice):
+#   8-13% EER improvement + 2× faster than ResNetSE34L
+# Empirical result: NaN at epoch 11 (BatchNorm) / 12 (GroupNorm).
 
 ## Model architecture
-model: NestedSpeakerNet
+model: experimental.NestedSpeakerNet
 num_levels: 4              # Number of nested levels (3, 4, or 5)
 nOut: 512                  # Embedding dimension
 encoder_type: SAP          # Temporal pooling: SAP or ASP
@@ -40,18 +52,18 @@ nPerSpeaker: 1
 nClasses: 140              # Mini VoxCeleb1: 140 speakers
 
 ## Training and test data - MINI DATASET
-train_list: /mnt/ricproject3/2025/data/mini_voxceleb2_train_list.txt
-test_list: /mnt/ricproject3/2025/data/mini_test_list.txt
-train_path: /mnt/ricproject3/2025/data/mini_voxceleb2
-test_path: /mnt/ricproject3/2025/data/mini_voxceleb1
+train_list: ${SL_SPV_DATA_ROOT}/mini_voxceleb2_train_list.txt
+test_list: ${SL_SPV_DATA_ROOT}/mini_test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb2
+test_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb1
 
 ## Validation settings
 max_test_pairs: 0          # 0 = use all pairs (~12,559)
 eval_batch_size: 1
 
 ## Augmentation paths
-musan_path: /mnt/ricproject3/2025/data/musan
-rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path: ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
 
 ## Performance optimization
 mixedprec: true

@@ -2,8 +2,14 @@
 # -*- coding: utf-8 -*-
 
 """
-Quick test script for Nested Speaker Network
-Tests model creation, forward pass, and basic functionality
+Quick test script for Nested Speaker Network.
+
+NOTE — QUARANTINED MODEL: ``models.experimental.NestedSpeakerNet`` does NOT
+converge for speaker verification. Three independent stabilisation attempts
+ended in NaN-cascade failures (best stable variant is +88% worse EER than the
+ResNetSE34L baseline). This script exists only to verify shapes / forward
+mechanics of the quarantined implementation, NOT to validate it for training.
+See ``models/experimental/README.md`` and BUGFIX-010 for the full story.
 """
 
 import torch
@@ -13,7 +19,8 @@ import os
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.NestedSpeakerNet import MainModel
+# Quarantined import: model lives under models/experimental/ since BUGFIX-010.
+from models.experimental.NestedSpeakerNet import MainModel
 
 def test_nested_network():
     """Test nested network with different configurations"""

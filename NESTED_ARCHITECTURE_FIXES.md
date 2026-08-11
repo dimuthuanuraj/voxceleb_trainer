@@ -1,5 +1,27 @@
 # Nested Architecture Stability Fixes
 
+> **⚠️ QUARANTINE NOTICE — added 2026-05-16 by BUGFIX-010.**
+>
+> This document records the architectural fixes *attempted* in the
+> Nested Speaker Network research thread. **None of the attempts
+> succeeded** — every stabilisation variant either crashed with a
+> NaN cascade or stabilised at performance significantly worse than
+> the ResNetSE34L baseline. The model has been moved to
+> [`models/experimental/NestedSpeakerNet.py`](models/experimental/NestedSpeakerNet.py)
+> and the related configs have been updated to point at the new
+> location (`model: experimental.NestedSpeakerNet`).
+>
+> Authoritative references:
+> - Full empirical write-up: [`research_logs/2025-12-29-nested-learning-experiment.md`](research_logs/2025-12-29-nested-learning-experiment.md)
+> - Quarantine rationale and scope: [`docs/bugfixes/BUGFIX-010-quarantine-nestedspeakernet.md`](docs/bugfixes/BUGFIX-010-quarantine-nestedspeakernet.md)
+> - Directory README: [`models/experimental/README.md`](models/experimental/README.md)
+>
+> This document is preserved as-is below for the historical record of
+> *what was tried*. The "fixes" it describes are not actually working
+> fixes; they are stabilisation attempts that did not converge.
+
+---
+
 **Date**: December 29, 2025  
 **Problem**: Training collapsed at Epoch 11 with NaN loss and degraded to 100% EER
 

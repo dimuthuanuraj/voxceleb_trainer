@@ -1,13 +1,51 @@
 #!/usr/bin/python
 # -*- encoding: utf-8 -*-
 
+# =====================================================================
+#  ⚠️  QUARANTINED — DOES NOT CONVERGE FOR SPEAKER VERIFICATION  ⚠️
+# =====================================================================
+#
+# This model is kept in `models/experimental/` as a research artifact
+# only. **Do not use for production training.**
+#
+# Empirical status (three independent stabilisation attempts):
+#   1. Full nested architecture, fixed 0.5× scaling, BatchNorm
+#      → Loss became NaN at epoch 11. Best EER before collapse: 21.72%.
+#   2. Learnable nested weights + GroupNorm + adaptive pooling
+#      → Loss became NaN at epoch 12. Best EER before collapse: 18.71%.
+#   3. Simplified nested (only deep levels connected)
+#      → Stable but +88% worse than baseline (best 29.03% vs ResNetSE34L
+#        baseline 15.48% on mini-VoxCeleb1).
+#
+# Root cause: nested aggregation creates O(2^N) gradient paths through
+# the network. For variable-length audio with high spectral variance
+# (σ² ≈ 2.5–8.0 vs. ≈ 0.1–0.3 for images), this produces unbounded
+# gradient magnitudes that gradient clipping at max_norm=5.0 cannot
+# tame. Adjacent levels' features are also anti-correlated in audio
+# (r ≈ −0.23) where they are positively correlated in vision (r ≈
+# 0.65), so the nested concat operation amplifies rather than
+# regularises feature norms. Full analysis at:
+#
+#   research_logs/2025-12-29-nested-learning-experiment.md
+#
+# Quarantined by: BUGFIX-010, 2026-05-16. See
+#   docs/bugfixes/BUGFIX-010-quarantine-nestedspeakernet.md
+# for rationale, scope, and removal-instead-of-quarantine considerations.
+#
+# Anyone considering reviving this architecture should first read the
+# research log above, then design a follow-up experiment that
+# specifically addresses the gradient-path-count and feature-anti-
+# correlation issues — not just tweak hyperparameters.
+# =====================================================================
+
 """
 Nested Learning Architecture for Speaker Verification
 
-Key Concept: Shallow network with nested hierarchy where each level 
+Key Concept: Shallow network with nested hierarchy where each level
 receives information from ALL previous levels, not just the preceding one.
 
-Expected Performance:
+Expected Performance (per original design hypothesis — NOT achieved
+in practice; see quarantine notice above):
 - 8-13% EER improvement over ResNetSE34L
 - 2× faster training and inference
 - 38% fewer parameters
@@ -173,30 +211,33 @@ class NestedSpeakerNet(nn.Module):
     Key Innovation: Multi-path information flow where each level reuses
     features from ALL previous levels, not just the immediate predecessor.
     """
-    def __init__(self, num_levels=4, nOut=512, encoder_type='SAP', 
-                 n_mels=80, log_input=True, fusion_type='concat', **kwargs):
+    def __init__(self, num_levels=4, nOut=512, encoder_type='SAP',
+                 n_mels=80, log_input=True, fusion_type='concat',
+                 sample_rate=16000, **kwargs):
         super(NestedSpeakerNet, self).__init__()
-        
+
         print(f'Nested Speaker Network: {num_levels} levels, {nOut}-dim embedding, encoder: {encoder_type}')
-        
+
         self.num_levels = num_levels
         self.encoder_type = encoder_type
         self.n_mels = n_mels
         self.log_input = log_input
         self.fusion_type = fusion_type
-        
+        self.sample_rate = sample_rate
+
         # Channel progression for each level
         base_channels = [32, 64, 128, 256, 512, 1024]
         self.channels = base_channels[:num_levels+1]
-        
-        # Mel-spectrogram preprocessing
+
+        # Mel-spectrogram preprocessing. n_fft/win_length/hop_length kept at the
+        # 16 kHz-derived values 512/400/160; see BUGFIX-006 doc.
         self.instancenorm = nn.InstanceNorm1d(n_mels)
         self.torchfb = torchaudio.transforms.MelSpectrogram(
-            sample_rate=16000, 
-            n_fft=512, 
-            win_length=400, 
-            hop_length=160, 
-            window_fn=torch.hamming_window, 
+            sample_rate=sample_rate,
+            n_fft=512,
+            win_length=400,
+            hop_length=160,
+            window_fn=torch.hamming_window,
             n_mels=n_mels
         )
         

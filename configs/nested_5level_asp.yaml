@@ -1,9 +1,18 @@
+# ⚠️ QUARANTINED CONFIG — TRAINS A NON-CONVERGENT MODEL ⚠️
+# ----------------------------------------------------------------------
+# Same quarantine status as the other nested_* configs — see
+# configs/nested_4level.yaml's header banner and
+# models/experimental/README.md / BUGFIX-010 for the full story. A
+# 5-level nested net has even more gradient paths than the 4-level
+# (2^5 = 32 paths) and is therefore strictly more unstable than the
+# already-failing 4-level variant.
+# ----------------------------------------------------------------------
+#
 # NESTED SPEAKER NETWORK - 5 Levels with ASP
-# Deeper nested network for potentially better performance
-# Expected: ~13.5% EER (vs 14.2% for 4-level)
+# Original hypothesis: ~13.5% EER (vs 14.2% for 4-level) — not achieved.
 
 ## Model architecture
-model: NestedSpeakerNet
+model: experimental.NestedSpeakerNet
 num_levels: 5              # 5 levels (more depth)
 nOut: 512
 encoder_type: ASP
@@ -40,18 +49,18 @@ nPerSpeaker: 1
 nClasses: 140
 
 ## Training and test data
-train_list: /mnt/ricproject3/2025/data/mini_voxceleb2_train_list.txt
-test_list: /mnt/ricproject3/2025/data/mini_test_list.txt
-train_path: /mnt/ricproject3/2025/data/mini_voxceleb2
-test_path: /mnt/ricproject3/2025/data/mini_voxceleb1
+train_list: ${SL_SPV_DATA_ROOT}/mini_voxceleb2_train_list.txt
+test_list: ${SL_SPV_DATA_ROOT}/mini_test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb2
+test_path: ${SL_SPV_DATA_ROOT}/mini_voxceleb1
 
 ## Validation
 max_test_pairs: 0
 eval_batch_size: 1
 
 ## Augmentation
-musan_path: /mnt/ricproject3/2025/data/musan
-rir_path: /mnt/ricproject3/2025/data/RIRS_NOISES/simulated_rirs
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path: ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
 
 ## Performance optimization
 mixedprec: true
