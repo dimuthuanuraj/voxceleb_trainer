@@ -12,6 +12,7 @@ class LossFunction(nn.Module):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
+        self.expects_grouped_input = True  # consumes (B, 2, D); flattens internally via repeat_interleave
 
         self.softmax = softmax.LossFunction(**kwargs)
         self.angleproto = angleproto.LossFunction(**kwargs)

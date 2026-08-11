@@ -4,7 +4,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import time, pdb, numpy
+import time, numpy
 from tuneThreshold import tuneThresholdfromScore
 import random
 
@@ -14,7 +14,8 @@ class LossFunction(nn.Module):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
-        
+        self.expects_grouped_input = True  # consumes (B, 2, D)
+
         self.hard_rank  = hard_rank
         self.hard_prob  = hard_prob
         self.margin     = margin

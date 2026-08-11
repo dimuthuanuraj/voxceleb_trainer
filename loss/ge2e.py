@@ -6,7 +6,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import time, pdb, numpy
+import time, numpy
 from utils import accuracy
 
 class LossFunction(nn.Module):
@@ -15,7 +15,8 @@ class LossFunction(nn.Module):
         super(LossFunction, self).__init__()
 
         self.test_normalize = True
-        
+        self.expects_grouped_input = True  # consumes (B, nPerSpeaker, D); SpeakerNet must not flatten
+
         self.w = nn.Parameter(torch.tensor(init_w))
         self.b = nn.Parameter(torch.tensor(init_b))
         self.criterion  = torch.nn.CrossEntropyLoss()
