@@ -1,0 +1,607 @@
+\documentclass[11pt,a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{amsmath}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+% ── Colours ───────────────────────────────────────────────────────────────────
+\definecolor{codebg}{RGB}{248,248,248}
+\definecolor{codeframe}{RGB}{200,200,200}
+\definecolor{keywordcol}{RGB}{0,0,200}
+\definecolor{commentcol}{RGB}{80,130,80}
+\definecolor{stringcol}{RGB}{160,32,32}
+\definecolor{linkblue}{RGB}{0,70,180}
+
+% ── Hyperref setup ────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true,
+  linkcolor=linkblue,
+  urlcolor=linkblue,
+  citecolor=linkblue,
+  pdftitle={Sampling Rate for Sinhala/Tamil Speaker Verification},
+  pdfauthor={Claude},
+  pdfsubject={Speaker Verification, Signal Processing},
+}
+
+% ── Listings (code blocks) ────────────────────────────────────────────────────
+\lstdefinestyle{bash}{
+  language=bash,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  keywordstyle=\color{keywordcol}\bfseries,
+  commentstyle=\color{commentcol}\itshape,
+  stringstyle=\color{stringcol},
+  numbers=none,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+}
+\lstdefinestyle{python}{
+  language=Python,
+  basicstyle=\ttfamily\footnotesize,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  rulecolor=\color{codeframe},
+  breaklines=true,
+  breakatwhitespace=true,
+  showstringspaces=false,
+  keywordstyle=\color{keywordcol}\bfseries,
+  commentstyle=\color{commentcol}\itshape,
+  stringstyle=\color{stringcol},
+  numbers=none,
+  xleftmargin=6pt,
+  xrightmargin=6pt,
+}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.5em}{}[\vspace{-2pt}\rule{\linewidth}{0.4pt}]
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{0.5em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection}{0.5em}{}
+
+% ── Header / footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyhead[L]{\small Sampling Rate Guide — SL\_SPV}
+\fancyhead[R]{\small \texttt{voxceleb\_trainer/}}
+\fancyfoot[C]{\small\thepage}
+
+% ── Custom box for TL;DR ──────────────────────────────────────────────────────
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{tldrbox}{
+  colback=blue!4!white,
+  colframe=blue!40!white,
+  title={\bfseries TL;DR — Read This First},
+  fonttitle=\bfseries,
+  breakable,
+}
+
+% ── Verdict colours in tables ─────────────────────────────────────────────────
+\newcommand{\yes}{\textcolor{green!60!black}{\checkmark}}
+\newcommand{\no}{\textcolor{red}{\texttimes}}
+\newcommand{\maybe}{$\triangle$}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ── Title block ───────────────────────────────────────────────────────────────
+\begin{center}
+  {\LARGE\bfseries Sampling Rate for Sinhala\,/\,Tamil\\[4pt]
+  Speaker Verification --- Scientific Guide}\\[10pt]
+  {\normalsize
+  \textbf{Subject:} Choice of sampling rate (F\textsubscript{s}) for SL\_SPV training; impact of mixing F\textsubscript{s} across utterances.\\
+  \textbf{Repository:} \texttt{voxceleb\_trainer/}\\
+  \textbf{Author of analysis:} Claude \quad \textbf{Date:} 2026-05-14\\[4pt]
+  \textbf{Driving context:} Sinhala corpus recorded at \textbf{44.1\,kHz}; VoxCeleb at \textbf{16\,kHz};
+  potential telephony domain at \textbf{8\,kHz}.\\ The repo's data loader hard-codes 16\,kHz-derived
+  constants and never resamples.
+  }
+\end{center}
+\vspace{4pt}
+\rule{\linewidth}{0.8pt}
+\vspace{4pt}
+
+% ── TL;DR ─────────────────────────────────────────────────────────────────────
+\begin{tldrbox}
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+  \item \textbf{Use 16\,kHz, mono, PCM (int16 or float32) for every utterance} before it enters the
+    training pipeline. It is the universal speaker-verification (SV) standard, covers all
+    speaker-discriminative spectral information, and matches every pretrained model you might reuse
+    (WavLM, ECAPA-TDNN, XLS-R, the existing MLP-Mixer V2 in this repo).
+
+  \item \textbf{Downsample your 44.1\,kHz Sinhala data to 16\,kHz} with a proper anti-alias filter
+    at corpus-build time. Do \textbf{not} rely on the loader to do it on the fly.
+
+  \item \textbf{Do not mix sampling rates inside a single training run.} Mixed-F\textsubscript{s}
+    training causes the model to learn the recording-channel signature (which becomes a shortcut
+    speaker cue), produces wrong-length analysis frames, and inflates training EER while collapsing
+    real-world EER.
+
+  \item If you need to support 8\,kHz telephony at \emph{deployment} time, \textbf{still train at
+    16\,kHz}, but add \textbf{bandwidth-limited augmentation} (low-pass $\to$ decimate $\to$ upsample
+    $\to$ optional codec) so the model sees both wide-band and narrow-band versions of the same speaker.
+
+  \item The data loader at \texttt{DatasetLoader.py:29} is silently 16\,kHz-only. Fix it (see
+    Section~\ref{sec:fixes}) regardless of what F\textsubscript{s} you choose.
+\end{enumerate}
+\end{tldrbox}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{What Sampling Rate Actually Controls (the Physics)}
+\label{sec:physics}
+
+\subsection{Nyquist--Shannon: the Only Hard Constraint}
+
+For a digital signal sampled at F\textsubscript{s}, the highest frequency that can be represented
+without aliasing is \textbf{F\textsubscript{s}/2} (the Nyquist frequency). Anything above that
+present in the analog input will fold back into the passband as aliasing distortion unless removed
+by an anti-alias filter before sampling.
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}lll}
+\toprule
+F\textsubscript{s} (kHz) & Nyquist (kHz) & What you can represent \\
+\midrule
+8.0  & 4.0  & Narrow-band telephony. Loses energy above 4\,kHz (sibilants /s/, /\textesh/ partly cut). \\
+16.0 & 8.0  & ``Wide-band''. Covers full speech bandwidth used in SV literature. \\
+22.05 & 11.025 & Half of CD. Rarely used in SV. \\
+44.1 & 22.05 & CD-quality. $\approx$2.75$\times$ the information SV needs; mostly music-sparkle content. \\
+48.0 & 24.0 & Pro-audio / video. Same conclusion as 44.1. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Where Speaker Identity Actually Lives Spectrally}
+
+Decades of speech-science work (Stevens 1998, Hansen \& Hasan 2015, the NIST SRE programme, and
+every VoxCeleb-derived study) place speaker-discriminative information predominantly in:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Cue & Approx.\ band (Hz) & Why it matters \\
+\midrule
+Fundamental frequency F\textsubscript{0} & 50--500 & Vocal-fold mass/length $\to$ gender, age, pitch \\
+Formants F\textsubscript{1}--F\textsubscript{3} & 200--3500 & Vocal-tract length \& shape, most individuating \\
+Formants F\textsubscript{4}, F\textsubscript{5} & 3500--5000 & Speaker-individual fine structure \\
+Spectral tilt / glottal source & 0--4000 & Phonation type, breathiness \\
+Higher harmonics, fricative noise & 4000--8000 & Some individual info in /s/, /\textesh/, aspiration \\
+Ultra-high band & $>$8000 & Almost no speaker-discriminative information \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Take-away:} F\textsubscript{s} = 16\,kHz captures every band that carries non-trivial
+speaker information. Going to 44.1\,kHz adds 6.05\,kHz of bandwidth with essentially no incremental
+speaker-identity signal --- but quadruples storage, IO, and FFT cost.
+
+\subsection{Why SV Benchmarks Settled on 16\,kHz}
+
+\begin{itemize}
+  \item VoxCeleb1/2, CN-Celeb, VoxLingua, NIST SRE wide-band partitions, FLEURS, Common Voice
+    (after standardisation): \textbf{all 16\,kHz}.
+  \item Mel-filterbanks (\texttt{n\_mels} = 40/80/128) cover $0$--F\textsubscript{s}/2 with
+    logarithmic spacing; at 16\,kHz the upper bin sits at 8\,kHz, exactly where speaker info tapers off.
+  \item Pretrained SSL encoders (WavLM, HuBERT, wav2vec-2, XLS-R, mHuBERT) are pretrained at
+    16\,kHz; feeding them anything else silently mis-aligns positional encoding.
+  \item 16\,kHz is a ``telco-superset'': you can simulate narrow-band by low-passing, but cannot
+    recover wide-band after the fact.
+\end{itemize}
+
+\subsection{What About 8\,kHz?}
+
+Useful only when your \emph{deployment} channel is genuinely 8\,kHz (PSTN, AMR-NB cellular, some
+VoIP). Even then, the recommended practice is to \textbf{train at 16\,kHz with bandwidth
+augmentation} and serve a single model --- this consistently beats training a separate 8\,kHz model
+on every published benchmark since $\sim$2015 (cf.\ Snyder et al.\ NIST SRE19 system descriptions).
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{The Specific Situation: 44.1\,kHz Sinhala Source}
+\label{sec:sinhala}
+
+Your Sinhala corpus is recorded at 44.1\,kHz. Three options exist:
+
+\begin{center}
+\begin{tabular}{p{3cm}p{7cm}p{2cm}}
+\toprule
+Option & What happens & Verdict \\
+\midrule
+\textbf{A.} Keep 44.1\,kHz everywhere &
+  Quadruples FFT cost; can't reuse pretrained 16\,kHz models; mel-filterbanks waste half their bins
+  on a silent band above 8\,kHz. &
+  \no~Don't do this. \\[4pt]
+\textbf{B.} Downsample to 16\,kHz once, at corpus-build time &
+  Reversible loss only of the 8--22\,kHz band ($\approx$0 speaker info); aligns with all benchmarks
+  and pretrained models. &
+  \yes~\textbf{Recommended.} \\[4pt]
+\textbf{C.} Resample on-the-fly inside the data loader &
+  Correct mathematically, but adds CPU cost per epoch, risks silent bugs, and makes augmentation
+  ambiguous about target F\textsubscript{s}. &
+  \maybe~Acceptable short-term. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{The Downsampling Itself --- Do It Right}
+
+Downsampling 44.1 $\to$ 16\,kHz is \textbf{not exact} because $44100/16000 = 2.75625$ is not an
+integer. Two correct approaches:
+
+\textbf{Way 1 --- \texttt{sox} (fastest, best filter, recommended for batch jobs):}
+\begin{lstlisting}[style=bash]
+sox input_44k.wav -r 16000 -c 1 -b 16 output_16k.wav rate -v -L
+# -v = very high quality, -L = linear phase filter
+\end{lstlisting}
+
+\textbf{Way 2 --- \texttt{librosa} / \texttt{torchaudio} (in-Python, for pipelines):}
+\begin{lstlisting}[style=python]
+import torchaudio
+import torchaudio.functional as AF
+wav, sr = torchaudio.load("input_44k.wav")            # (C, T) at 44100
+wav = wav.mean(dim=0, keepdim=True)                   # force mono
+wav16 = AF.resample(
+    wav, orig_freq=sr, new_freq=16000,
+    resampling_method="sinc_interp_kaiser",
+    lowpass_filter_width=64, rolloff=0.99,
+    beta=14.769656459379492,                          # Kaiser beta for 80 dB stop-band
+)
+torchaudio.save("output_16k.wav", wav16, 16000,
+                encoding="PCM_S", bits_per_sample=16)
+\end{lstlisting}
+
+\textbf{Common mistakes to avoid:}
+\begin{itemize}
+  \item Naive decimation (\texttt{wav[::3]}) without anti-alias filtering: aliases the 5.3--22\,kHz
+    band into 0--5.3\,kHz as audible and inaudible spectral garbage.
+  \item Resampling \emph{after} loud normalisation: any rounding error rides on a maxed-out signal.
+  \item Mixing \texttt{librosa.resample(..., res\_type="kaiser\_fast")} with \texttt{sox} across the
+    dataset --- see Section~\ref{sec:mixed} for why this is dangerous.
+\end{itemize}
+
+\subsection{Storage Choice}
+
+\begin{itemize}
+  \item \textbf{int16 PCM WAV} at 16\,kHz: 32\,kB/s. Lossless within int16 dynamic range. Use this
+    unless you have a specific reason not to.
+  \item \textbf{FLAC} at 16\,kHz, level 5: $\approx$half the size, lossless, natively supported by
+    \texttt{soundfile}/\texttt{torchaudio}.
+  \item Avoid Opus, MP3, AAC for \emph{training-set storage}. Each transcode adds codec artefacts
+    that the model can learn as spurious speaker features.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{What Happens if You Train with Mixed Sampling Rates}
+\label{sec:mixed}
+
+\subsection{The Mechanical Problem: Wrong Analysis Window}
+
+\texttt{loadWAV} in \texttt{DatasetLoader.py:29} computes:
+
+\begin{lstlisting}[style=python]
+max_audio = max_frames * 160 + 240
+\end{lstlisting}
+
+Those constants assume 16\,kHz with a 10\,ms hop (160 samples) and 25\,ms window. Feed it 44.1\,kHz
+audio and:
+\begin{itemize}
+  \item \texttt{max\_frames = 200} no longer means ``2 seconds''; it means \textbf{0.726\,s} of
+    audio at 44.1\,kHz.
+  \item Frame count, mel-bin frequencies, ASP pooling temporal dimension --- \textbf{all become
+    F\textsubscript{s}-dependent} but the rest of the model assumes 16\,kHz.
+\end{itemize}
+
+The script will \textbf{not crash}. It silently trains on mis-framed inputs --- EER never reaches
+its potential.
+
+\subsection{The Information-Content Problem}
+
+\begin{itemize}
+  \item Mixing 8\,kHz and 16\,kHz audio in the same batch: the 8\,kHz samples have \textbf{zero
+    energy} above 4\,kHz (or aliased garbage). The model sees upper mel bins as ``near-silent'' only
+    for \emph{some} utterances, correlating silence with the recording channel rather than the speaker.
+  \item Mixing 16\,kHz and badly-downsampled 44.1\,kHz: filter ripple and roll-off in the 6--8\,kHz
+    band become a non-speaker shortcut cue.
+\end{itemize}
+
+\subsection{The Shortcut-Learning Problem (the Big One)}
+
+Neural networks are \textbf{shortcut learners} (Geirhos et al., \textit{Nat.\ Mach.\ Intell.}
+2020). Given any feature that correlates with the label but is not the intended concept, the network
+will exploit it.
+
+\begin{quote}
+\textit{Suppose 80\% of speaker A's utterances are 44.1\,kHz (studio) and 80\% of speaker B's
+are 8\,kHz (phone). The AAM-Softmax classifier learns ``if the audio has zero energy above 4\,kHz,
+this is probably speaker B.'' Validation EER on same-condition trials looks great. The moment you
+evaluate on B's studio voice, EER collapses.}
+\end{quote}
+
+This is \emph{exactly} the mechanism that has caused multiple published SV systems to score well
+on VoxCeleb1-O and fail on telephony deployment.
+
+\subsection{The Pretrained-Model Misalignment Problem}
+
+Initialising from the 16\,kHz MLP-Mixer V2 checkpoint then feeding it 44.1\,kHz audio shifts the
+SincConv learnable band centres by $44.1/16 = 2.75625\times$. Every downstream layer sees the wrong
+receptive field. The checkpoint is \emph{worse than a random init} in this case.
+
+\subsection{The Augmentation-Mix Problem}
+
+\texttt{AugmentWAV} convolves audio with RIR files and mixes in MUSAN noise at 16\,kHz. If
+\texttt{audio} is 44.1\,kHz, the convolution is dimensionally legal but \textbf{acoustically
+nonsense}: the RIR's 1-second impulse becomes a 0.36-second impulse, simulating a tiny room; the
+noise spectrum's 4\,kHz edge sits at 1.45\,kHz of your input.
+
+\subsection{The Trial-Pair Scoring Problem}
+
+If enrol is 16\,kHz and test is 44.1\,kHz (or vice-versa), cosine similarity is biased by
+bandwidth mismatch even for the same speaker. Empirically this can add 2--5\% absolute EER on a
+corpus with mixed sources unless every trial pair is forced to identical F\textsubscript{s}
+\emph{and} identical resampler chain.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Quantified Expectation of the Damage}
+\label{sec:damage}
+
+Order-of-magnitude estimates drawn from the SV literature and the architecture choices in this repo
+(relative changes versus a clean 16\,kHz baseline):
+
+\begin{center}
+\begin{tabular}{p{7cm}p{3.5cm}p{2cm}}
+\toprule
+Scenario & Expected EER impact & Confidence \\
+\midrule
+All training \& test audio at 16\,kHz & baseline & -- \\
+All audio resampled 44.1 $\to$ 16\,kHz, high-quality filter & $\leq$+0.1\% absolute & High \\
+Mixed 16\,kHz + 8\,kHz, no bandwidth aug & \textbf{+2 to +5\% absolute} on cross-bandwidth trials & High \\
+Mixed 16\,kHz + 44.1\,kHz, both fed raw into loader & \textbf{+3 to +10\% absolute}, possibly NaN & High \\
+Trained 16\,kHz + bandwidth aug, evaluated on 8\,kHz telephony & +0.5 to +1.5\% absolute & High \\
+Trained 16\,kHz, evaluated on 8\,kHz with no aug & +3 to +8\% absolute & High \\
+MinDCF impact & $\approx$1.5--2$\times$ the EER swing & Medium \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Recommended Training Recipe for the SL Corpus}
+\label{sec:recipe}
+
+\subsection{Corpus-Build Stage (One-Time)}
+
+\begin{enumerate}
+  \item Standardise everything to \textbf{16\,kHz, mono, 16-bit PCM WAV (or FLAC)}.
+  \begin{itemize}
+    \item Sinhala 44.1\,kHz $\to$ \verb|sox ... rate -v -L 16000|.
+    \item Any 8\,kHz telephony: keep as 8\,kHz on disk; label \texttt{narrow\_band=true} in
+      metadata. Upsample to 16\,kHz inside the loader; never archive the upsampled version as the
+      primary file.
+    \item Tamil OpenSLR (mostly 16\,kHz): already fine.
+  \end{itemize}
+  \item Apply a soft VAD (e.g.\ \texttt{silero-vad} or \texttt{webrtcvad} aggressiveness~2) to trim
+    leading/trailing silence $>300$\,ms. Do \emph{not} aggressively remove internal silence ---
+    speaker rhythm carries information.
+  \item Loudness-normalise to $-23$\,LUFS (\texttt{pyloudnorm}) or peak-normalise to $-1$\,dBFS.
+    Pick one and stick with it.
+  \item Write a \texttt{metadata.tsv} with columns:\\
+    \texttt{utt\_id}, \texttt{speaker\_id}, \texttt{language}, \texttt{channel},
+    \texttt{source}, \texttt{duration\_s}, \texttt{original\_fs}.
+\end{enumerate}
+
+\subsection{Loader Stage (Every Batch)}
+
+Patch \texttt{DatasetLoader.py} so that \texttt{loadWAV}:
+\begin{itemize}
+  \item accepts \texttt{sample\_rate} (target F\textsubscript{s}, default 16000) as a parameter,
+  \item reads native F\textsubscript{s} from \texttt{soundfile},
+  \item resamples via \texttt{torchaudio.functional.resample} or
+    \texttt{scipy.signal.resample\_poly} if mismatched,
+  \item raises a loud warning the first time per process if any resampling occurs,
+  \item recomputes \texttt{max\_audio} from
+    $\texttt{int}(\text{max\_frames} \times 0.01 \times \text{target\_sr} + 0.015 \times \text{target\_sr})$.
+\end{itemize}
+
+Minimal patch sketch:
+\begin{lstlisting}[style=python]
+def loadWAV(filename, max_frames, evalmode=True, num_eval=10,
+            target_sr: int = 16000):
+    hop_s, win_s = 0.010, 0.025
+    max_audio = int(max_frames * hop_s * target_sr + win_s * target_sr)
+
+    audio, sr = soundfile.read(filename, dtype="float32", always_2d=False)
+    if audio.ndim > 1:
+        audio = audio.mean(axis=1)               # force mono
+    if sr != target_sr:
+        from math import gcd
+        g = gcd(sr, target_sr)
+        audio = signal.resample_poly(audio, target_sr // g, sr // g)
+
+    audiosize = audio.shape[0]
+    if audiosize <= max_audio:
+        shortage = max_audio - audiosize + 1
+        audio = numpy.pad(audio, (0, shortage), mode="constant")
+        audiosize = audio.shape[0]
+    # ... rest unchanged
+\end{lstlisting}
+
+Two improvements bundled in: (a) \texttt{mode="constant"} instead of \texttt{'wrap'} (avoids
+fabricating repeated content for short clips), and (b) explicit mono conversion.
+
+\subsection{Augmentation Stage --- Simulate the Channels You Don't Have}
+
+\begin{lstlisting}[style=python]
+def bandwidth_aug(audio, sr=16000, p=0.3):
+    if random.random() > p:
+        return audio
+    cutoff = random.choice([3400, 3700, 4000])
+    sos = signal.butter(8, cutoff, btype="low", fs=sr, output="sos")
+    audio = signal.sosfilt(sos, audio)
+    # Decimate to 8 kHz then back to 16 kHz
+    audio = signal.resample_poly(audio, 1, 2)
+    audio = signal.resample_poly(audio, 2, 1)
+    # Optional: mu-law companding to simulate G.711
+    if random.random() < 0.5:
+        audio = numpy.sign(audio) * \
+                numpy.log1p(255 * numpy.abs(audio)) / numpy.log1p(255)
+    return audio.astype("float32")
+\end{lstlisting}
+
+With $p \approx 0.3$, a 16\,kHz-trained model becomes bandwidth-robust without a separate 8\,kHz
+training run.
+
+\subsection{Evaluation Stage}
+
+\begin{itemize}
+  \item Run separate eval lists for \textbf{wide-band}, \textbf{narrow-band},
+    \textbf{cross-bandwidth}, and \textbf{code-switched} subsets.
+  \item The cross-bandwidth subset is the honest test of whether bandwidth augmentation worked.
+  \item Report EER and MinDCF for each subset.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Decision Matrix}
+\label{sec:matrix}
+
+\begin{center}
+\begin{tabular}{p{3.5cm}p{3cm}p{2.5cm}p{4cm}}
+\toprule
+Your data & Your deployment & Recommended F\textsubscript{s} & What to fix \\
+\midrule
+All Sinhala 44.1\,kHz; all Tamil 16\,kHz & Mobile app, broadband &
+  \textbf{16\,kHz} (downsample Sinhala) & \S5.2 loader patch \\[4pt]
+Mix of studio and broadcast (44.1) & Same as above &
+  \textbf{16\,kHz} & \S5.2 loader patch \\[4pt]
+Adds telephony 8\,kHz & Mixed broadband + phone &
+  \textbf{16\,kHz} + bandwidth aug & \S5.2 + \S5.3 \\[4pt]
+Pure call-centre 8\,kHz only & Call-centre only &
+  Stay at \textbf{8\,kHz}; retrain from scratch & \S5.2 patch + retrain mel configs \\[4pt]
+Cross-language code-switch eval & Anywhere &
+  \textbf{16\,kHz}; same recipe & \S5.2 + multi-lingual splits \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Concrete Fixes to Land in This Repo}
+\label{sec:fixes}
+
+Minimum changes needed before any SL training run can be trusted:
+
+\begin{center}
+\begin{tabular}{clp{5cm}p{4.5cm}}
+\toprule
+\# & File & Change & Why \\
+\midrule
+1 & \texttt{DatasetLoader.py:26--55} &
+  Add \texttt{target\_sr} param to \texttt{loadWAV}; resample if mismatch; recompute
+  \texttt{max\_audio} from \texttt{target\_sr} &
+  Root bug. Everything else follows. \\[4pt]
+2 & \texttt{DatasetLoader.py:38} &
+  Replace \texttt{'wrap'} padding with \texttt{'constant'} + small noise &
+  Wrap-pad fabricates speaker-specific repetition cues for short clips. \\[4pt]
+3 & \texttt{AugmentWAV.\_\_init\_\_} &
+  Read RIR/MUSAN at construction time and resample to \texttt{target\_sr} if needed &
+  Otherwise augmentation is at the wrong F\textsubscript{s}. \\[4pt]
+4 & All \texttt{configs/*.yaml} &
+  Add \texttt{sample\_rate: 16000} and pipe through to loader &
+  Make the choice explicit, not hidden in a constant. \\[4pt]
+5 & \texttt{DatasetLoader.py} &
+  Add \texttt{bandwidth\_aug} augmentation behind a config flag &
+  Robustness to deployment-channel mismatch. \\[4pt]
+6 & \texttt{corpus\_build.py} (new) &
+  One-shot script: walk source dir, transcode to 16\,kHz mono 16-bit PCM via sox,
+  write \texttt{metadata.tsv} and \texttt{train\_list.txt} &
+  Make corpus-prep reproducible. \\[4pt]
+7 & \texttt{check\_corrupted\_audio.py} &
+  Extend to also report native F\textsubscript{s} distribution across the corpus &
+  Surface mixed-F\textsubscript{s} corpora at scan time, not at epoch 30. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{Frequently Asked Questions}
+\label{sec:faq}
+
+\paragraph{Q: My Sinhala recordings are 44.1\,kHz, 24-bit, stereo, studio quality. Won't I lose
+information downsampling to 16\,kHz mono 16-bit?}
+Yes, but not information that matters for SV. You lose (a) the 8--22\,kHz spectral band ($\approx$0
+speaker info), (b) the second channel (typically room-mic redundancy), (c) the lower 8 bits of
+dynamic range (below the noise floor of typical speech). Empirically, EER does not budge.
+
+\paragraph{Q: Why not train at 44.1\,kHz to ``preserve as much as possible''?}
+Three reasons: (i) you cannot use any pretrained model; (ii) FFT/mel-spec compute roughly triples;
+(iii) the upper bins carry mostly recording-environment cues that the model latches onto as shortcut
+features --- actively \emph{hurting} generalisation.
+
+\paragraph{Q: My VAD removed too much; should I lower the threshold?}
+Yes. Use a soft VAD that only trims edges. Internal pauses, breath, lip noise carry speaker
+information. Don't aggressively de-silence.
+
+\paragraph{Q: Can I train one model that handles 8/16/44.1\,kHz inputs?}
+One model, yes --- but the \emph{one} input rate it sees must be 16\,kHz. Resample everything to
+16\,kHz at the loader, then use bandwidth augmentation (\S\ref{sec:recipe}) so the signal sometimes
+``behaves'' like 8\,kHz telephony. This is what every modern production SV system does.
+
+\paragraph{Q: 24\,kHz is a common middle ground (used by some TTS systems). Should I use it?}
+No SV benchmark uses it; no pretrained SV model uses it; it offers no measurable SV gain over
+16\,kHz. Use 16\,kHz.
+
+\paragraph{Q: Should I time-stretch utterances as augmentation?}
+Speed perturbation ($\pm10\%$, e.g.\ with \texttt{sox tempo 0.9} and \texttt{tempo 1.1}) is a
+\emph{good} standard augmentation; it is conceptually independent of sampling rate. Apply it
+\emph{after} resampling to 16\,kHz.
+
+% ══════════════════════════════════════════════════════════════════════════════
+\section{References \& Further Reading}
+\label{sec:refs}
+
+\begin{itemize}[leftmargin=*, label={}]
+  \item Stevens, K.\,N. (1998). \textit{Acoustic Phonetics.} MIT Press. --- formant-frequency
+    speaker individuality.
+  \item Snyder, D. et al. (2018). ``X-vectors: Robust DNN Embeddings for Speaker Recognition.''
+    \textit{ICASSP.} --- 16\,kHz standard, wide-band/narrow-band considerations.
+  \item Chen, S. et al. (2022). ``WavLM: Large-scale self-supervised pretraining for full stack
+    speech processing.'' \textit{IEEE J.\ Sel.\ Topics Signal Process.} --- 16\,kHz SSL.
+  \item Geirhos, R. et al. (2020). ``Shortcut learning in deep neural networks.''
+    \textit{Nat.\ Mach.\ Intell.} --- why mixed-F\textsubscript{s} training fails generalisation.
+  \item Smith, J.\,O. (2002). ``Digital Audio Resampling Home Page'' --- engineering of
+    high-quality resampling.
+  \item Conneau, A. et al. (2022). ``FLEURS: Few-shot Learning Evaluation of Universal
+    Representations of Speech.'' --- Sinhala/Tamil multilingual eval, all 16\,kHz.
+  \item NIST SRE evaluation plans (2018, 2019, 2021) --- bandwidth handling guidance for
+    production SV.
+\end{itemize}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\vspace{12pt}
+\rule{\linewidth}{0.8pt}
+
+\noindent\textbf{Bottom line:}
+Standardise the entire Sri Lankan corpus to \textbf{16\,kHz mono PCM} at build time; patch the
+data loader to resample defensively and recompute frame constants from \texttt{target\_sr}; add
+bandwidth augmentation if 8\,kHz telephony is in scope; \textbf{never} mix native sample rates
+inside a training run. Following this avoids the silent-corruption mode that the current loader is
+wide open to, and aligns the project with every pretrained checkpoint and every public benchmark
+you will want to compare against.
+
+\end{document}
