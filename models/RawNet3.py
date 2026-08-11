@@ -19,6 +19,7 @@ class RawNet3(nn.Module):
         self.norm_sinc = kwargs["norm_sinc"]
         self.out_bn = kwargs["out_bn"]
         self.summed = summed
+        self.sample_rate = kwargs.get("sample_rate", 16000)
 
         self.preprocess = nn.Sequential(
             PreEmphasis(), nn.InstanceNorm1d(1, eps=1e-4, affine=True)
@@ -28,6 +29,7 @@ class RawNet3(nn.Module):
                 C // 4,
                 251,
                 stride=kwargs["sinc_stride"],
+                sample_rate=float(self.sample_rate),
             )
         )
         self.relu = nn.ReLU()
@@ -46,7 +48,6 @@ class RawNet3(nn.Module):
             attn_input = 1536 * 3
         else:
             attn_input = 1536
-        print("self.encoder_type", self.encoder_type)
         if self.encoder_type == "ECA":
             attn_output = 1536
         elif self.encoder_type == "ASP":
@@ -83,8 +84,7 @@ class RawNet3(nn.Module):
                 x = x - torch.mean(x, dim=-1, keepdim=True)
             elif self.norm_sinc == "mean_std":
                 m = torch.mean(x, dim=-1, keepdim=True)
-                s = torch.std(x, dim=-1, keepdim=True)
-                s[s < 0.001] = 0.001
+                s = torch.std(x, dim=-1, keepdim=True).clamp(min=0.001)
                 x = (x - m) / s
 
         if self.summed:

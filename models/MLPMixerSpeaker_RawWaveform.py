@@ -94,15 +94,21 @@ class SincConv_fast(nn.Module):
         self.min_low_hz = min_low_hz
         self.min_band_hz = min_band_hz
         
-        # Hamming window
+        # Hamming window. Registered as a non-persistent buffer so that .cuda() /
+        # .to(device) on the parent module move it automatically (no per-forward
+        # device fixup) and so it is recomputable from kernel_size at construction
+        # rather than persisted into state_dict.
         n_lin = torch.linspace(0, (self.kernel_size / 2) - 1,
                               steps=int((self.kernel_size / 2)))
-        self.window_ = 0.54 - 0.46 * torch.cos(2 * math.pi * n_lin / self.kernel_size)
-        
-        # Frequency axis for filter computation
+        window_ = 0.54 - 0.46 * torch.cos(2 * math.pi * n_lin / self.kernel_size)
+        self.register_buffer("window_", window_, persistent=False)
+
+        # Frequency axis for filter computation. Same buffer treatment as above —
+        # recomputable from (kernel_size, sample_rate) and device-tracked.
         n = (self.kernel_size - 1) / 2.0
-        self.n_ = 2 * math.pi * torch.arange(-n, 0).view(1, -1) / self.sample_rate
-    
+        n_ = 2 * math.pi * torch.arange(-n, 0).view(1, -1) / self.sample_rate
+        self.register_buffer("n_", n_, persistent=False)
+
     def _hz_to_mel(self, hz):
         """Convert Hz to mel scale"""
         if not isinstance(hz, torch.Tensor):
@@ -122,35 +128,34 @@ class SincConv_fast(nn.Module):
         Returns:
             features: Bandpass filtered features [batch, out_channels, time_frames]
         """
-        # Ensure parameters are on same device
-        self.n_ = self.n_.to(x.device)
-        self.window_ = self.window_.to(x.device)
-        
+        # self.n_ and self.window_ are registered buffers — they follow the parent
+        # module's device automatically. No per-forward .to(...) fixup needed.
+
         # Constrain parameters to valid ranges
         low = self.min_low_hz + torch.abs(self.low_hz_)
         high = torch.clamp(low + self.min_band_hz + torch.abs(self.band_hz_),
                           self.min_low_hz, self.sample_rate / 2)
         band = (high - low)[:, None]
-        
+
         # Compute bandpass filters
         f_times_t_low = torch.matmul(low[:, None], self.n_)
         f_times_t_high = torch.matmul(high[:, None], self.n_)
-        
+
         # Bandpass filter impulse response
-        band_pass_left = ((torch.sin(f_times_t_high) - torch.sin(f_times_t_low)) / 
+        band_pass_left = ((torch.sin(f_times_t_high) - torch.sin(f_times_t_low)) /
                          (self.n_ / 2)) * self.window_
         band_pass_center = 2 * band
         band_pass_right = torch.flip(band_pass_left, dims=[1])
-        
+
         # Concatenate and normalize
         band_pass = torch.cat([band_pass_left, band_pass_center, band_pass_right], dim=1)
         band_pass = band_pass / (2 * band[:, 0, None])
-        
-        # Add channel dimension for conv1d
-        self.filters = (band_pass).view(self.out_channels, 1, self.kernel_size)
-        
-        # Apply learned filters
-        return F.conv1d(x.unsqueeze(1), self.filters, stride=self.stride,
+
+        # Filters are recomputed every forward from learnable parameters — they
+        # don't need to live on self.
+        filters = band_pass.view(self.out_channels, 1, self.kernel_size)
+
+        return F.conv1d(x.unsqueeze(1), filters, stride=self.stride,
                        padding=self.kernel_size // 2, groups=1)
 
 
@@ -295,18 +300,21 @@ class MLPMixerSpeakerNet_RawWaveform(nn.Module):
         stride: SincNet hop length (default: 160)
     """
     def __init__(self, nOut=512, num_filters=80, hidden_dim=256, num_blocks=8,
-                 expansion_factor=4, groups=4, kernel_size=251, stride=160, **kwargs):
+                 expansion_factor=4, groups=4, kernel_size=251, stride=160,
+                 sample_rate=16000, **kwargs):
         super(MLPMixerSpeakerNet_RawWaveform, self).__init__()
-        
+
         self.num_filters = num_filters
         self.hidden_dim = hidden_dim
         self.num_blocks = num_blocks
-        
+        self.sample_rate = sample_rate
+
         # SincNet Frontend: Learnable bandpass filters
         # Replaces fixed mel-spectrogram extraction
         self.sincnet = SincConv_fast(
             out_channels=num_filters,
             kernel_size=kernel_size,
+            sample_rate=sample_rate,
             stride=stride
         )
         

@@ -5,25 +5,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class PreEmphasis(torch.nn.Module):
-    def __init__(self, coef: float = 0.97) -> None:
-        super().__init__()
-        self.coef = coef
-        # make kernel
-        # In pytorch, the convolution operation uses cross-correlation. So, filter is flipped.
-        self.register_buffer(
-            "flipped_filter",
-            torch.FloatTensor([-self.coef, 1.0]).unsqueeze(0).unsqueeze(0),
-        )
+from models._frontend import PreEmphasis as _CanonicalPreEmphasis
 
-    def forward(self, input: torch.tensor) -> torch.tensor:
-        assert (
-            len(input.size()) == 2
-        ), "The number of dimensions of input tensor must be 2!"
-        # reflect padding to match lengths of in/out
-        input = input.unsqueeze(1)
-        input = F.pad(input, (1, 0), "reflect")
-        return F.conv1d(input, self.flipped_filter)
+
+class PreEmphasis(_CanonicalPreEmphasis):
+    """Backwards-compatibility alias for :class:`models._frontend.PreEmphasis`.
+
+    The RawNet pipeline pairs PreEmphasis with ``InstanceNorm1d(1, ...)``
+    which expects a 3D ``(B, 1, T)`` input, so this subclass pins
+    ``squeeze=False`` on the canonical class. Historical output shape
+    is preserved.
+
+    New code should import directly from :mod:`models._frontend` with
+    ``squeeze=False`` explicit. See
+    ``docs/bugfixes/BUGFIX-025-shared-audio-frontend.md``.
+    """
+
+    def __init__(self, coef: float = 0.97) -> None:
+        super().__init__(coef=coef, squeeze=False)
 
 
 class AFMS(nn.Module):
@@ -97,7 +96,12 @@ class Bottle2neck(nn.Module):
 
         self.width = width
 
-        self.mp = nn.MaxPool1d(pool) if pool else False
+        # nn.Identity is the standard PyTorch no-op placeholder: always an
+        # nn.Module (so it shows up in children() / print(model) / state_dict
+        # tooling), always callable, returns its input unchanged. Pre-fix this
+        # slot held the literal `False`, which made forward() rely on a
+        # truthiness guard to avoid calling a non-callable — a fragile pattern.
+        self.mp = nn.MaxPool1d(pool) if pool else nn.Identity()
         self.afms = AFMS(planes)
 
         if inplanes != planes:  # if change in number of filters
@@ -135,8 +139,9 @@ class Bottle2neck(nn.Module):
         out = self.bn3(out)
 
         out += residual
-        if self.mp:
-            out = self.mp(out)
+        # self.mp is either MaxPool1d (when pool>0) or Identity (when pool=False/0);
+        # always callable, no truthiness guard needed.
+        out = self.mp(out)
         out = self.afms(out)
 
         return out
