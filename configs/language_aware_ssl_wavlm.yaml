@@ -1,0 +1,92 @@
+# ====================================================================
+# FEATURE-001 Option B (variant 1) — frozen WavLM-Base front-end
+# ====================================================================
+#
+# This config exercises the SSL front-end path of FEATURE-001 using
+# microsoft/wavlm-base — a 94-million-parameter WavLM-Base encoder
+# pretrained on ~94 languages including Sinhala and Tamil. The encoder
+# is frozen (ssl_freeze: true) so only the attention-pooling + FC head
+# trains; this is the recommended setting for a small SL pilot corpus.
+#
+# Requires the optional `transformers` dependency — uncomment the
+# `transformers>=4.30,<5` line in requirements.txt before running.
+#
+# See:
+#   docs/bugfixes/FEATURE-001-language-aware-frontend.md  (§ Option B)
+#   models/SSLFrontendSpeaker.py                          (the model)
+#
+# Companion configs:
+#   configs/language_aware_ssl_xlsr.yaml     — XLS-R-300M (300M params)
+#   configs/language_aware_ssl_mhubert.yaml  — mHuBERT-147 (147 langs)
+#   configs/language_aware_sincconv.yaml     — SincConv path (no SSL)
+
+## Model architecture
+model: SSLFrontendSpeaker
+nOut: 512
+encoder_type: ASP
+ssl_encoder_name: microsoft/wavlm-base
+ssl_freeze: true             # head-only training; ~6M trainable params
+ssl_layer: -1                # last transformer layer; experiment with -2/-3
+sample_rate: 16000           # WavLM-Base is pretrained at 16 kHz
+
+## Data loader
+augment: true
+batch_size: 32               # WavLM-Base activations are heavier than mel
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 4
+max_seg_per_spk: 500
+seed: 42
+
+## Training
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60                # head-only training converges faster
+
+optimizer: adam
+scheduler: steplr
+lr: 0.0005                   # can be higher since encoder is frozen
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100                # placeholder; set to your SL_Celeb speaker count
+
+## Initial weights — none; the SSL encoder pretraining IS the initialisation
+initial_model: ""
+
+## Data paths — via ${SL_SPV_DATA_ROOT} per BUGFIX-013 / paths.env.example
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+
+## Validation
+max_test_pairs: 0
+eval_batch_size: 16          # SSL activations are large — keep batch modest
+
+## Augmentation
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+## Performance optimization
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+## Distributed
+distributed: false
+port: "8888"
+
+## Save
+save_path: exps/language_aware_ssl_wavlm

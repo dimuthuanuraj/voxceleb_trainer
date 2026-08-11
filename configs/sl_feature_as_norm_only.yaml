@@ -1,0 +1,91 @@
+# ====================================================================
+# Feature-add: P0 + FEATURE-002 (AS-Norm score normalisation) ONLY.
+# --------------------------------------------------------------------
+# Measures the STANDALONE contribution of adaptive symmetric score
+# normalisation applied to the P0 (from-scratch) embedding model.
+# Training is unchanged from P0; AS-Norm runs at eval time only.
+#
+# Hypothesis: AS-Norm normalises trial scores against in-domain cohort
+# statistics, which helps regardless of how the embedding was trained.
+# It should provide a modest but consistent EER drop on top of any
+# trained model.
+#
+# Expected: 5-15% relative MinDCF drop, slightly smaller EER drop.
+# AS-Norm's contribution is usually largest on MinDCF (operating-point
+# metric), smaller on EER (raw separability).
+# ====================================================================
+
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 80
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100
+
+initial_model: ""
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+## ----- Single feature ON -----
+as_norm: true
+as_norm_cohort_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/asnorm_cohort.txt
+as_norm_cohort_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+as_norm_top_k: 300              # literature-standard cohort top-K
+
+## ----- All others OFF -----
+finetune: false
+llrd: false
+lang_aux: false
+plda: false
+
+deterministic: true
+
+save_path: exps/feature_as_norm_only_seed42

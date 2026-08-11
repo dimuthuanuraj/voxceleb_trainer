@@ -1,0 +1,102 @@
+# ====================================================================
+# P2 ablation: full stack MINUS FEATURE-010 (PLDA scoring).
+# --------------------------------------------------------------------
+# Hypothesis: with cosine scoring instead of PLDA, how much does the
+# generative score backend matter? Modern AAM-Softmax embeddings are
+# already discriminative — PLDA's marginal benefit may be small on
+# long, clean SL utterances; LARGER on short / telephony-channel
+# trials.
+#
+# Expected: 0-3% EER increase on long utterances; LARGER (5-10%) if
+# the test set contains short trials. PLDA's contribution informs
+# whether to keep it in the pipeline for SL telephony deployment.
+# ====================================================================
+
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100
+
+initial_model: ${SL_SPV_DATA_ROOT}/checkpoints/ecapa_voxceleb1.model
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+finetune: true
+finetune_freeze: [frontend]
+finetune_lr_multiplier: 0.1
+
+llrd: true
+llrd_decay: 0.9
+llrd_layer_pattern: ecapa
+
+lang_aux: true
+lang_aux_weight: 0.3
+lang_aux_num_classes: 4
+lang_aux_label_file: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/spk_lang_lookup.txt
+
+per_lang_test_lists:
+  si: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_si.txt
+  ta: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_ta.txt
+  cs: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_cs.txt
+
+as_norm: true
+as_norm_cohort_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/asnorm_cohort.txt
+as_norm_cohort_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+as_norm_top_k: 300
+
+## ----- FEATURE-010 OFF (this is the ablation) -----
+plda: false
+
+deterministic: true
+
+save_path: exps/P2_no_plda_seed42

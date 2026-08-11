@@ -1,0 +1,91 @@
+# ====================================================================
+# Feature-add: P0 + FEATURE-007 (multi-task language-ID head) ONLY.
+# --------------------------------------------------------------------
+# Measures the STANDALONE contribution of the auxiliary language-ID
+# head, trained from scratch (no English init), WITHOUT score
+# normalisation, WITHOUT PLDA.
+#
+# Hypothesis: forcing the embedding to be informative about language
+# regularises the small-corpus speaker learning, even WITHOUT an
+# English-pretrained prior. Tests whether the multi-task signal is
+# useful on its own or whether it only adds value on top of transfer.
+#
+# Expected: 5-15% relative EER drop vs P0 — modest standalone, but
+# may compound with fine-tune in P2. The (P2 vs P2-no-lang_aux) ablation
+# captures the composition effect.
+# ====================================================================
+
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 80                   # from-scratch — needs longer than fine-tune
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100
+
+initial_model: ""               # NO English init — pure single-feature test
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+## ----- Single feature ON -----
+lang_aux: true
+lang_aux_weight: 0.3            # literature-standard lambda for SV+aux
+lang_aux_num_classes: 4         # si / ta / en / mix
+lang_aux_label_file: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/spk_lang_lookup.txt
+
+## ----- All others OFF -----
+finetune: false
+llrd: false
+as_norm: false
+plda: false
+
+deterministic: true
+
+save_path: exps/feature_lang_aux_only_seed42

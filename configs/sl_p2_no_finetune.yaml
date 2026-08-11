@@ -1,0 +1,100 @@
+# ====================================================================
+# P2 ablation: full stack MINUS FEATURE-004 (cross-lingual fine-tune).
+# --------------------------------------------------------------------
+# Hypothesis: how much of P2's gain comes from the English-pretrained
+# init? Disable fine-tune (and LLRD, which is meaningless without an
+# initial_model). Keep lang_aux, AS-Norm, PLDA, per-language eval.
+#
+# Expected: large EER increase vs P2 (cross-lingual fine-tune is
+# typically the dominant lever). Magnitude estimates the contribution
+# of the English-pretrained acoustic prior.
+# ====================================================================
+
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 80                   # extended — from-scratch needs more epochs
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100
+
+initial_model: ""               # ← disabled (with finetune: false below)
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+## ----- FEATURE-004 OFF (this is the ablation) -----
+finetune: false
+## LLRD needs an initial_model to be meaningful — disable too.
+llrd: false
+
+## ----- All other P2 features ON -----
+lang_aux: true
+lang_aux_weight: 0.3
+lang_aux_num_classes: 4
+lang_aux_label_file: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/spk_lang_lookup.txt
+
+per_lang_test_lists:
+  si: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_si.txt
+  ta: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_ta.txt
+  cs: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_cs.txt
+
+as_norm: true
+as_norm_cohort_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/asnorm_cohort.txt
+as_norm_cohort_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+as_norm_top_k: 300
+
+plda: true
+plda_train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/plda_train_list.txt
+plda_train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+plda_dim: 50
+
+deterministic: true
+
+save_path: exps/P2_no_finetune_seed42

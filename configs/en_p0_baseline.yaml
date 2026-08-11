@@ -1,0 +1,106 @@
+# ====================================================================
+# EN P0 baseline — ECAPA-TDNN-Large trained from scratch on VoxCeleb2.
+# --------------------------------------------------------------------
+# This run produces two artefacts at once:
+#   1. The pooled-EER reference number for English VoxCeleb1-O.
+#      Expected with this recipe: ~1.0-1.5% EER after 80 epochs.
+#   2. The English-pretrained checkpoint that the SL fine-tune configs
+#      (sl_p1_finetune.yaml, sl_full_stack.yaml, sl_p2_*) consume as
+#      `initial_model: ${SL_SPV_DATA_ROOT}/checkpoints/ecapa_voxceleb1.model`.
+#      After this run finishes, copy the best checkpoint to that path.
+#
+# All universal feature flags are OFF here so this row is the clean
+# baseline. en_full.yaml turns LLRD/AS-Norm/PLDA on; en_ssl_wavlm.yaml
+# swaps in the WavLM frontend.
+#
+# Paths are RELATIVE to voxceleb_trainer/ and resolve through symlinks
+# under voxceleb_trainer/data/ (see SETUP.md §7 — Step 1). Expected:
+#   voxceleb_trainer/
+#   └── data/
+#       ├── voxceleb_new  → /mnt/ricproject2/voxceleb_new   (or wherever)
+#       │   ├── train_list.txt    speaker_id + relpath
+#       │   ├── test_list.txt     veri_test2-style trial pairs
+#       │   ├── voxceleb2/        training wavs
+#       │   └── voxceleb1/        evaluation wavs
+#       ├── musan         → /mnt/.../musan
+#       └── RIRS_NOISES   → /mnt/.../RIRS_NOISES
+# ====================================================================
+
+## Architecture — FEATURE-006 ECAPA-TDNN-Large
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024                  # 512 for the "small" variant if OOM on T4
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+## Data loader
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 12           # per-DDP-process; 2 GPUs x 12 = 24 workers on a 48-core node
+max_seg_per_spk: 500
+seed: 42
+
+## Training
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 80                   # canonical VoxCeleb2 ECAPA recipe
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 5994                  # VoxCeleb2 has 5994 dev speakers
+
+## Paths
+initial_model: ""               # from scratch — NO pretrained weights
+
+train_list: data/voxceleb_new/train_list.clean.txt
+test_list:  data/voxceleb_new/test_list.txt
+train_path: data/voxceleb_new/voxceleb2
+test_path:  data/voxceleb_new/voxceleb1
+
+# MUSAN + RIRs reached through their own symlinks under data/.
+musan_path: data/musan
+rir_path:   data/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:                  # canonical VoxCeleb mix
+  clean:  0.50
+  reverb: 0.15
+  music:  0.10
+  speech: 0.10
+  noise:  0.15
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: true              # set true if using 2x T4 DDP
+ddp_find_unused_parameters: false   # plain ECAPA baseline: every param is used in forward; skip the extra autograd traversal
+port: "8888"
+
+## ALL FEATURES EXPLICITLY OFF (this is the baseline)
+finetune: false
+llrd: false
+lang_aux: false                 # degenerate on monolingual EN — kept off
+as_norm: false
+plda: false
+# per_lang_test_lists: not set — pooled-only evaluation
+
+## Reproducibility (BUGFIX-017)
+deterministic: true
+
+save_path: exps/EN_p0_baseline_seed42

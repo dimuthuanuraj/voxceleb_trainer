@@ -1,0 +1,97 @@
+# ====================================================================
+# P1 — Cross-lingual fine-tune from English VoxCeleb1 checkpoint.
+# --------------------------------------------------------------------
+# Hypothesis tested: how much does English-pretrained knowledge
+# transfer to SL? FEATURE-004 freezes the front-end (preserves English
+# acoustic features); FEATURE-005 applies layer-wise LR decay so deeper
+# layers carry the transferable prior while shallower layers adapt.
+#
+# Expected: 30-50% relative EER drop vs P0. This is THE dominant lever
+# for low-resource SV — far larger than any in-domain regularisation.
+#
+# Inactive: lang_aux, AS-Norm, PLDA, per-language eval. They're tested
+# separately and combined together in P2.
+# ====================================================================
+
+## Architecture
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+## Data loader
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+## Training — shorter than P0; warm-started, no need for 80 epochs
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001                       # base; FEATURE-004 scales this to 0.0001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100                   # OVERRIDE per corpus
+
+## Paths
+initial_model: ${SL_SPV_DATA_ROOT}/checkpoints/ecapa_voxceleb1.model
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+## ----- FEATURE-004 cross-lingual fine-tune -----
+finetune: true
+finetune_freeze: [frontend]     # freeze mel front-end (BUGFIX-025 stack)
+finetune_lr_multiplier: 0.1     # 10x reduction for transfer-learning stability
+
+## ----- FEATURE-005 layer-wise LR decay -----
+llrd: true
+llrd_decay: 0.9                 # 4-layer ECAPA: top vs bottom ratio = 0.73
+llrd_layer_pattern: ecapa
+
+## Features OFF (tested in P2)
+lang_aux: false
+as_norm: false
+plda: false
+
+## Reproducibility
+deterministic: true
+
+save_path: exps/P1_finetune_seed42

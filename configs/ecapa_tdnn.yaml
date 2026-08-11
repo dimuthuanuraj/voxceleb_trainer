@@ -1,0 +1,77 @@
+# ====================================================================
+# FEATURE-006 - ECAPA-TDNN-Large (Desplanques et al. 2020)
+# ====================================================================
+#
+# Strongest practical SV architecture today. Expected 0.8-1.5% EER on
+# VoxCeleb1-O after ~80 epochs; per the analysis doc, 2-4% absolute
+# EER improvement on SL data vs ResNetSE34L (the current baseline).
+#
+# Compose with:
+#   FEATURE-002 AS-Norm           (--as_norm + cohort list)
+#   FEATURE-003 per-language eval (--per_lang_test_lists)
+#   FEATURE-004 fine-tune         (--finetune + --finetune_freeze)
+#   FEATURE-005 LLRD              (--llrd --llrd_layer_pattern ecapa)
+
+## Model architecture
+model: ECAPA_TDNN
+nOut: 192
+encoder_type: ASP          # accepted for compat; ECAPA always uses ASP
+channels: 1024             # 512 for the "small" variant
+n_mels: 80
+log_input: true
+sample_rate: 16000
+
+## Data loader
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+## Training
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 80
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 5994             # override per corpus
+
+initial_model: ""
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+save_path: exps/ecapa_tdnn

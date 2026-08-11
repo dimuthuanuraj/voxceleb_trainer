@@ -1,0 +1,76 @@
+# ====================================================================
+# FEATURE-001 Option B (variant 2) — frozen XLS-R-300M front-end
+# ====================================================================
+#
+# Larger SSL encoder than WavLM-Base (300M params; hidden_size=1024)
+# pretrained on ~128 languages via wav2vec 2.0 self-supervision.
+# Heavier compute + memory than wavlm-base but typically the strongest
+# multilingual front-end for cross-lingual transfer.
+#
+# Requires the optional `transformers` dependency (see requirements.txt).
+# Companion configs: configs/language_aware_ssl_wavlm.yaml and
+# configs/language_aware_ssl_mhubert.yaml.
+
+## Model architecture
+model: SSLFrontendSpeaker
+nOut: 512
+encoder_type: ASP
+ssl_encoder_name: facebook/wav2vec2-xls-r-300m
+ssl_freeze: true
+ssl_layer: -1
+sample_rate: 16000           # XLS-R-300M is pretrained at 16 kHz
+
+## Data loader
+augment: true
+batch_size: 16               # XLS-R-300M is heavier than WavLM-Base
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 4
+max_seg_per_spk: 500
+seed: 42
+
+## Training
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60
+
+optimizer: adam
+scheduler: steplr
+lr: 0.0005
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100
+
+initial_model: ""
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+
+max_test_pairs: 0
+eval_batch_size: 8           # large encoder; small eval batch
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 2   # compensate for smaller batch
+
+distributed: false
+port: "8888"
+
+save_path: exps/language_aware_ssl_xlsr

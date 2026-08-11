@@ -1,0 +1,92 @@
+# ====================================================================
+# EN SSL frontend — frozen WavLM-Base + ASP pool + FC head, VoxCeleb2.
+# --------------------------------------------------------------------
+# Mirror of language_aware_ssl_wavlm.yaml but on monolingual English
+# data. Exercises FEATURE-001 (SSL front-end) end-to-end on the
+# corpus where the WavLM pretraining is most representative.
+#
+# Only the attention-pooling + FC head trains (~6M parameters);
+# the 94M-param WavLM-Base encoder is frozen. This is the recommended
+# configuration for the small SL pilot too, so getting an English EER
+# from this exact recipe gives a reference number to compare against
+# when the SL run lands.
+#
+# Requires the `transformers` pip dep — already pinned in
+# environment.yml / requirements.txt.
+# ====================================================================
+
+## Model architecture — FEATURE-001 Option B variant 1
+model: SSLFrontendSpeaker
+nOut: 512
+encoder_type: ASP
+ssl_encoder_name: microsoft/wavlm-base
+ssl_freeze: true                # head-only training
+ssl_layer: -1                   # last transformer layer
+sample_rate: 16000
+
+## Data loader
+augment: true
+batch_size: 32                  # SSL activations are heavy — keep modest
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 12           # per-DDP-process; 2 GPUs x 12 = 24 workers on a 48-core node
+max_seg_per_spk: 500
+seed: 42
+
+## Training (head-only converges faster than full-encoder training)
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60
+
+optimizer: adam
+scheduler: steplr
+lr: 0.0005                      # can be higher: encoder is frozen
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 5994
+
+## Initial weights — the SSL encoder pretraining IS the initialisation
+initial_model: ""
+
+## Paths
+train_list: data/voxceleb_new/train_list.clean.txt
+test_list:  data/voxceleb_new/test_list.txt
+train_path: data/voxceleb_new/voxceleb2
+test_path:  data/voxceleb_new/voxceleb1
+musan_path: data/musan
+rir_path:   data/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 16             # SSL activations are large
+
+augment_chain:
+  clean:  0.50
+  reverb: 0.15
+  music:  0.10
+  speech: 0.10
+  noise:  0.15
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: true
+port: "8888"
+
+## Features explicitly OFF for this run
+finetune: false
+llrd: false
+lang_aux: false
+as_norm: false
+plda: false
+
+## Reproducibility
+deterministic: true
+
+save_path: exps/EN_ssl_wavlm_seed42

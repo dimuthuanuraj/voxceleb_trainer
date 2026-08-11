@@ -1,0 +1,104 @@
+# ====================================================================
+# P2 ablation: full stack MINUS FEATURE-002 (AS-Norm).
+# --------------------------------------------------------------------
+# Hypothesis: AS-Norm and PLDA both reduce score variance — do they
+# compose constructively, or do they redundantly model the same
+# residual? Removing AS-Norm from P2 (PLDA still on) measures the
+# unique AS-Norm contribution given PLDA.
+#
+# Expected: small-to-moderate EER increase (0-5% relative), with a
+# LARGER MinDCF increase (5-15% relative). AS-Norm's benefit is
+# usually largest on MinDCF (operating-point metric). If the EER
+# delta is near-zero, PLDA + lang_aux already cover what AS-Norm
+# would add.
+# ====================================================================
+
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100
+
+initial_model: ${SL_SPV_DATA_ROOT}/checkpoints/ecapa_voxceleb1.model
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+finetune: true
+finetune_freeze: [frontend]
+finetune_lr_multiplier: 0.1
+
+llrd: true
+llrd_decay: 0.9
+llrd_layer_pattern: ecapa
+
+lang_aux: true
+lang_aux_weight: 0.3
+lang_aux_num_classes: 4
+lang_aux_label_file: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/spk_lang_lookup.txt
+
+per_lang_test_lists:
+  si: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_si.txt
+  ta: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_ta.txt
+  cs: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_cs.txt
+
+## ----- FEATURE-002 OFF (this is the ablation) -----
+as_norm: false
+
+## ----- FEATURE-010 ON -----
+plda: true
+plda_train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/plda_train_list.txt
+plda_train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+plda_dim: 50
+
+deterministic: true
+
+save_path: exps/P2_no_as_norm_seed42

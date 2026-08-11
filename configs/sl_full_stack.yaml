@@ -1,0 +1,111 @@
+# ====================================================================
+# SL-SPV full-stack config — exercises every shipped feature
+# (BUGFIX-001..026 + FEATURE-001..011) against the 100-speaker
+# Sinhala+Tamil corpus. This is the P2 config from RUN_GUIDE.md.
+#
+# Override `nClasses` on the CLI: `--nClasses <N>` where N is taken from
+# the bottom line of `tools/sl_dataprep.py` output (or row count of
+# `lists/speakers.csv` minus header).
+# ====================================================================
+
+## Architecture — FEATURE-006 ECAPA-TDNN-Large
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+## Data loader
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+## Training
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100                   # OVERRIDE per corpus
+
+## Paths (BUGFIX-013 portable env-var expansion)
+initial_model: ${SL_SPV_DATA_ROOT}/checkpoints/ecapa_voxceleb1.model
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false
+port: "8888"
+
+## ----- FEATURE-004 cross-lingual fine-tune -----
+finetune: true
+finetune_freeze: [frontend]
+finetune_lr_multiplier: 0.1
+
+## ----- FEATURE-005 layer-wise LR decay -----
+llrd: true
+llrd_decay: 0.9
+llrd_layer_pattern: ecapa
+
+## ----- FEATURE-007 language-ID multi-task head -----
+lang_aux: true
+lang_aux_weight: 0.3
+lang_aux_num_classes: 4
+lang_aux_label_file: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/spk_lang_lookup.txt
+
+## ----- FEATURE-003 per-language evaluation -----
+per_lang_test_lists:
+  si: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_si.txt
+  ta: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_ta.txt
+  cs: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_cs.txt
+
+## ----- FEATURE-002 AS-Norm -----
+as_norm: true
+as_norm_cohort_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/asnorm_cohort.txt
+as_norm_cohort_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+as_norm_top_k: 300
+
+## ----- FEATURE-010 PLDA scoring -----
+plda: true
+plda_train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/plda_train_list.txt
+plda_train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+plda_dim: 50                    # 2 * plda_dim <= n_speakers; bump after corpus grows
+
+## Reproducibility (BUGFIX-017)
+deterministic: true
+
+save_path: exps/P2_full_stack_seed42

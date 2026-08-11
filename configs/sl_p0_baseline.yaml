@@ -1,0 +1,89 @@
+# ====================================================================
+# P0 baseline — ECAPA-TDNN trained from scratch on SL-SPV.
+# --------------------------------------------------------------------
+# Hypothesis tested: can a modern SV architecture learn anything useful
+# from only 100 SL speakers, with NO English-pretrained prior, NO score
+# normalisation, NO PLDA, NO multi-task regularisation?
+#
+# Expected: 8-20% pooled EER. This is your FLOOR. Every other config
+# is judged against this.
+#
+# All feature flags (FEATURE-002..010) are explicitly OFF so the
+# config is self-documenting; nothing is inherited from defaults.
+# ====================================================================
+
+## Architecture — FEATURE-006 ECAPA-TDNN-Large
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024                  # Large variant; switch to 512 if OOM on T4
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+## Data loader
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+## Training
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 80                   # longer than P1/P2 — no warm start
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001                       # from-scratch learning rate
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100                   # OVERRIDE per corpus (see speakers.csv)
+
+## Paths
+initial_model: ""               # from scratch — NO pretrained weights
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:                  # BUGFIX-016 — tuned for SL deployment
+  clean:  0.30                  # lower than upstream default (0.50)
+  reverb: 0.20                  # SL deployment often indoors/echoey
+  music:  0.15
+  speech: 0.15                  # cross-talk common in call-centre data
+  noise:  0.20
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: false              # set true if using 2x T4 DDP
+port: "8888"
+
+## ALL FEATURES EXPLICITLY OFF (this is the baseline)
+finetune: false
+llrd: false
+lang_aux: false
+as_norm: false
+plda: false
+# per_lang_test_lists: not set — pooled-only evaluation
+
+## Reproducibility (BUGFIX-017)
+deterministic: true
+
+save_path: exps/P0_baseline_seed42

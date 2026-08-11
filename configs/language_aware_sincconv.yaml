@@ -1,0 +1,89 @@
+# ====================================================================
+# FEATURE-001 Option A — Learnable language-aware front-end (SincConv)
+# ====================================================================
+#
+# This config exercises the SincConv-based learnable front-end via
+# MLPMixerSpeaker_RawWaveform. The SincConv filterbank (replacing the
+# fixed mel-spectrogram) learns its band centres and widths from the
+# training data — so Sinhala / Tamil formant distributions can be
+# absorbed into the front-end rather than being squeezed through a
+# 16-kHz mel grid tuned for English. See:
+#
+#   docs/bugfixes/FEATURE-001-language-aware-frontend.md  (§ Option A)
+#   models/MLPMixerSpeaker_RawWaveform.py                  (the model)
+#
+# The companion Option B (frozen WavLM / XLS-R / mHuBERT encoder) is
+# in configs/language_aware_ssl_*.yaml and uses model=SSLFrontendSpeaker.
+# Pick one path per training run; they are not stackable.
+
+## Model architecture
+model: MLPMixerSpeaker_RawWaveform
+nOut: 512
+encoder_type: ASP
+num_filters: 80              # learnable SincConv bands (= former n_mels)
+log_input: true
+sample_rate: 16000           # match SincConv pretraining; BUGFIX-006
+
+## Data loader
+augment: true
+batch_size: 64
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 4
+max_seg_per_spk: 500
+seed: 42
+
+## Training — fine-tune-shaped defaults (low LR for cross-lingual transfer)
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 80
+
+optimizer: adam
+scheduler: steplr
+lr: 0.0001                   # low for fine-tuning from English checkpoint
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 100                # placeholder; set to your SL_Celeb speaker count
+
+## Initial weights — point at the best English raw-waveform checkpoint
+## once one exists; comment out for from-scratch SL training.
+initial_model: ""
+
+## Data paths — set via ${SL_SPV_DATA_ROOT} per BUGFIX-013 / paths.env.example.
+## Replace with the SL_Celeb paths once the pilot corpus exists.
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb/wav
+
+## Validation
+max_test_pairs: 0
+eval_batch_size: 32
+
+## Augmentation
+augment_chain:
+  clean:  0.30
+  reverb: 0.20
+  music:  0.15
+  speech: 0.15
+  noise:  0.20
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+## Performance optimization
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+## Distributed
+distributed: false
+port: "8888"
+
+## Save
+save_path: exps/language_aware_sincconv

@@ -1,0 +1,117 @@
+# ====================================================================
+# EN full-features — ECAPA-TDNN + LLRD + AS-Norm + PLDA on VoxCeleb2.
+# --------------------------------------------------------------------
+# Mirror of sl_full_stack.yaml but for monolingual English. Exercises
+# every UNIVERSAL feature (the 4 language-aware ones are degenerate on
+# single-language data and stay off here; their code paths are covered
+# by tools/test_features.py).
+#
+# Features exercised:
+#   FEATURE-002 AS-Norm           (eval-time score normalisation)
+#   FEATURE-005 LLRD              (layer-wise LR decay)
+#   FEATURE-006 ECAPA-TDNN        (architecture)
+#   FEATURE-010 PLDA              (Gaussian back-end at scoring time)
+#   BUGFIX-013 path expansion, BUGFIX-016 augment chain, BUGFIX-017
+#   deterministic mode — all on by virtue of the recipe.
+#
+# Initial weights: this config CONTINUES from en_p0_baseline.yaml's
+# best checkpoint so LLRD has a meaningful prior to differentially
+# preserve. Run en_p0_baseline.yaml first.
+#
+# Expected EER on VoxCeleb1-O: ~0.7-1.1% (modest improvement over P0
+# from AS-Norm + PLDA; LLRD's effect from a same-domain restart is
+# small but positive).
+# ====================================================================
+
+## Architecture — FEATURE-006 ECAPA-TDNN-Large
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+## Data loader
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 12           # per-DDP-process; 2 GPUs x 12 = 24 workers on a 48-core node
+max_seg_per_spk: 500
+seed: 42
+
+## Training (shorter — continuing from a converged P0)
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 30                   # continuation, not from scratch
+
+optimizer: adam
+scheduler: steplr
+lr: 0.0001                      # 10x lower — fine-tune phase
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+nClasses: 5994
+
+## Paths — continues from EN baseline checkpoint
+initial_model: exps/EN_p0_baseline_seed42/model/best.model
+
+train_list: data/voxceleb_new/train_list.clean.txt
+test_list:  data/voxceleb_new/test_list.txt
+train_path: data/voxceleb_new/voxceleb2
+test_path:  data/voxceleb_new/voxceleb1
+musan_path: data/musan
+rir_path:   data/RIRS_NOISES/simulated_rirs
+
+max_test_pairs: 0
+eval_batch_size: 32
+
+augment_chain:
+  clean:  0.50
+  reverb: 0.15
+  music:  0.10
+  speech: 0.10
+  noise:  0.15
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+gradient_accumulation_steps: 1
+
+distributed: true
+port: "8888"
+
+## ----- FEATURE-005 layer-wise LR decay -----
+# Preserves earlier-layer representations learned during P0; later
+# layers continue to adapt at full lr. Decay 0.9 = each block deeper
+# from the head sees 0.9x its predecessor's effective lr.
+llrd: true
+llrd_decay: 0.9
+llrd_layer_pattern: ecapa
+
+## ----- FEATURE-002 AS-Norm (eval-time) -----
+as_norm: true
+as_norm_cohort_list: data/voxceleb_new/lists/asnorm_cohort.txt
+as_norm_cohort_path: data/voxceleb_new/voxceleb2
+as_norm_top_k: 300              # top-K cohort scores per side
+
+## ----- FEATURE-010 PLDA back-end -----
+plda: true
+plda_train_list: data/voxceleb_new/lists/plda_train_list.txt
+plda_train_path: data/voxceleb_new/voxceleb2
+plda_dim: 200                   # ~3% of n_speakers; safe default
+
+## Language-aware features — explicitly OFF (monolingual run)
+finetune: false                 # we manage init via initial_model directly
+lang_aux: false
+# per_lang_test_lists: not set
+
+## Reproducibility
+deterministic: true
+
+save_path: exps/EN_full_seed42
