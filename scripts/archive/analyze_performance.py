@@ -1,5 +1,23 @@
 #!/usr/bin/env python3
 """
+======================================================================
+ ARCHIVED — do not use as-is.  See scripts/archive/README.md and
+ docs/bugfixes/BUGFIX-024-consolidate-performance-scripts.md.
+
+ This script's checks ("no num_workers", "no autocast", "no gradient
+ accumulation", "no caching", "uses scipy.io.wavfile slowly", etc.)
+ were written against the un-optimised trainer in October 2025.
+ Every flagged issue has since been resolved by the perf-updated
+ trainer (BUGFIX-001..023). Running this today produces a long list
+ of false positives and would mislead a new contributor.
+
+ Kept under scripts/archive/ as a research artefact only — preserves
+ the citation chain from PERFORMANCE_README.md, README_SL_COLVAI.md,
+ and research_logs/2025-10-23.md. If reviving, audit and update the
+ rules first; the docstring below describes the script as it was
+ when archived, not how to use it now.
+======================================================================
+
 Performance Analysis and Bottleneck Detection for VoxCeleb Trainer
 This script analyzes:
 1. Code bottlenecks

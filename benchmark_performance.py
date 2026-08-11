@@ -2,12 +2,27 @@
 """
 Performance Benchmark Script - benchmark_performance.py
 
-This script compares the original vs optimized versions of the VoxCeleb trainer.
-Run this to measure the actual speedup achieved with optimizations.
+Runtime benchmark for VoxCeleb / SL_SPV trainer variants. Provides a
+`PerformanceMonitor` (timing + summary stats) and optional GPU monitoring
+via pynvml. Use it to compare:
+
+  - two configs against each other (e.g. before / after augment_chain tuning),
+  - two trainer variants (the base trainSpeakerNet.py vs. the perf-updated /
+    distillation variants),
+  - the impact of a one-off flag flip (e.g. --deterministic, --eval_streaming).
 
 Usage:
-    python benchmark_performance.py --config configs/experiment_01.yaml --mode original
-    python benchmark_performance.py --config configs/experiment_01_performance_updated.yaml --mode optimized
+    python benchmark_performance.py --config configs/<X>.yaml --mode original
+    python benchmark_performance.py --config configs/<Y>.yaml --mode optimized
+
+History (see BUGFIX-024):
+    This is the *surviving* tool of three Oct-2025 perf scripts. The static
+    analyser `analyze_performance.py` and the config-mutation tool
+    `quick_optimize.py` were archived to `scripts/archive/` once their
+    recommendations were absorbed into the perf-updated trainer (BUGFIX-001
+    through BUGFIX-023). The "original vs optimized" framing in the --mode
+    flag is preserved for backward compatibility with old commands, but is
+    no longer the primary use case — both variants ship in the repo today.
 """
 
 import time

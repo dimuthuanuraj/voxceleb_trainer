@@ -1,4 +1,21 @@
 """
+======================================================================
+ ARCHIVED — do not use as-is.  See scripts/archive/README.md and
+ docs/bugfixes/BUGFIX-024-consolidate-performance-scripts.md.
+
+ This script destructively rewrites configs/experiment_01.yaml in
+ place and prints a wall of suggested manual code changes. Every
+ suggestion (`num_workers`, `pin_memory`, `prefetch_factor`,
+ `autocast`, `GradScaler`, …) is now the perf-updated trainer's
+ default. Running this script today is at best a no-op and at worst
+ *reverses* improvements the project has made since October 2025.
+
+ Kept under scripts/archive/ as a research artefact only — preserves
+ the citation chain from README_SL_COLVAI.md and the early
+ research-log entries. If you want to tune a config today, edit it
+ directly and consult PERFORMANCE_README.md.
+======================================================================
+
 Quick Performance Optimizations for VoxCeleb Trainer
 Apply these changes for immediate 2-3x speedup
 

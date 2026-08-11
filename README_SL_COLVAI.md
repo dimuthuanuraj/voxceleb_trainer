@@ -99,8 +99,9 @@ tmux new -s train_optimized
 
 ### Debugging Tools (NEW)
 - `debug_repo.py` - Comprehensive repository debugging
-- `analyze_performance.py` - Performance analysis tool
-- `quick_optimize.py` - Quick optimization script
+- `analyze_nan_debug.py` + `NaN_DEBUGGING_GUIDE.md` - NaN incident triage (BUGFIX-012)
+- `scripts/archive/analyze_performance.py` - **Archived** (BUGFIX-024). Static AST analyser; obsolete since BUGFIX-001..023 implemented the optimisations it flagged.
+- `scripts/archive/quick_optimize.py` - **Archived** (BUGFIX-024). Config mutator; obsolete since the perf-updated trainer adopted its recommendations as defaults.
 
 ### Documentation (NEW)
 - `PERFORMANCE_README.md` - Detailed performance optimization guide
