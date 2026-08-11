@@ -1,0 +1,421 @@
+% ====================================================================
+%  Inderscience — International Journal of Biometrics (IJBM)
+% --------------------------------------------------------------------
+%  Template note: Inderscience's official submission system accepts
+%  manuscripts in Microsoft Word (template:
+%  inderscience.com/info/inauthors/author_journal.php) OR LaTeX. For
+%  LaTeX, Inderscience asks authors to use their generic
+%  `interscience_paper.cls` class on submission (or plain article and
+%  the production team re-typesets). We use the plain `article` class
+%  here so the draft compiles anywhere; swap the class at submission.
+%  Inderscience expects: abstract (max 150 words), 4-6 keywords,
+%  Harvard-style references, biographical notes for each author.
+%  Target length: 6000-8000 words (12-18 typeset pages).
+% ====================================================================
+%% STATUS 2026-07-03: Experimental design superseded by the project audit
+%% (research_logs/2026-07-03-project-audit-sota-roadmap.md). This venue awaits
+%% the P4 flagship cross-lingual (Sinhala<->Tamil) study. Benchmark v0 results
+%% now exist (see research_logs/2026-07-03-*) and are quoted below as
+%% preliminary context; final tables require the SLCeleb v1 benchmark and the
+%% P4 runs (cross-lingual trials, DANN/Dual-LoRA arms).
+% ====================================================================
+\documentclass[11pt,a4paper]{article}
+
+% Engine guard: fontspec under XeLaTeX/LuaLaTeX (as in the 2026-05-23
+% builds); T1/Latin Modern fallback so the draft also compiles with
+% pdfLaTeX on machines without xetex/luaotfload.
+\usepackage{iftex}
+\iftutex
+  \usepackage{fontspec}
+  \setmainfont{DejaVu Serif}
+  \setsansfont{DejaVu Sans}
+  \setmonofont{DejaVu Sans Mono}
+\else
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\fi
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{booktabs,tabularx,amsmath,amssymb,microtype,enumitem,parskip}
+\usepackage{authblk}
+
+\title{Low-resource biometric speaker verification on Sinhala--Tamil
+bilingual audio: a single-corpus ablation study with cross-lingual
+transfer, score normalisation, and PLDA scoring}
+
+\author[1]{[First Author]}
+\author[1]{[Second Author]}
+\affil[1]{[Department], [University], Sri Lanka. \\
+\texttt{[email@institution]}}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Voice-based biometric authentication has matured on English
+benchmarks but remains under-evaluated for the low-resource languages
+typical of South Asian deployment contexts. We present the first
+reproducible speaker-verification (SV) benchmark for Sri Lankan Sinhala
+and Tamil, evaluated on a two-tier protocol: benchmark v0, 527 speakers
+of read speech from OpenSLR SLR52 and SLR65 (478 Sinhala, 49 Tamil;
+12{,}000 trials per language), and benchmark v1, built on SLCeleb, our
+280-speaker in-the-wild corpus (pending data placement).
+Building on an ECAPA-TDNN encoder with AAM-Softmax training, we
+systematically evaluate four authentication-relevant levers:
+cross-lingual fine-tuning from an English-pretrained checkpoint with
+selective front-end freezing; layer-wise learning-rate decay; an
+auxiliary language-identification head trained jointly with the
+speaker loss; and a two-stage PLDA followed by adaptive symmetric
+score normalisation. Each lever is ablated independently, with three-
+seed reproducibility. We report monolingual Sinhala-only, Tamil-only,
+and cross-lingual equal-error rates, together with an open-source
+toolkit and corpus-preparation pipeline released for downstream use.
+\end{abstract}
+
+\noindent \textbf{Keywords:} speaker verification; biometrics;
+cross-lingual transfer; low-resource speech; Sinhala; Tamil; PLDA;
+score normalisation; ECAPA-TDNN.
+
+\section{Introduction}
+\label{sec:intro}
+
+Voice-based biometrics is increasingly deployed in financial
+authentication, call-centre fraud detection, and forensic audio
+analysis. The dominant published benchmarks
+\cite{nagrani2017voxceleb} use English speech almost exclusively, and
+the state-of-the-art architectures and training recipes
+\cite{desplanques2020ecapa,deng2019arcface} were validated at that
+scale. For Sri Lankan deployment contexts the linguistic mismatch is
+fundamental: Sinhala (Indo-Aryan, [N=17] million speakers) and Tamil
+(Dravidian, [N=5] million Sri Lankan speakers) are absent from the
+publicly available SV corpora, bilingual and code-switched speech is
+normal in everyday usage, and the labelled-speaker base accessible to
+a single research effort is small (tens to low hundreds).
+
+This paper contributes:
+\begin{enumerate}
+    \item A reproducible two-tier Sinhala/Tamil SV benchmark ---
+    v0: 527 speakers (478 Sinhala from OpenSLR SLR52, 49 Tamil from
+    OpenSLR SLR65 read speech); v1: SLCeleb, our 280-speaker
+    in-the-wild corpus (pending) --- with monolingual, cross-lingual,
+    and pooled trial lists.
+    \item Single-feature ablations isolating the contribution of
+    cross-lingual fine-tuning, layer-wise LR decay, multi-task
+    language-ID, AS-Norm score normalisation, and PLDA scoring.
+    \item An open-source toolkit
+    (\texttt{voxceleb\_trainer-SL-SPV}) \cite{slspv2026repo}
+    extending the upstream voxceleb\_trainer with eleven features and
+    twenty-six bug fixes, each selectable via a single YAML key.
+\end{enumerate}
+
+The remainder of this paper is organised as follows.
+Section~\ref{sec:related} reviews relevant work in SV architectures,
+cross-lingual transfer, and score normalisation.
+Section~\ref{sec:method} describes the corpus, architectures, and
+training recipe.
+Section~\ref{sec:experiments} reports results.
+Section~\ref{sec:discussion} discusses biometric-deployment
+implications, and Section~\ref{sec:conclusion} concludes.
+
+\section{Related work}
+\label{sec:related}
+
+\subsection{Speaker verification architectures}
+\label{sec:related:arch}
+
+Modern SV pipelines extract a fixed-length embedding from variable-
+length audio and score trial pairs by a similarity function on those
+embeddings. ECAPA-TDNN \cite{desplanques2020ecapa} is the de-facto
+reference architecture, combining Res2Net-style multi-scale 1D
+convolutions, squeeze-and-excite channel re-weighting, multi-layer
+feature aggregation, and channel-attentive statistical pooling. We
+adopt ECAPA-TDNN-Large ($C=1024$ channels) as the headline encoder.
+
+\subsection{Cross-lingual transfer for biometrics}
+\label{sec:related:transfer}
+
+When the target-language SV corpus is small, training from random
+initialisation overfits. Cross-lingual fine-tuning from a
+high-resource (typically English VoxCeleb1) checkpoint is the
+established remedy. The fine-tune policy hyper-parameters — which
+layers to freeze, the global LR multiplier, and whether to apply
+layer-wise LR decay (LLRD) — are well studied in the BERT / WavLM
+literature but less systematically reported for SV fine-tuning, which
+motivates our explicit ablation in Section~\ref{sec:experiments}.
+
+\subsection{Score normalisation and generative backends}
+\label{sec:related:scoring}
+
+Adaptive symmetric score normalisation (AS-Norm)
+\cite{matejka2017analysis} computes per-trial-side cohort statistics
+from a fixed set of impostor embeddings and normalises trial scores
+against those statistics. Two-covariance PLDA
+\cite{sizov2014unifying} replaces cosine scoring with a likelihood
+ratio test under same-speaker vs different-speakers hypotheses. Both
+are eval-time post-processing steps that do not require retraining,
+and they compose: the standard NIST SRE pipeline order is
+PLDA $\to$ AS-Norm.
+
+\subsection{Auxiliary objectives for low-resource SV}
+\label{sec:related:aux}
+
+Multi-task language-ID heads — a linear classifier trained jointly
+with the speaker loss to predict the utterance's language — regularise
+the speaker embedding to retain language-discriminative structure
+that aids cross-lingual discrimination. The opposite
+(adversarial / DANN-style \cite{ganin2015dann}) is also studied but
+empirically more brittle on small corpora; we therefore evaluate the
+multi-task variant as the primary lever and treat DANN as
+infrastructure-ready future work.
+
+\section{Methodology}
+\label{sec:method}
+
+\subsection{Corpus}
+\label{sec:method:corpus}
+
+Evaluation is two-tier. Benchmark v0 comprises 527 speakers: 478
+Sinhala from OpenSLR SLR52 (crowdsourced read speech, 16~kHz) and 49
+Tamil from OpenSLR SLR65 (studio read speech, resampled to 16~kHz at
+load), keeping speakers with at least 10 utterances. Benchmark v1 is
+built on SLCeleb, our 280-speaker in-the-wild Sinhala/Tamil corpus
+(multi-genre, multi-session, with bilingual speakers), pending data
+placement. Within each speaker we hold out 20\% of utterances for
+trial-pair construction; the remainder forms the training pool
+(31{,}049 training utterances at a 60-utterance-per-speaker cap for
+the fine-tuning experiments).
+
+v0 trial pairs are constructed at a 1:3 target-to-impostor ratio at
+three operating points: monolingual Sinhala (3{,}000 target +
+9{,}000 impostor pairs), monolingual Tamil (3{,}000 + 9{,}000), and
+cross-lingual (pairs for speakers present in both languages --- empty
+at v0, since the OpenSLR corpora contain no bilingual speakers, and
+populated at v1 by SLCeleb). Pair sampling is reproducible
+from a single fixed random seed \cite{slspv2026repo}.
+
+\subsection{Architecture and training}
+\label{sec:method:arch}
+
+The speaker encoder is ECAPA-TDNN \cite{desplanques2020ecapa} with
+$C=1024$ channels, 80 log-mel filterbanks, embedding dimension 192,
+and channel-attentive statistical pooling. The training loss is
+additive-angular-margin softmax (AAM-Softmax) \cite{deng2019arcface}
+with margin 0.2 and scale 30. Augmentation reuses the MUSAN +
+RIR simulation chain at training time.
+
+\subsection{Cross-lingual fine-tune protocol}
+\label{sec:method:finetune}
+
+For configurations P1 and P2 (Section~\ref{sec:experiments}) we
+initialise from an ECAPA-TDNN checkpoint pretrained on VoxCeleb1
+\cite{nagrani2017voxceleb}. During SL fine-tuning the mel front-end
+is frozen, the global LR is scaled by $0.1\times$, and layer-wise
+LR decay with $\gamma=0.9$ is applied across the four ECAPA layers
+so that the layer closest to the loss head receives the full LR and
+the input-side layer receives $0.9^3 \approx 0.73\times$ of it.
+
+\subsection{Multi-task language-ID head}
+\label{sec:method:langaux}
+
+A linear head $W_{\mathrm{aux}}\in\mathbb{R}^{4\times 192}$ predicts
+the utterance's primary language (si / ta / en / mix) from the speaker
+embedding before the $n_{\mathrm{PerSpeaker}}$ reshape. The combined
+loss is
+\begin{equation}
+\mathcal{L}_{\mathrm{total}}
+= \mathcal{L}_{\mathrm{speaker}}
++ \lambda \, \mathcal{L}_{\mathrm{lang}},
+\quad \lambda=0.3.
+\end{equation}
+Speakers absent from the per-speaker language lookup carry
+\texttt{ignore\_index=-1} and contribute no gradient.
+
+\subsection{Eval-time scoring backends}
+\label{sec:method:scoring}
+
+We evaluate three eval-time scoring backends:
+\begin{enumerate}
+    \item Cosine similarity on length-normalised embeddings (baseline).
+    \item Two-covariance PLDA \cite{sizov2014unifying} with LDA
+    pre-reduction to $d=200$ and length normalisation.
+    \item AS-Norm \cite{matejka2017analysis} with top-$K=300$ cohort
+    statistics on a 500-speaker in-domain cohort, layered on top
+    of either backend (1) or (2).
+\end{enumerate}
+
+\subsection{Reproducibility}
+\label{sec:method:repro}
+
+All experiments use deterministic-mode training (cuDNN deterministic
+flag, TF32 disabled,
+\texttt{torch.use\_deterministic\_algorithms} enabled). Primary
+configurations are run with three random seeds (42, 123, 7); we
+report $\mathrm{mean} \pm \mathrm{std}$. Single-feature ablations
+use seed 42 only.
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Configurations}
+\label{sec:exp:configs}
+
+We define three primary configurations and five single-feature
+ablations:
+
+\begin{itemize}[leftmargin=*]
+    \item \textbf{P0:} ECAPA-TDNN from scratch on SL-SPV.
+    \item \textbf{P1:} P0 + cross-lingual fine-tune (front-end frozen,
+    LLRD).
+    \item \textbf{P2:} P1 + multi-task language-ID head + AS-Norm +
+    PLDA + per-language evaluation.
+    \item Ablations of P2 with each of the five features individually
+    disabled.
+\end{itemize}
+
+\subsection{Preliminary monolingual baselines (benchmark v0)}
+\label{sec:exp:prelim}
+
+%% Numbers below are from the 2026-07-03 benchmark v0 runs
+%% (research_logs/2026-07-03-{zeroshot-baseline-table,p2-backend-adaptation,
+%% p3-peft-finetuning}.md). Monolingual context only; the P4 cross-lingual
+%% arms this paper targets are pending.
+
+\begin{table}[t]
+\centering
+\caption{Preliminary monolingual EER (\%) on benchmark v0 (527
+read-speech speakers; 12{,}000 trials per language). Fine-tuned rows
+are $\mathrm{mean} \pm \mathrm{std}$ over three seeds. Preliminary,
+benchmark v0: read speech, near single-session, closed-set speakers
+for the fine-tuned rows; v1 (SLCeleb) provides the open-set,
+in-the-wild condition.}
+\label{tab:prelim}
+\begin{tabular}{lcc}
+\toprule
+\textbf{System} & \textbf{Si} & \textbf{Ta} \\
+\midrule
+Zero-shot SpeechBrain ECAPA-TDNN            & 4.78 & 3.21 \\
+Zero-shot ReDimNet-B6                       & 2.71 & 1.48 \\
+ReDimNet-B6 + AS-Norm (training-free)       & 2.07 & 0.90 \\
+WavLM-base+ LoRA fine-tune (3 seeds)        & 3.73 $\pm$ 0.49 & 3.11 $\pm$ 0.61 \\
+WavLM-base+ full fine-tune (3 seeds)        & \textbf{1.69 $\pm$ 0.06} & \textbf{1.41 $\pm$ 0.10} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:prelim} gives preliminary monolingual context from
+benchmark v0. Deployment-relevant preliminary findings: full
+fine-tuning beat LoRA at every seed on this closed-set benchmark
+(contrary to the published PEFT-under-shift prediction; the v1
+open-set rerun arbitrates), and per-language score calibration is
+mandatory --- applying a calibrator fitted on one language to the
+other inflates Cllr by up to $5.7\times$. Cross-lingual (Cs) trials
+remain pending on benchmark v1's bilingual speakers.
+
+\subsection{Headline results}
+\label{sec:exp:headline}
+
+\begin{table}[t]
+\centering
+\caption{Speaker-verification performance on the SL-SPV evaluation set.
+Numbers are pooled / Sinhala-only / Tamil-only / cross-lingual EER (\%),
+$\mathrm{mean} \pm \mathrm{std}$ over three random seeds.}
+\label{tab:headline}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Config} & \textbf{Pooled} & \textbf{Si} & \textbf{Ta} & \textbf{Cs} \\
+\midrule
+P0 from scratch    & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] \\
+P1 + fine-tune     & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] \\
+P2 full stack      & \textbf{[X.X $\pm$ Y.Y]} & \textbf{[X.X $\pm$ Y.Y]}
+                   & \textbf{[X.X $\pm$ Y.Y]} & \textbf{[X.X $\pm$ Y.Y]} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Ablation analysis}
+\label{sec:exp:ablation}
+
+\begin{table}[t]
+\centering
+\caption{Single-feature ablations from the full stack (P2), seed 42.
+$\Delta$ = pooled-EER increase when the named feature is removed.}
+\label{tab:ablation}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Ablation} & \textbf{Pooled EER \%} & $\boldsymbol{\Delta}$ \\
+\midrule
+P2 (all features)   & [X.X] & 0 \\
+\midrule
+$-$ fine-tune       & [X.X] & $+$[Y.Y] \\
+$-$ LLRD            & [X.X] & $+$[Y.Y] \\
+$-$ lang-aux        & [X.X] & $+$[Y.Y] \\
+$-$ AS-Norm         & [X.X] & $+$[Y.Y] \\
+$-$ PLDA            & [X.X] & $+$[Y.Y] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Implications for biometric deployment}
+\label{sec:disc:deploy}
+
+Voice biometric deployment in bilingual environments faces three
+operating points that this benchmark explicitly characterises:
+monolingual enrolment matching the test-time language (Si / Ta
+columns of Table~\ref{tab:headline}), cross-lingual enrolment-test
+mismatch (Cs column), and pooled (deployment-time language unknown).
+A smaller Si--Ta gap indicates a more deployable model when the
+language is not known in advance; a smaller Cs--Pooled gap indicates
+robustness to language switching between enrolment and verification.
+
+\subsection{Threats to validity}
+\label{sec:disc:threats}
+
+[NOTE: Discuss after results land. Likely topics: benchmark v0's
+read-speech, near single-session character and closed-set fine-tuning
+evaluation (optimistic absolute EERs; v1 SLCeleb provides the
+open-set, multi-session condition), single-corpus-per-language
+generalisation, channel homogeneity, and possible label noise in the
+multi-task language-ID lookup.]
+
+\subsection{Future work}
+\label{sec:disc:future}
+
+The toolkit ships infrastructure for two avenues we did not exercise
+in this paper: (i) self-supervised continued pretraining on
+unlabelled SL podcast/broadcast audio (FEATURE-009, design-only)
+to further close the cross-lingual gap; and (ii) DANN-style adversarial
+language and channel invariance (FEATURE-008), particularly relevant
+for telephony deployment where the recording channel differs from
+the training distribution.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We presented the first reproducible speaker-verification benchmark for
+Sri Lankan Sinhala and Tamil, evaluated on a two-tier protocol
+(benchmark v0: 527 read-speech speakers from OpenSLR SLR52/SLR65;
+benchmark v1: SLCeleb, our 280-speaker in-the-wild corpus, pending). Single-feature ablations isolate the contribution
+of each lever in the full-stack configuration: cross-lingual fine-tune,
+layer-wise LR decay, multi-task language-ID, AS-Norm, and PLDA. The
+open-source toolkit, corpus-preparation pipeline, and reproducibility
+checklist are released for downstream work on Sri Lankan biometrics.
+
+\section*{Acknowledgements}
+[Funding, computational resources, advisor acknowledgements.]
+
+\bibliographystyle{plain}
+\bibliography{../references}
+
+\section*{Biographical notes}
+\noindent
+\textbf{[First Author]} is [position] at [institution]. Their research
+interests include [topics]. [One-paragraph bio per author per IJBM
+submission guidelines.]
+
+\end{document}

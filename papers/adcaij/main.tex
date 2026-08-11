@@ -1,0 +1,398 @@
+% ====================================================================
+%  ADCAIJ — Advances in Distributed Computing and Artificial
+%  Intelligence Journal (Universidad de Salamanca / BISITE)
+% --------------------------------------------------------------------
+%  Template note: ADCAIJ is open access, CC-BY, and uses its own
+%  LaTeX class `adcaij.cls` available from
+%  https://revistas.usal.es/index.php/2255-2863
+%  For submission, replace the \documentclass{article} with
+%  \documentclass{adcaij}. ADCAIJ accepts manuscripts in two
+%  formats (Word and LaTeX) and has no strict word limit; typical
+%  papers are 10-16 pages including figures and references.
+%  ADCAIJ has a distributed-systems and AI-architecture emphasis, so
+%  the framing of this paper foregrounds the training-pipeline /
+%  toolkit aspects more than the IJBM version.
+% ====================================================================
+%% STATUS 2026-07-03: Experimental design superseded by the project audit
+%% (research_logs/2026-07-03-project-audit-sota-roadmap.md). This venue awaits
+%% the P6 on-device/edge-distillation study. Benchmark v0 results now
+%% exist (see research_logs/2026-07-03-*) and are quoted below as preliminary
+%% context; final tables require the SLCeleb v1 benchmark and the P6
+%% distillation/edge runs (KD into ReDimNet-B0/CAM++, INT8 ONNX export).
+% ====================================================================
+\documentclass[11pt,a4paper]{article}
+
+% Engine guard: fontspec under XeLaTeX/LuaLaTeX (as in the 2026-05-23
+% builds); T1/Latin Modern fallback so the draft also compiles with
+% pdfLaTeX on machines without xetex/luaotfload.
+\usepackage{iftex}
+\iftutex
+  \usepackage{fontspec}
+  \setmainfont{DejaVu Serif}
+  \setsansfont{DejaVu Sans}
+  \setmonofont{DejaVu Sans Mono}
+\else
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+\fi
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{booktabs,tabularx,amsmath,microtype,enumitem,parskip}
+\usepackage{authblk}
+
+\title{A modular, multi-GPU training pipeline for low-resource
+cross-lingual speaker verification: design, ablation, and reference
+deployment on Sinhala--Tamil bilingual audio}
+
+\author[1]{[First Author]}
+\author[1]{[Second Author]}
+\affil[1]{[Department], [University], Sri Lanka. \\
+\texttt{[email@institution]}}
+
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent We describe the design, implementation, and empirical
+validation of an open-source training pipeline for cross-lingual
+speaker verification under low-resource constraints. The pipeline
+extends the upstream \texttt{voxceleb\_trainer} codebase with eleven
+modular features --- each selectable via a single configuration key
+--- spanning multilingual self-supervised front-ends, cross-lingual
+fine-tuning with layer-wise learning-rate decay, auxiliary
+language-identification heads, score normalisation, and PLDA
+scoring. We deploy the pipeline across a heterogeneous cluster of
+NVIDIA T4, A10, and A40 GPUs, with distributed data-parallel training
+on the T4 pair and single-GPU runs for ablation passes. As a
+reference deployment, we evaluate on a two-tier Sinhala--Tamil
+benchmark: v0, 527 speakers of read speech from OpenSLR SLR52 and
+SLR65 (478 Sinhala, 49 Tamil; 12{,}000 trials per language), and v1,
+built on SLCeleb, our 280-speaker in-the-wild corpus (pending data
+placement), with single-feature ablations isolating contributions. The toolkit, master experimental protocol,
+corpus-preparation script, and aggregation tools are released to
+enable reproducible low-resource SV research.
+\end{abstract}
+
+\noindent \textbf{Keywords:} speaker verification; cross-lingual
+transfer; distributed training; multi-GPU; open-source toolkit;
+low-resource languages; ablation study.
+
+\section{Introduction}
+\label{sec:intro}
+
+Modern speaker verification (SV) systems are increasingly defined as
+much by the engineering of the training pipeline as by the choice of
+architecture or loss function. A typical research setup combines
+several independently-developed components: a front-end (mel /
+SincConv / self-supervised), a backbone (TDNN / ResNet / transformer),
+a margin-based loss (AM- / AAM-Softmax), an evaluation backend
+(cosine / PLDA), score normalisation, and one or more auxiliary
+training objectives. Yet most published systems combine these
+components in a single end-to-end commitment, without ablating
+contributions, and without releasing the configuration scaffolding
+that would let a downstream practitioner enable or disable each lever.
+
+This paper presents the inverse: a training pipeline that decomposes
+the SV system into eleven \emph{independently togglable} features
+(FEATURE-001 through FEATURE-011 in the codebase), each guarded by a
+single YAML or CLI key, each accompanied by a design document, and
+each contributing to a unified single-feature ablation. We describe
+the architectural decisions that make this modularity work in
+practice (Section~\ref{sec:design}), the heterogeneous multi-GPU
+deployment we use to run the protocol (Section~\ref{sec:deployment}),
+and the empirical validation on a low-resource Sinhala--Tamil corpus
+(Section~\ref{sec:experiments}). Contributions:
+
+\begin{enumerate}
+    \item A modular SV training pipeline with eleven independently
+    togglable features, each composable with all others and each
+    defaulting to off so that pre-existing experiment scripts remain
+    behaviour-identical.
+    \item A heterogeneous multi-GPU deployment strategy that maps
+    each protocol stage to the appropriate device class (DDP on
+    consumer GPUs, single-GPU for ablations, large-VRAM for
+    self-supervised backbones).
+    \item A reproducible two-tier Sinhala--Tamil benchmark (v0: 527
+    speakers from OpenSLR SLR52/SLR65 read speech; v1: SLCeleb, our
+    280-speaker in-the-wild corpus, pending) as the pipeline's
+    reference deployment, with corpus preparation and results
+    aggregation fully automated.
+\end{enumerate}
+
+\section{Related work}
+\label{sec:related}
+
+\subsection{Speaker verification architectures}
+
+ECAPA-TDNN \cite{desplanques2020ecapa} is the de-facto reference
+architecture for non-self-supervised SV; multilingual self-supervised
+encoders (WavLM \cite{chen2022wavlm}, wav2vec~2 \cite{baevski2020wav2vec2})
+provide strong out-of-the-box features for low-resource languages.
+Margin-based losses (AAM-Softmax \cite{deng2019arcface}) are standard
+for embedding training.
+
+\subsection{Cross-lingual transfer and SV-specific eval backends}
+
+Cross-lingual fine-tuning from English-pretrained checkpoints is the
+established remedy for low-resource SV. Eval-time backends such as
+PLDA \cite{sizov2014unifying} and AS-Norm \cite{matejka2017analysis}
+add 5--20\% relative MinDCF reduction at zero training cost.
+Adversarial language/channel invariance \cite{ganin2015dann} is
+infrastructure-ready in our pipeline but evaluated only as future
+work in this paper.
+
+\subsection{Modular training pipelines in the broader AI ecosystem}
+
+Modular training frameworks --- HuggingFace \texttt{transformers},
+SpeechBrain, NeMo, fairseq --- have shaped the way modern ML research
+is conducted. Our pipeline shares their feature-toggle philosophy but
+specialises it for SV: each feature is paired with a design document
+articulating the hypothesis, expected effect size, and risk; each is
+ablated explicitly in a single command sweep.
+
+\section{System design}
+\label{sec:design}
+
+\subsection{Feature toggle as the primary abstraction}
+
+Every shipped feature obeys a strict invariant: \emph{the default-off
+configuration is byte-identical to the pre-feature pipeline}. This
+constraint --- enforced by design review for every merge --- means a
+practitioner can adopt the pipeline incrementally, enabling one feature
+at a time, with confidence that earlier experiments remain valid.
+
+Concretely:
+\begin{itemize}[leftmargin=*]
+    \item Every feature is gated by a single boolean (e.g.\ \texttt{plda:
+    true}); the YAML and CLI representations are isomorphic.
+    \item Default-off paths execute the original code path with no
+    additional branching cost.
+    \item Each feature ships with a smoke test verifying behaviour
+    parity at the default setting.
+\end{itemize}
+
+\subsection{Composition rules}
+
+The eleven features compose into the following layered architecture
+(Figure~\ref{fig:layers}, [INSERT\_FIGURE]):
+
+\begin{description}[leftmargin=*,style=nextline]
+    \item[Front-end] Mel-filterbank, SincConv (raw-waveform), or
+    self-supervised transformer (WavLM / XLS-R / mHuBERT-147).
+    \item[Backbone] ECAPA-TDNN, ResNet-SE34V2, RawNet3, MLPMixerSpeaker
+    (raw or mel).
+    \item[Pooling] Channel-attentive statistical pooling (ECAPA),
+    self-attentive pooling (others).
+    \item[Training-time auxiliary heads] Multi-task language-ID,
+    DANN-style adversarial language/channel.
+    \item[Loss] AAM-Softmax, AM-Softmax, ProtoNet, GE2E, Triplet.
+    \item[Optimisation] Selective freezing, layer-wise LR decay,
+    distributed data-parallel.
+    \item[Eval backends] Cosine, PLDA (two-covariance), AS-Norm
+    (composable with both).
+    \item[Reporting] Per-language EER / MinDCF, pooled metrics,
+    multi-seed aggregation.
+\end{description}
+
+\subsection{Configuration management and reproducibility}
+
+A single YAML config encodes every choice in the pipeline. Paths
+expand environment variables (\texttt{\$\{SL\_SPV\_DATA\_ROOT\}}) for
+machine portability. The deterministic-mode switch
+(\texttt{deterministic: true}) sets cuDNN deterministic flag,
+disables TF32, and enables \texttt{torch.use\_deterministic\_algorithms}
+for paper-grade reproducibility.
+
+\section{Multi-GPU deployment}
+\label{sec:deployment}
+
+\subsection{Heterogeneous cluster allocation}
+\label{sec:deploy:hetero}
+
+The reference deployment uses three machine types in a small
+heterogeneous cluster:
+
+\begin{table}[t]
+\centering
+\caption{Heterogeneous-cluster GPU allocation for the protocol.}
+\label{tab:cluster}
+\begin{tabularx}{\linewidth}{lXX}
+\toprule
+\textbf{Machine} & \textbf{VRAM} & \textbf{Workload} \\
+\midrule
+A40 (single node)    & 48 GB        & Self-supervised front-end configs (FEATURE-001 WavLM / XLS-R / mHuBERT) \\
+2$\times$ T4 (DDP)   & 16 GB $\times$ 2 & ECAPA-TDNN baseline, primary protocol; distributed data-parallel \\
+A10 (single node)    & 24 GB        & Single-feature ablations, multi-seed reproducibility runs \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Distributed data-parallel on the T4 pair uses NCCL backend; the
+trainer reuses the upstream \texttt{voxceleb\_trainer} DDP path
+(verified after BUGFIX-001 corrected the original kwarg-passing bug
+in \texttt{mp.spawn}).
+
+\subsection{Wall-clock budget}
+\label{sec:deploy:budget}
+
+The full protocol (three primary configurations $\times$ three seeds
+$+$ five single-feature ablations $\times$ one seed) dispatches to
+$\sim$3--5 days of wall-clock time across the three machines.
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Reference deployment: two-tier Sinhala--Tamil benchmark}
+\label{sec:exp:corpus}
+
+The reference deployment is a two-tier benchmark. Benchmark v0
+comprises 527 speakers of read speech: 478 Sinhala from OpenSLR SLR52
+and 49 Tamil from OpenSLR SLR65 (speakers with at least 10
+utterances). Benchmark v1 is built on SLCeleb, our 280-speaker
+in-the-wild Sinhala--Tamil corpus (multi-genre, multi-session), and is
+pending data placement. Train/test split is 80/20 within each speaker;
+trial pairs (v0: 3{,}000 target + 9{,}000 impostor pairs per language)
+are generated deterministically from a single random seed
+(\texttt{tools/sl\_dataprep.py}). Per-language, cross-lingual, and
+pooled trial lists are evaluated independently; the cross-lingual list
+is empty at v0 (no bilingual speakers in OpenSLR) and is populated at
+v1 by SLCeleb.
+
+\subsection{Configurations}
+\label{sec:exp:configs}
+
+\begin{itemize}[leftmargin=*]
+    \item P0: ECAPA-TDNN from scratch.
+    \item P1: P0 + cross-lingual fine-tune from VoxCeleb1 ECAPA
+    checkpoint, front-end frozen, layer-wise LR decay $\gamma=0.9$.
+    \item P2: P1 + multi-task language-ID head ($\lambda=0.3$) +
+    AS-Norm (top-$K=300$, 500-speaker cohort) + PLDA ($d=200$) +
+    per-language evaluation.
+\end{itemize}
+
+\subsection{Preliminary results (benchmark v0)}
+\label{sec:exp:prelim}
+
+%% Numbers below are from the 2026-07-03 benchmark v0 runs
+%% (research_logs/2026-07-03-{zeroshot-baseline-table,p2-backend-adaptation,
+%% p3-peft-finetuning}.md). The P6 distillation/edge results this paper
+%% targets are pending.
+
+\begin{table}[t]
+\centering
+\caption{Preliminary EER (\%) on benchmark v0 (527 read-speech
+speakers; 12{,}000 trials per language). Fine-tuned rows are
+$\mathrm{mean} \pm \mathrm{std}$ over three seeds. Preliminary,
+benchmark v0 (read speech, closed-set for the fine-tuned rows);
+distillation and on-device results are pending.}
+\label{tab:prelim}
+\begin{tabular}{lccc}
+\toprule
+\textbf{System} & \textbf{Params} & \textbf{Si} & \textbf{Ta} \\
+\midrule
+Zero-shot SpeechBrain ECAPA-TDNN        & $\sim$20M & 4.78 & 3.21 \\
+Zero-shot ReDimNet-B1                   & 2.2M      & 3.57 & 1.67 \\
+Zero-shot ReDimNet-B6                   & 15M       & 2.71 & 1.48 \\
+ReDimNet-B6 + AS-Norm (training-free)   & 15M       & 2.07 & 0.90 \\
+WavLM-base+ LoRA fine-tune (3 seeds)    & 95M (1.1\% trained) & 3.73 $\pm$ 0.49 & 3.11 $\pm$ 0.61 \\
+WavLM-base+ full fine-tune (3 seeds)    & 95M       & \textbf{1.69 $\pm$ 0.06} & \textbf{1.41 $\pm$ 0.10} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:prelim} gives preliminary benchmark-v0 context for the
+edge study: the 2.2M-parameter ReDimNet-B1 already outperforms the
+$\sim$20M ECAPA-TDNN zero-shot, AS-Norm is a training-free lever worth
+carrying on-device (Si 2.71 $\to$ 2.07), and the fine-tuned
+WavLM-base+ (full fine-tune) is the current distillation-teacher
+candidate. Per-language score calibration proved mandatory
+(cross-language calibrator swap inflates Cllr up to $5.7\times$) ---
+an on-device deployment must ship per-language calibrators. The
+distillation, quantisation, and runtime results that are this paper's
+subject remain pending (P6).
+
+\subsection{Headline results}
+
+\begin{table}[t]
+\centering
+\caption{Equal-error rate (\%) on the SL-SPV evaluation set,
+$\mathrm{mean} \pm \mathrm{std}$ over three random seeds.}
+\label{tab:headline}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Config} & \textbf{Pooled} & \textbf{Si} & \textbf{Ta} & \textbf{Cs} \\
+\midrule
+P0 from scratch   & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] \\
+P1 + fine-tune    & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] \\
+P2 full stack     & \textbf{[X.X $\pm$ Y.Y]} & \textbf{[X.X $\pm$ Y.Y]}
+                  & \textbf{[X.X $\pm$ Y.Y]} & \textbf{[X.X $\pm$ Y.Y]} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Single-feature ablations}
+
+\begin{table}[t]
+\centering
+\caption{Single-feature ablations from the full stack (P2), seed 42.}
+\label{tab:ablation}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Ablation} & \textbf{Pooled EER \%} & $\boldsymbol{\Delta}$ \\
+\midrule
+P2 (all features)   & [X.X] & 0 \\
+$-$ fine-tune       & [X.X] & $+$[Y.Y] \\
+$-$ LLRD            & [X.X] & $+$[Y.Y] \\
+$-$ lang-aux        & [X.X] & $+$[Y.Y] \\
+$-$ AS-Norm         & [X.X] & $+$[Y.Y] \\
+$-$ PLDA            & [X.X] & $+$[Y.Y] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Modularity in practice}
+
+[NOTE: discuss whether the strict default-off invariant held in
+practice across the protocol; identify any place where a feature's
+behaviour leaked into the default path; reflect on the trade-off
+between modularity and absolute SOTA performance.]
+
+\subsection{Heterogeneous GPU utilisation efficiency}
+
+[NOTE: report wall-clock utilisation and idle-time fraction per
+machine; recommend allocation revisions if a particular workload
+turned out to be limited by something other than VRAM/compute.]
+
+\subsection{Limitations}
+
+[NOTE: benchmark v0 is read speech, near single-session, and
+closed-set for the fine-tuned systems (optimistic absolute EERs;
+benchmark v1 / SLCeleb provides the open-set in-the-wild condition);
+single-deployment generalisation; absence of self-supervised continued
+pretraining (FEATURE-009 is infrastructure-ready but not exercised
+here).]
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+We described and validated a modular, multi-GPU training pipeline for
+low-resource cross-lingual speaker verification. The pipeline's eleven
+independently-togglable features compose cleanly under default-off
+invariants and ablate cleanly under single-feature negations. The
+reference deployment on Sinhala--Tamil bilingual audio demonstrates the
+pipeline's intended use; the open-source release positions the
+pipeline as the substrate for downstream low-resource SV research.
+
+\section*{Acknowledgements}
+[Funding, computational resources, advisor acknowledgements.]
+
+\bibliographystyle{plain}
+\bibliography{../references}
+
+\end{document}

@@ -1,0 +1,442 @@
+% =====================================================================
+%  IEEE Signal Processing Letters — manuscript
+% ---------------------------------------------------------------------
+%  Format: IEEEtran `journal` class, 2-column.
+%  Length limit: 4 pages typeset content including references, figures,
+%  tables, and bibliography. Submissions exceeding 4 pages are returned
+%  without review.
+%  Style notes per SPL author guidelines:
+%   - Compact title; no acronyms in title unless universally understood.
+%   - Single contribution; no omnibus.
+%   - Abstract: 100-200 words.
+%   - 3 to 5 Index Terms (IEEE keyword taxonomy where possible).
+%   - References in IEEE numbered style via IEEEtran.bst.
+%  Compile:
+%      pdflatex main && bibtex main && pdflatex main && pdflatex main
+% =====================================================================
+\documentclass[journal]{IEEEtran}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{microtype}
+\usepackage{url}
+
+\hyphenation{Sin-ha-la Ta-mil Vox-Ce-leb}
+
+\newcommand{\dcf}{\mathrm{minDCF}}
+\newcommand{\cllr}{C_{\mathrm{llr}}}
+
+\begin{document}
+
+\title{Speaker Verification for Sinhala and Tamil:\\
+A Reproducible Benchmark with Zero-Shot and\\
+Training-Free Adaptation Baselines}
+
+\author{%
+    [First~Author],~\IEEEmembership{Student~Member,~IEEE,}
+    [Second~Author],~\IEEEmembership{Member,~IEEE,}
+\thanks{Manuscript received [Month] [Day], [Year]; revised [Month] [Day], [Year].}%
+\thanks{The authors are with the [Department], [University],
+[City], Sri~Lanka (e-mail: [email@institution]).}%
+\thanks{Code, configurations, and trial lists are released at
+\texttt{github.com/[user]/voxceleb\_trainer-SL-SPV}.}}
+
+\markboth{IEEE Signal Processing Letters,~Vol.~XX, No.~X, [Month]~[Year]}%
+{[Author]~\MakeLowercase{\textit{et~al.}}: Speaker Verification for
+Sinhala and Tamil}
+
+\maketitle
+
+\begin{abstract}
+Sinhala and Tamil, the two official languages of Sri Lanka, have no
+published speaker-verification (SV) benchmark. We present the first
+reproducible SV benchmark for these languages, built from public
+OpenSLR read-speech corpora: 527 speakers (478 Sinhala, 49 Tamil)
+with 3{,}000 target and 9{,}000 impostor trials per language,
+deterministically generated from a single seed. On this benchmark we
+report the first zero-shot baselines for four state-of-the-art
+VoxCeleb-trained systems (ECAPA-TDNN and ReDimNet-B1/B2/B6):
+equal-error rates of 2.71--4.78\% on Sinhala and 1.48--3.21\% on
+Tamil, i.e., $2$--$8\times$ their published VoxCeleb1-O figures even
+on clean read speech, with poor minimum detection cost
+(0.24--0.48 at $P_{\mathrm{tgt}}{=}0.01$) throughout. A training-free
+adaptation study shows that adaptive score normalization with a small
+in-domain cohort recovers up to 39\% relative EER (best system:
+2.07\%/0.90\%), that PLDA helps or hurts depending on corpus recording
+structure, and that swapping calibrators between the two languages
+inflates $C_{\mathrm{llr}}$ by up to $5.7\times$, making per-language
+calibration mandatory. In-language fine-tuning of WavLM confirms and
+completes this picture. Trial lists, code, and configurations are
+released.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Speaker verification, low-resource languages, benchmark,
+score normalization, calibration.
+\end{IEEEkeywords}
+
+\IEEEpeerreviewmaketitle
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+% =====================================================================
+
+\IEEEPARstart{S}{peaker} verification (SV) on English benchmarks has
+matured: publicly released systems reach 0.4--0.8\% equal-error rate
+(EER) on VoxCeleb1-O \cite{desplanques2020ecapa, yakovlev2024redimnet,
+nagrani2017voxceleb}. How well these released checkpoints transfer to
+unseen low-resource languages is far less well characterized. For the
+two official languages of Sri Lanka --- Sinhala (Indo-Aryan,
+$\sim$17\,million speakers) and Tamil (Dravidian, $\sim$5\,million Sri
+Lankan speakers) --- the gap is complete: neither language appears in
+any catalogued SV corpus, and we could find no published SV results
+for modern architectures on Sinhala at all.
+
+Evidence from other languages suggests transfer is costly:
+VoxCeleb-trained systems degrade by a factor of 2--4 in EER on
+CN-Celeb \cite{fan2020cnceleb}, and cross-lingual trials suffer
+systematic score shifts that break calibration
+\cite{matejka2017analysis, thienpondt2022tackling}. Whether these
+findings extend to Sinhala and Tamil, whether the published VoxCeleb
+ranking of systems is preserved under the shift, and how much of the
+loss is recoverable \emph{without any training} are open questions
+with direct deployment relevance.
+
+This letter contributes:
+\begin{itemize}
+\item \textbf{SL-SPV benchmark v0} --- the first reproducible SV
+benchmark for Sinhala and Tamil: 527 speakers drawn from public
+OpenSLR corpora \cite{kjartansson2018crowdsourced, he2020opensource},
+12{,}000 trials per language constructed deterministically from a
+single seed, and evaluation at two operating points
+($\dcf$ at $P_{\mathrm{tgt}}=0.01$ and $0.05$) alongside EER.
+\item \textbf{Zero-shot baselines} for four state-of-the-art released
+checkpoints --- ECAPA-TDNN \cite{desplanques2020ecapa,
+ravanelli2021speechbrain} and ReDimNet-B1/B2/B6
+\cite{yakovlev2024redimnet} --- quantifying the English$\to$Sinhala/%
+Tamil degradation at $2$--$8\times$ published VoxCeleb1-O EER.
+\item \textbf{A training-free adaptation study} of adaptive score
+normalization (AS-Norm) \cite{matejka2017analysis}, two-covariance
+PLDA \cite{sizov2014unifying, kenny2010}, and score calibration,
+including the first cross-lingual calibration-transfer measurement
+for this language pair. We additionally verify the conclusions
+against in-language fine-tuning of WavLM \cite{chen2022wavlm}.
+\end{itemize}
+
+Section~\ref{sec:benchmark} describes the benchmark,
+Section~\ref{sec:zeroshot} the zero-shot results,
+Section~\ref{sec:adapt} the adaptation study,
+Section~\ref{sec:limitations} the limitations, and
+Section~\ref{sec:conclusion} concludes.
+
+% =====================================================================
+\section{The SL-SPV Benchmark (v0)}
+\label{sec:benchmark}
+% =====================================================================
+
+\subsection{Corpora}
+\label{ssec:corpora}
+
+Sinhala audio comes from OpenSLR SLR52
+\cite{kjartansson2018crowdsourced}, a crowdsourced read-speech corpus
+recorded at 16\,kHz; retaining speakers with at least 10 utterances
+yields \textbf{478 speakers} ($\sim$185k utterances). SLR52 publishes
+no gender or session metadata. Tamil audio comes from OpenSLR SLR65
+\cite{he2020opensource}, a studio-recorded read-speech corpus
+(48\,kHz, downsampled to 16\,kHz), yielding \textbf{49 speakers}
+(4{,}286 utterances) with speaker gender recoverable from the file
+naming convention. Both corpora are CC~BY-SA licensed, so the
+benchmark is fully redistributable as trial lists over public audio.
+
+\subsection{Trial protocol}
+\label{ssec:protocol}
+
+Each speaker's utterances are split 80/20 into a training/adaptation
+pool and a held-out test pool (seed 42); all trials are drawn from
+test utterances only. Per language we sample \textbf{3{,}000 target
+and 9{,}000 impostor trials} (1:3). Target trials pair same-speaker,
+same-language utterances. Impostor trials are same-language and
+\emph{same-gender whenever gender is known for both speakers}: the
+Tamil list contains zero cross-gender impostor pairs, while Sinhala
+impostors are not gender-controlled because SLR52 lacks the metadata
+(Section~\ref{sec:limitations}). Pairs are deduplicated as unordered
+pairs, self-pairs are excluded, and all sampling is reproducible from
+the single seed.
+
+\subsection{Metrics}
+\label{ssec:metrics}
+
+We report EER (mean of false-positive and false-negative rates at the
+crossing) and $\dcf$ at $P_{\mathrm{tgt}} \in \{0.01, 0.05\}$ with
+$C_{\mathrm{miss}}{=}C_{\mathrm{fa}}{=}1$, making the numbers
+comparable with both the NIST and VoxCeleb literatures. Calibration
+experiments additionally report $\cllr$. The evaluation harness
+treats unlabeled trials as a hard error rather than imputing labels.
+
+% =====================================================================
+\section{Zero-Shot Baselines}
+\label{sec:zeroshot}
+% =====================================================================
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.12}
+\caption{Zero-shot results on SL-SPV v0 (full 12{,}000-trial lists
+per language): EER (\%) and $\dcf$ at $P_{\mathrm{tgt}}=0.01/0.05$.
+``V1-O'' is each checkpoint's published VoxCeleb1-O EER (\%).}
+\label{tab:zeroshot}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.6pt}
+\begin{tabular}{l r r r c r c}
+\toprule
+& & & \multicolumn{2}{c}{\textbf{Sinhala}} & \multicolumn{2}{c}{\textbf{Tamil}} \\
+\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+\textbf{System} & \textbf{Par.} & \textbf{V1-O} & EER & DCF$_{.01/.05}$ & EER & DCF$_{.01/.05}$ \\
+\midrule
+ECAPA-TDNN \cite{desplanques2020ecapa}  & 20M  & 0.80 & 4.78 & .471/.291 & 3.21 & .482/.207 \\
+ReDimNet-B1 \cite{yakovlev2024redimnet} & 2.2M & 0.73 & 3.57 & .306/.209 & 1.67 & .406/.162 \\
+ReDimNet-B2 \cite{yakovlev2024redimnet} & 4.7M & 0.52 & 4.17 & .422/.244 & 1.97 & .454/.170 \\
+ReDimNet-B6 \cite{yakovlev2024redimnet} & 15M  & 0.37 & \textbf{2.71} & .238/.153 & \textbf{1.48} & .422/.160 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+We evaluate four released VoxCeleb-trained checkpoints without any
+adaptation: the SpeechBrain ECAPA-TDNN \cite{desplanques2020ecapa,
+ravanelli2021speechbrain} trained on VoxCeleb1+2
+\cite{nagrani2017voxceleb, chung2018voxceleb2}, and the large-margin
+fine-tuned ReDimNet-B1/B2/B6 checkpoints \cite{yakovlev2024redimnet}.
+Scoring is cosine similarity on $\ell_2$-normalized full-utterance
+embeddings, with no score normalization or calibration --- the raw
+transfer reference that Section~\ref{sec:adapt} improves on.
+Table~\ref{tab:zeroshot} reports the results, the first published SV
+baselines for these languages. Four observations:
+
+\emph{(i) Language shift alone costs a multiple, not a margin.}
+Relative to each checkpoint's published VoxCeleb1-O EER, the SL-SPV
+degradation factor spans $4.9$--$8.0\times$ (Sinhala) and
+$2.3$--$4.0\times$ (Tamil): Tamil sits within the $2$--$4\times$ band
+that the CN-Celeb literature \cite{fan2020cnceleb} reports for
+in-the-wild Chinese, and Sinhala exceeds it, despite v0 being clean,
+single-session read speech.
+
+\emph{(ii) The VoxCeleb ranking mostly, but not fully, transfers.}
+ReDimNet-B6 is best and ECAPA-TDNN worst on both languages, yet B1
+beats B2 on both languages despite B2's better VoxCeleb1-O figure ---
+and parameter count does not buy robustness monotonically: B1 (2.2M)
+outperforms both B2 (4.7M) and ECAPA-TDNN ($\sim$20M).
+
+\emph{(iii) EER alone overstates how solved Tamil is.} Tamil EER is
+uniformly lower (studio audio, 49 speakers), but Tamil
+$\dcf_{.01}$ is uniformly \emph{worse} than Sinhala for the ReDimNets
+(B6: 0.422 vs.\ 0.238): with few speakers, a handful of hard
+impostors dominates the low-false-alarm operating point.
+
+\emph{(iv) Scores are usable but badly scaled.} $\dcf_{.01}$ is poor
+everywhere (0.24--0.48) while EERs look deployable --- the classic
+signature of uncalibrated scores in a mismatched domain
+\cite{matejka2017analysis, thienpondt2022tackling}, and the direct
+motivation for the next section.
+
+% =====================================================================
+\section{Training-Free Adaptation}
+\label{sec:adapt}
+% =====================================================================
+
+\subsection{Setup}
+\label{ssec:adaptsetup}
+
+All levers in this section require no fine-tuning --- only one
+embedding-extraction pass over \emph{training-pool} audio, which is
+disjoint from every trial utterance. From the training pool
+we build (a) a multi-language cohort of 527 utterances (one per
+speaker, both languages, following \cite{matejka2017analysis}) and
+(b) a PLDA training set of 10{,}480 utterances ($\le$20 per speaker,
+527 speakers). Four backends are compared per model and language:
+(1) \emph{cosine} (the Table~\ref{tab:zeroshot} baseline, reproduced
+exactly as a sanity check); (2) \emph{AS-Norm}: adaptive symmetric
+score normalization using, per trial side, the mean/std of its
+top-$K$ ($K{=}300$) cohort similarities,
+$s' = \tfrac{1}{2}\!\left[(s-\mu_e)/\sigma_e +
+(s-\mu_t)/\sigma_t\right]$;
+(3) \emph{PLDA}: two-covariance PLDA \cite{sizov2014unifying,
+kenny2010} with LDA to 150 dimensions, centering and length
+normalization; and (4) PLDA followed by AS-Norm. We apply the grid to ECAPA-TDNN,
+ReDimNet-B1, and ReDimNet-B6 --- the worst, smallest, and best
+zero-shot systems.
+
+For calibration, each trial list is split 50/50 (stratified, seed 42)
+into calibration and evaluation halves; an affine logistic-regression
+mapping (score~$\to$~log-likelihood ratio) is fit per condition.
+\emph{Self-cal} fits and evaluates within one language;
+\emph{cross-cal} fits on one language and evaluates on the other,
+measuring the cross-lingual score shift \cite{thienpondt2022tackling}.
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.1}
+\caption{Training-free backend adaptation on SL-SPV v0:
+EER \% ($\dcf$ at $P_{\mathrm{tgt}}{=}0.01$). Bold: best EER per
+system and language.}
+\label{tab:backend}
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{l l c c}
+\toprule
+\textbf{System} & \textbf{Backend} & \textbf{Sinhala} & \textbf{Tamil} \\
+\midrule
+ECAPA-TDNN  & cosine          & 4.78 (.471) & 3.21 (.482) \\
+            & \ \ +AS-Norm    & \textbf{3.19} (.330) & 2.24 (.480) \\
+            & PLDA            & 6.00 (.598) & 2.46 (.495) \\
+            & \ \ +AS-Norm    & 5.80 (.482) & \textbf{2.06} (.374) \\
+\midrule
+ReDimNet-B1 & cosine          & 3.57 (.306) & 1.67 (.406) \\
+            & \ \ +AS-Norm    & \textbf{2.38} (.245) & \textbf{1.47} (.433) \\
+            & PLDA            & 5.34 (.452) & 1.77 (.419) \\
+            & \ \ +AS-Norm    & 5.23 (.382) & 1.49 (.297) \\
+\midrule
+ReDimNet-B6 & cosine          & 2.71 (.238) & 1.48 (.422) \\
+            & \ \ +AS-Norm    & \textbf{2.07} (.167) & \textbf{0.90} (.376) \\
+            & PLDA            & 3.84 (.293) & 1.11 (.340) \\
+            & \ \ +AS-Norm    & 3.56 (.254) & 1.16 (.314) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Results}
+\label{ssec:adaptresults}
+
+\subsubsection{AS-Norm is the single most cost-effective lever}
+Table~\ref{tab:backend} shows AS-Norm with the small in-domain cohort
+delivers 23--39\% relative EER reduction in five of six
+model--language pairs (12\% for B1 on Tamil) --- bracketing the
+20--30\% band reported for multilingual score normalization
+\cite{matejka2017analysis} --- and improves $\dcf_{.01}$ in five of
+six pairs as well (best: B6 Sinhala $0.238\to0.167$; the exception is
+B1 Tamil, $0.406\to0.433$). The best training-free
+system is \textbf{ReDimNet-B6 + AS-Norm: 2.07\% (Sinhala) / 0.90\%
+(Tamil)}, at the cost of one cohort file and no training.
+
+\subsubsection{PLDA is condition-dependent}
+In-domain PLDA \emph{hurts} Sinhala EER for every model (B6:
+$2.71\to3.84$) yet \emph{helps} Tamil EER for two of three models
+(ECAPA: $3.21\to2.46$; B6: $1.48\to1.11$; B1: $1.67\to1.77$), and
+PLDA+AS-Norm gives the best Tamil $\dcf_{.01}$ for all three models. Our working hypothesis is a benchmark
+artifact: the PLDA fit is dominated by the 478 Sinhala speakers of
+near-single-session crowdsourced audio, so its within-speaker
+covariance underestimates real channel variability, whereas the
+studio-recorded Tamil fits the model better. The claim that PLDA wins
+under domain shift \cite{wang2022scoring} should therefore not be
+dismissed on this evidence; a multi-session corpus
+(Section~\ref{sec:limitations}) is the decisive test.
+
+\subsubsection{Cross-lingual score shift is large and real}
+Table~\ref{tab:calib} reports $\cllr$ for ReDimNet-B6 under self- and
+cross-language calibration. Swapping calibrators across languages
+inflates $\cllr$ by up to $5.7\times$ (Sinhala scored with a
+Tamil-fit calibrator under AS-Norm): \emph{per-language calibration
+is mandatory} for deployment, extending the cross-lingual score-shift
+finding of \cite{thienpondt2022tackling} to this language pair.
+Notably, PLDA scores are the most \emph{transportable} across
+languages (cross-cal penalty only $1.2$--$2.7\times$) even where
+PLDA's EER is worse --- generatively modeled scores appear to live in
+a more language-invariant domain than cosine scores.
+
+\begin{table}[!t]
+\renewcommand{\arraystretch}{1.1}
+\caption{Cross-lingual score shift (ReDimNet-B6): $\cllr$ on the
+evaluation half with self-language vs.\ cross-language calibration
+(inflation factor in parentheses).}
+\label{tab:calib}
+\centering
+\small
+\setlength{\tabcolsep}{3.4pt}
+\begin{tabular}{l cc cc}
+\toprule
+& \multicolumn{2}{c}{\textbf{Sinhala eval}} & \multicolumn{2}{c}{\textbf{Tamil eval}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Backend} & self & Tamil-fit & self & Sinhala-fit \\
+\midrule
+cosine        & 0.129 & 0.489 (3.8$\times$) & 0.095 & 0.149 (1.6$\times$) \\
+\ \ +AS-Norm  & 0.099 & 0.565 (5.7$\times$) & 0.071 & 0.167 (2.4$\times$) \\
+PLDA          & 0.171 & 0.390 (2.3$\times$) & 0.073 & 0.084 (1.2$\times$) \\
+\ \ +AS-Norm  & 0.163 & 0.442 (2.7$\times$) & 0.066 & 0.094 (1.4$\times$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Verification against in-language fine-tuning}
+\label{ssec:finetune}
+
+To check that the training-free conclusions are not an artifact of
+frozen encoders, we additionally fine-tuned WavLM-base+
+\cite{chen2022wavlm} (attentive-statistics pooling, 192-d embeddings,
+AAM-softmax \cite{deng2019arcface}, margin 0.2, scale 30) on
+31{,}049 training-pool utterances (all 527 speakers, capped at 60
+utterances per speaker). Full fine-tuning reaches
+$1.69\pm0.06\%$ (Sinhala) and $1.41\pm0.10\%$ (Tamil) EER over three
+seeds --- past the best zero-shot system --- whereas LoRA
+\cite{hu2022lora} ($r{=}8$, 1.1\% of parameters) reaches only
+$3.73\pm0.49\%$ / $3.11\pm0.61\%$ on this closed-set benchmark.
+Composing the backends with the fine-tuned encoder completes the
+domain-shift picture: PLDA becomes redundant or harmful on
+\emph{both} languages (Sinhala $1.63\to2.46$ at seed 42), exactly as
+predicted for in-domain embeddings \cite{wang2022scoring}, while
+AS-Norm's EER gain saturates but it still improves the
+operating-point metrics ($\dcf_{.01}$ Sinhala $0.180\to0.144$, Tamil
+$0.175\to0.149$, with $\cllr$ down $\sim$15\%). Backend adaptation
+thus remains worth keeping for deployment even once the encoder is
+adapted.
+
+% =====================================================================
+\section{Limitations}
+\label{sec:limitations}
+% =====================================================================
+
+The v0 benchmark has known limitations that any use of its numbers
+must respect. (1)~Both corpora are read speech with, in effect, a
+single recording session per speaker, so absolute EERs are
+optimistic; the numbers are valid for \emph{relative} comparison of
+systems and backends, not for comparison against in-the-wild
+benchmarks. (2)~The evaluation is closed-set: the adaptation/training
+pool contains the same 527 speakers as the trials
+(utterance-disjoint), which is standard for domain-adaptation PLDA
+but must be stated --- it also removes the overfitting penalty that
+usually favors parameter-efficient over full fine-tuning, so the
+LoRA result of Section~\ref{ssec:finetune} should not be read as
+general. (3)~Sinhala impostor trials are not gender-controlled
+(SLR52 has no gender metadata); Tamil trials are. (4)~SLR65 Tamil is
+Indian-accented rather than Sri Lankan Tamil. (5)~There is no
+telephony/codec condition and no code-switched speech. A v1 rerun on
+SLCeleb, a 280-speaker in-the-wild Sri Lankan corpus with
+multi-session and bilingual speakers (IEEE DataPort), is planned to
+address (1)--(4) and to provide open-set and genuine cross-lingual
+trials.
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =====================================================================
+
+This letter establishes the first reproducible speaker-verification
+benchmark for Sinhala and Tamil, publishes the first zero-shot
+baselines for four state-of-the-art VoxCeleb-trained systems on it,
+and characterizes what training-free adaptation can and cannot
+repair: AS-Norm with a 527-utterance cohort recovers up to 39\%
+relative EER (best system 2.07\%/0.90\%), PLDA's value hinges on
+corpus recording structure, and calibration does not transfer across
+the two languages. Trial lists, code, and configurations are
+released to make every number in this letter reproducible from a
+single seed and to serve as the reference point for the planned
+in-the-wild v1 benchmark.
+
+% =====================================================================
+% References
+% =====================================================================
+\bibliographystyle{IEEEtran}
+\bibliography{../references}
+
+\end{document}
