@@ -1,0 +1,937 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage{fontspec}
+\setmainfont{DejaVu Serif}
+\setsansfont{DejaVu Sans}
+\setmonofont{DejaVu Sans Mono}[Scale=0.9]
+
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{amssymb}     % for \checkmark, \square
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{fancyvrb}
+\usepackage{parskip}
+\usepackage{microtype}
+
+\usepackage[colorlinks=true,
+            linkcolor=blue!50!black,
+            urlcolor=blue!50!black,
+            citecolor=blue!50!black,
+            pdfborder={0 0 0}]{hyperref}
+
+\usepackage{titlesec}
+\titleformat*{\section}{\Large\bfseries\sffamily}
+\titleformat*{\subsection}{\large\bfseries\sffamily}
+\titleformat*{\subsubsection}{\normalsize\bfseries\sffamily}
+
+\setlength{\emergencystretch}{3em}
+\renewcommand{\arraystretch}{1.15}
+
+% Make tabularx columns vtop-aligned for long-cell tables
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+
+\title{}
+\author{}
+\date{}
+
+\begin{document}
+\section*{SL-SPV Experimental Protocol \& Reporting Guide}
+
+\begin{quote}
+A reproducible end-to-end protocol that exercises every shipped feature
+(BUGFIX-001..026, FEATURE-001..011) on a 100-speaker Sinhala+Tamil corpus
+and produces thesis-grade and journal-grade speaker-verification results.
+\end{quote}
+
+\textbf{Last updated:} 2026-05-22 $\cdot$ \textbf{Code state:} all BUGFIX-NNN and FEATURE-NNN landed up to FEATURE-011 (corpus prep) and FEATURE-010 (PLDA scoring).
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\section*{Contents}
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \href{\#part-1--setup}{Part 1 --- Setup}
+\end{itemize}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Prerequisites \& environment
+  \item Hardware allocation (your 3 machines)
+\end{enumerate}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \href{\#part-2--corpus}{Part 2 --- Corpus}
+\end{itemize}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Directory layout
+  \item Generating list, lookup and cohort files
+\end{enumerate}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \href{\#part-3--the-protocol}{Part 3 --- The protocol}
+\end{itemize}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item P0 --- Baseline (ECAPA-TDNN, from scratch)
+  \item P1 --- Cross-lingual fine-tune from an English checkpoint
+  \item P2 --- Full feature stack
+  \item Ablation matrix
+  \item Multi-seed statistical reporting
+\end{enumerate}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \href{\#part-4--outputs--runtime}{Part 4 --- Outputs \& runtime}
+\end{itemize}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Output artefact inventory
+  \item Master script template
+  \item Expected runtime per machine
+\end{enumerate}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \href{\#part-5--writing-it-up}{Part 5 --- Writing it up}
+\end{itemize}
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item Methods section template (LaTeX)
+  \item Results tables (LaTeX templates)
+  \item Reproducibility checklist
+  \item Citation block
+\end{enumerate}
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \href{\#appendices}{Appendices}
+\end{itemize}
+A. Feature-by-feature flag reference B. Troubleshooting C. Expected EER ranges (sanity-check guidance)
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\section*{Part 1 --- Setup}
+
+\section*{1. Prerequisites \& environment}
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+# Python 3.10 or newer; tested on 3.11
+python -m venv .venv
+source .venv/bin/activate
+
+pip install -r requirements.txt
+# transformers >=4.30,<5 is required for FEATURE-001 SSL paths
+pip install 'transformers>=4.30,<5'
+\end{Verbatim}
+
+
+Verify the install:
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+python -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), 'devices', torch.cuda.device_count())"
+python -c "from models.ECAPA_TDNN import MainModel; print(MainModel(nOut=192))" | head -10
+\end{Verbatim}
+
+
+Set up the portable data root (BUGFIX-013):
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+cp paths.env.example paths.env
+# edit paths.env: SL_SPV_DATA_ROOT=/abs/path/to/sl_celeb
+source paths.env
+echo "$SL_SPV_DATA_ROOT"
+\end{Verbatim}
+
+
+\section*{2. Hardware allocation (your 3 machines)}
+
+You have \textbf{2$\times$ T4 single-machine}, \textbf{1$\times$ A10}, \textbf{1$\times$ A40}. Use them like this:
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|Y|}
+\hline
+Machine & VRAM & Best workload & Why \\
+\hline
+\textbf{A40} (48GB) & 48 GB & FEATURE-001 SSL configs (WavLM, XLS-R, mHuBERT) & Headroom for 95M--300M param encoders at \texttt{batch\_size=32+} \\
+\hline
+\textbf{2$\times$ T4} (16 GB $\times$2 = distributed) & 32 GB & ECAPA-TDNN baseline, ablations & Distributed-data-parallel speeds these up \textasciitilde{}1.8$\times$ on 2 GPUs; mixed precision (already on) covers Turing fp16 \\
+\hline
+\textbf{A10} (24 GB) & 24 GB & Multi-seed reproducibility runs, ECAPA-Small, debugging & Single GPU good for repeated runs that need no DDP coordination \\
+\hline
+\end{tabularx}
+\end{center}
+
+CUDA / cuDNN compatibility note: PyTorch $\geq$2.1 is required (the BUGFIX trail uses \texttt{torch.amp.autocast('cuda', ...)}, \texttt{inference\_mode}, deterministic algorithms). Verify with the \texttt{python -c "import torch ..."} line above.
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\section*{Part 2 --- Corpus}
+
+\section*{3. Directory layout}
+
+The corpus-prep script (\texttt{tools/sl\_dataprep.py}, FEATURE-011) expects this exact tree:
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+$SL_SPV_DATA_ROOT/sl_celeb/
+├── si/                              # Sinhala
+│   ├── si_spk000/
+│   │   ├── utt00.wav                # 16 kHz mono, ≥2 s, ≥4 utts per speaker
+│   │   ├── utt01.wav
+│   │   └── ...
+│   └── si_spk059/
+│       └── ...
+├── ta/                              # Tamil
+│   ├── ta_spk000/ ...
+│   └── ta_spk039/ ...
+├── en/                              # Optional: English utterances of the same speakers (for cross-lingual trials)
+│   └── ...
+└── mix/                             # Optional: code-switched utterances
+    └── ...
+\end{Verbatim}
+
+
+Constraints (enforced at prep time):
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \texttt{*.wav} files only. 16 kHz mono (resample with \texttt{sox} or the loader's auto-resampler from BUGFIX-005).
+  \item Each speaker directory $\geq$ 4 utterances (the prep script holds out 20 \% for test; $\leq$4 leaves <1 train utterance).
+  \item Speaker IDs are arbitrary strings; the prep script assigns contiguous integer labels.
+  \item A speaker present in BOTH \texttt{si/spk\_X} and \texttt{ta/spk\_X} is treated as the SAME speaker (one integer label). This unlocks cross-lingual trials.
+\end{itemize}
+
+Side resources also under \texttt{\$SL\_SPV\_DATA\_ROOT}:
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+$SL_SPV_DATA_ROOT/
+├── sl_celeb/                        # main corpus (above)
+├── musan/                           # MUSAN noise/music/speech (BUGFIX-016)
+└── RIRS_NOISES/simulated_rirs/      # reverb (BUGFIX-016)
+\end{Verbatim}
+
+
+\section*{4. Generating list, lookup and cohort files}
+
+Run the corpus prep script \textbf{once}:
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+python tools/sl_dataprep.py \
+    --corpus_root $SL_SPV_DATA_ROOT/sl_celeb \
+    --out_dir     $SL_SPV_DATA_ROOT/sl_celeb/lists \
+    --langs       si ta \
+    --test_frac   0.2 \
+    --target_pairs_per_lang 1000 \
+    --impostor_ratio 1 \
+    --cohort_size 500 \
+    --seed 42
+\end{Verbatim}
+
+
+This produces \textbf{9 files} in \texttt{\$SL\_SPV\_DATA\_ROOT/sl\_celeb/lists/}:
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|}
+\hline
+File & Used by & Format \\
+\hline
+\texttt{train\_list.txt} & trainer (\texttt{--train\_list}) & \texttt{<spk\_int> <relpath>} \\
+\hline
+\texttt{test\_list.txt} & trainer pooled-eval (\texttt{--test\_list}) & \texttt{<label> <enrol> <test>} \\
+\hline
+\texttt{test\_list\_si.txt}, \texttt{\_ta.txt}, \texttt{\_cs.txt} & FEATURE-003 per-language eval & same as \texttt{test\_list.txt} \\
+\hline
+\texttt{spk\_lang\_lookup.txt} & FEATURE-007 (\texttt{--lang\_aux\_label\_file}) and FEATURE-008 (\texttt{--dann\_lang\_label\_file}) & \texttt{<spk\_int> <lang\_int>} \\
+\hline
+\texttt{asnorm\_cohort.txt} & FEATURE-002 (\texttt{--as\_norm\_cohort\_list}) & one wav path per line \\
+\hline
+\texttt{plda\_train\_list.txt} & FEATURE-010 (\texttt{--plda\_train\_list}) & \texttt{<spk\_int> <relpath>} \\
+\hline
+\texttt{speakers.csv} & reproducibility metadata & \texttt{spk\_label, original\_id, lang, n\_train, n\_test} \\
+\hline
+\end{tabularx}
+\end{center}
+
+The bottom of the prep script's output prints \texttt{nClasses for trainer: --nClasses <N>} --- paste that value into all configs below.
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\section*{Part 3 --- The protocol}
+
+The protocol consists of \textbf{three primary configurations} (\texttt{P0} / \texttt{P1} / \texttt{P2}), then a \textbf{one-feature-at-a-time ablation} stripping features back from \texttt{P2}. Every primary config is run with \textbf{3 random seeds} (42 / 123 / 7) and reported as \texttt{mean ± std}. The ablations are run with seed 42 only (per-feature contribution, not absolute number).
+
+All commands assume the cwd is the repo root and \texttt{\$SL\_SPV\_DATA\_ROOT} is set.
+
+\section*{5. P0 --- Baseline: ECAPA-TDNN from scratch}
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+NCLASSES=$(awk -F, 'END{print NR-1}' $SL_SPV_DATA_ROOT/sl_celeb/lists/speakers.csv)
+
+python trainSpeakerNet.py \
+    --config configs/ecapa_tdnn.yaml \
+    --nClasses $NCLASSES \
+    --train_list $SL_SPV_DATA_ROOT/sl_celeb/lists/train_list.txt \
+    --test_list  $SL_SPV_DATA_ROOT/sl_celeb/lists/test_list.txt \
+    --train_path $SL_SPV_DATA_ROOT/sl_celeb \
+    --test_path  $SL_SPV_DATA_ROOT/sl_celeb \
+    --musan_path $SL_SPV_DATA_ROOT/musan \
+    --rir_path   $SL_SPV_DATA_ROOT/RIRS_NOISES/simulated_rirs \
+    --save_path  exps/P0_ecapa_baseline_seed42 \
+    --seed 42 \
+    --deterministic \
+    --max_epoch 80
+\end{Verbatim}
+
+
+\textbf{What this tests:} can a modern SV architecture learn anything from 100 SL speakers without prior knowledge? Expected: 8--20 \% EER. This is your floor.
+
+\textbf{Hardware:} 2$\times$T4 (DDP) or A10. Add \texttt{--distributed} on T4 to use both. Expect \textasciitilde{}12--18 h on T4 pair, \textasciitilde{}10 h on A10.
+
+\section*{6. P1 --- Cross-lingual fine-tune from an English checkpoint}
+
+This requires an English-pretrained checkpoint (e.g. VoxCeleb1 ECAPA). If you don't have one yet, train one first using the same config but with \texttt{--train\_list} pointing at VoxCeleb1 dev.
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+python trainSpeakerNet.py \
+    --config configs/ecapa_tdnn.yaml \
+    --nClasses $NCLASSES \
+    --train_list ... --test_list ... --train_path ... --test_path ... \
+    --musan_path ... --rir_path ... \
+    --save_path  exps/P1_ecapa_finetune_seed42 \
+    --seed 42 \
+    --deterministic \
+    --max_epoch 60 \
+    --initial_model $SL_SPV_DATA_ROOT/checkpoints/ecapa_voxceleb1.model \
+    --finetune \
+    --finetune_freeze frontend \
+    --finetune_lr_multiplier 0.1 \
+    --llrd --llrd_layer_pattern ecapa --llrd_decay 0.9
+\end{Verbatim}
+
+
+\textbf{What this tests:} does English-pretrained knowledge transfer to SL? FEATURE-004 freezes the front-end (preserves English acoustic features); FEATURE-005 applies layer-wise LR decay. Expected: 30--50 \% relative EER drop vs P0.
+
+\textbf{Hardware:} A40 or A10. Skip DDP --- fine-tune runs are shorter (\textasciitilde{}6 h). Run all 3 seeds in series on one machine.
+
+\section*{7. P2 --- Full feature stack}
+
+Every flag turned on. This is the headline number for the paper.
+
+Create \texttt{configs/sl\_full\_stack.yaml}:
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+# Inherits from ecapa_tdnn.yaml semantics; override the SL-specific paths
+model: ECAPA_TDNN
+nOut: 192
+channels: 1024
+n_mels: 80
+sample_rate: 16000
+log_input: true
+encoder_type: ASP
+
+augment: true
+batch_size: 200
+max_frames: 200
+eval_frames: 0
+nDataLoaderThread: 5
+max_seg_per_spk: 500
+seed: 42
+
+test_interval: 1
+trainfunc: aamsoftmax
+patience: 15
+max_epoch: 60
+
+optimizer: adam
+scheduler: steplr
+lr: 0.001
+lr_decay: 0.97
+weight_decay: 2e-5
+
+margin: 0.2
+scale: 30
+nPerSpeaker: 1
+
+initial_model: ${SL_SPV_DATA_ROOT}/checkpoints/ecapa_voxceleb1.model
+
+train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/train_list.txt
+test_list:  ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list.txt
+train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+test_path:  ${SL_SPV_DATA_ROOT}/sl_celeb
+musan_path: ${SL_SPV_DATA_ROOT}/musan
+rir_path:   ${SL_SPV_DATA_ROOT}/RIRS_NOISES/simulated_rirs
+
+mixedprec: true
+prefetch_factor: 2
+persistent_workers: true
+
+# ----- FEATURE-004 cross-lingual fine-tune -----
+finetune: true
+finetune_freeze: [frontend]
+finetune_lr_multiplier: 0.1
+
+# ----- FEATURE-005 layer-wise LR decay -----
+llrd: true
+llrd_decay: 0.9
+llrd_layer_pattern: ecapa
+
+# ----- FEATURE-007 language-ID multi-task head -----
+lang_aux: true
+lang_aux_weight: 0.3
+lang_aux_num_classes: 4
+lang_aux_label_file: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/spk_lang_lookup.txt
+
+# ----- FEATURE-003 per-language evaluation -----
+per_lang_test_lists:
+  si: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_si.txt
+  ta: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_ta.txt
+  cs: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/test_list_cs.txt
+
+# ----- FEATURE-002 AS-Norm -----
+as_norm: true
+as_norm_cohort_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/asnorm_cohort.txt
+as_norm_cohort_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+as_norm_top_k: 300
+
+# ----- FEATURE-010 PLDA scoring -----
+plda: true
+plda_train_list: ${SL_SPV_DATA_ROOT}/sl_celeb/lists/plda_train_list.txt
+plda_train_path: ${SL_SPV_DATA_ROOT}/sl_celeb
+plda_dim: 200
+
+save_path: exps/P2_full_stack_seed42
+
+deterministic: true
+distributed: false
+port: "8888"
+\end{Verbatim}
+
+
+Run:
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+python trainSpeakerNet.py --config configs/sl_full_stack.yaml --seed 42 --nClasses $NCLASSES
+\end{Verbatim}
+
+
+\textbf{What this tests:} every shipped lever working together. Expected: 40--60 \% relative EER drop vs P0.
+
+\textbf{Hardware:} A40 strongly preferred (PLDA fit + AS-Norm + per-lang eval triple-runs the eval pass; SSL configs additionally need 24+GB).
+
+\section*{8. Ablation matrix}
+
+Starting from P2, strip ONE feature at a time. Report the EER delta --- that's the per-feature contribution.
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|}
+\hline
+Tag & What changes vs P2 & Tests \\
+\hline
+\texttt{P2} & (full stack, all flags on) & headline \\
+\hline
+\texttt{P2 -finetune} & \texttt{finetune: false}, \texttt{initial\_model: ""} & importance of cross-lingual transfer (FEATURE-004) \\
+\hline
+\texttt{P2 -llrd} & \texttt{llrd: false} & importance of layer-wise LR (FEATURE-005) \\
+\hline
+\texttt{P2 -lang\_aux} & \texttt{lang\_aux: false} & importance of multi-task lang head (FEATURE-007) \\
+\hline
+\texttt{P2 -as\_norm} & \texttt{as\_norm: false} & importance of score normalisation (FEATURE-002) \\
+\hline
+\texttt{P2 -plda} & \texttt{plda: false} (falls back to cosine) & importance of PLDA backend (FEATURE-010) \\
+\hline
+\end{tabularx}
+\end{center}
+
+(Single-feature ablations only. Pairwise interactions are out of scope for the first paper; mention as future work.)
+
+Each ablation = one run with seed 42. Six ablations + the P2 reference = 7 runs.
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+# Example: -finetune ablation
+python trainSpeakerNet.py --config configs/sl_full_stack.yaml --seed 42 --nClasses $NCLASSES \
+    --no_finetune --initial_model "" \
+    --save_path exps/P2_minus_finetune_seed42
+\end{Verbatim}
+
+
+(The \texttt{--no\_finetune} flag negates the \texttt{store\_true} default. For YAML, set \texttt{finetune: false}.)
+
+\section*{9. Multi-seed statistical reporting}
+
+For the \textbf{primary configs only} (P0, P1, P2 --- three of them), run \textbf{three seeds}: 42, 123, 7. That's 9 runs total for the primary protocol; report \texttt{mean ± std}.
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+for SEED in 42 123 7; do
+    python trainSpeakerNet.py --config configs/sl_full_stack.yaml \
+        --seed $SEED \
+        --nClasses $NCLASSES \
+        --save_path exps/P2_full_stack_seed${SEED}
+done
+\end{Verbatim}
+
+
+For each primary config, after all 3 seeds finish, aggregate via:
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+# A tiny aggregator (drop into tools/ if you want it permanent)
+python - <<'PY'
+import re, statistics, glob
+for cfg in ['P0_ecapa_baseline', 'P1_ecapa_finetune', 'P2_full_stack']:
+    eers, dcfs = [], []
+    for path in sorted(glob.glob(f'exps/{cfg}_seed*/result/scores.txt')):
+        with open(path) as f:
+            best = max(re.findall(r'VEER ([\d.]+),.*MinDCF ([\d.]+)', f.read()),
+                       key=lambda t: -float(t[0]))  # lowest EER
+            eers.append(float(best[0])); dcfs.append(float(best[1]))
+    if eers:
+        print(f'{cfg:30s} EER = {statistics.mean(eers):.3f} ± {statistics.stdev(eers):.3f}'
+              f'  MinDCF = {statistics.mean(dcfs):.4f} ± {statistics.stdev(dcfs):.4f}')
+PY
+\end{Verbatim}
+
+
+\textbf{Bootstrap confidence intervals} for the headline EER (the journal-grade extra step): re-sample trial pairs with replacement, recompute EER, repeat 1000 times, take the 2.5\%/97.5\% quantiles. Drop this into \texttt{tools/bootstrap\_eer.py} when you write that script; for the first thesis pass, std-across-seeds is sufficient.
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\section*{Part 4 --- Outputs \& runtime}
+
+\section*{10. Output artefact inventory}
+
+Every run produces this under \texttt{exps/<save\_path>/}:
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+exps/<save_path>/
+├── model/
+│   ├── best.model             # lowest VEER checkpoint
+│   ├── best.eer               # the value
+│   ├── best_threshold.txt     # EER-point threshold
+│   ├── model000000010.model   # per-epoch checkpoints
+│   └── ...
+├── result/
+│   ├── scores.txt             # per-epoch VEER / MinDCF / RawVEER (FEATURE-002)
+│   ├── run<timestamp>.zip     # snapshot of all *.py at training time
+│   └── run<timestamp>.cmd     # exact argparse Namespace
+├── tb/                        # TensorBoard logs
+├── asnorm_cohort.pt           # FEATURE-002 cohort cache (when --as_norm on)
+├── plda.pkl                   # FEATURE-010 PLDA cache (when --plda on)
+└── eval_feats_tmp/            # FEATURE-018 streaming eval (when --eval_streaming on)
+\end{Verbatim}
+
+
+For paper-grade reproducibility, the artefacts you need are: \textbf{\texttt{model/best.model}} + \textbf{\texttt{result/run<timestamp>.cmd}} + \textbf{\texttt{speakers.csv}} + \textbf{the corpus prep \texttt{--seed}}.
+
+\section*{11. Master script template}
+
+A single script you can dispatch across your three machines. Save as \texttt{tools/run\_all\_protocol.sh}:
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+#!/usr/bin/env bash
+set -euo pipefail
+source paths.env
+NCLASSES=$(awk -F, 'END{print NR-1}' $SL_SPV_DATA_ROOT/sl_celeb/lists/speakers.csv)
+SEEDS=(42 123 7)
+
+# ---- Primary configs × 3 seeds -----------------------------------
+for SEED in "${SEEDS[@]}"; do
+  python trainSpeakerNet.py --config configs/ecapa_tdnn.yaml \
+    --seed $SEED --nClasses $NCLASSES --deterministic \
+    --save_path exps/P0_ecapa_baseline_seed${SEED}
+
+  python trainSpeakerNet.py --config configs/ecapa_tdnn.yaml \
+    --seed $SEED --nClasses $NCLASSES --deterministic \
+    --initial_model $SL_SPV_DATA_ROOT/checkpoints/ecapa_voxceleb1.model \
+    --finetune --finetune_freeze frontend --finetune_lr_multiplier 0.1 \
+    --llrd --llrd_layer_pattern ecapa --llrd_decay 0.9 \
+    --save_path exps/P1_ecapa_finetune_seed${SEED}
+
+  python trainSpeakerNet.py --config configs/sl_full_stack.yaml \
+    --seed $SEED --nClasses $NCLASSES \
+    --save_path exps/P2_full_stack_seed${SEED}
+done
+
+# ---- Ablations (seed 42 only) ------------------------------------
+for ABLATE in finetune llrd lang_aux as_norm plda; do
+  python trainSpeakerNet.py --config configs/sl_full_stack.yaml \
+    --seed 42 --nClasses $NCLASSES \
+    --no_${ABLATE} \
+    --save_path exps/P2_minus_${ABLATE}_seed42
+done
+
+echo "All protocol runs complete. Aggregate with tools/aggregate_seeds.py."
+\end{Verbatim}
+
+
+\textbf{Dispatch suggestion:} A40 runs P2 (heaviest); T4-pair runs P0 (DDP across both); A10 runs P1 + the 5 ablations in series. Total wall-clock budget: \textasciitilde{}3--5 days for the primary 9 runs; +1.5 days for ablations.
+
+\section*{12. Expected runtime per machine}
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|Y|}
+\hline
+Run & A40 & 2$\times$ T4 (DDP) & A10 \\
+\hline
+P0 ECAPA from scratch (80 epoch) & \textasciitilde{}6 h & \textasciitilde{}13 h & \textasciitilde{}9 h \\
+\hline
+P1 fine-tune (60 epoch) & \textasciitilde{}3 h & \textasciitilde{}7 h & \textasciitilde{}5 h \\
+\hline
+P2 full stack (60 epoch) --- heaviest (PLDA fit + per-lang $\times$ 3 eval) & \textasciitilde{}4 h & \textasciitilde{}9 h & \textasciitilde{}6 h \\
+\hline
+One ablation (60 epoch) & \textasciitilde{}3 h & \textasciitilde{}7 h & \textasciitilde{}5 h \\
+\hline
+\end{tabularx}
+\end{center}
+
+Numbers assume \texttt{batch\_size=200}, \texttt{max\_frames=200}, 80 mel filterbanks, ECAPA-TDNN-Large. Halve runtime by switching to \texttt{channels: 512} (ECAPA-Small) if compute-bound --- EER usually 0.5--1.5 \% worse.
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\section*{Part 5 --- Writing it up}
+
+\section*{13. Methods section template (LaTeX)}
+
+Drop this into your thesis Methods chapter / journal paper §3. Replace bracketed values after the runs finish.
+
+\begin{quote}
+\textbf{Note:} Introduction and Related Work chapter templates live separately under \href{thesis_chapters/}{\texttt{thesis\_chapters/}}. See \href{thesis_chapters/README.md}{\texttt{thesis\_chapters/README.md}} for the file layout and assembly instructions.
+\end{quote}
+
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+\section{Methods}
+\label{sec:methods}
+
+\subsection{Corpus}
+\label{ssec:corpus}
+The SL-SPV corpus comprises [N=100] speakers of Sinhala (n=[60])
+and Tamil (n=[40]) sourced from [your sources]. All recordings are mono
+16~kHz; the median utterance duration is [X]~s. We hold out 20\% of
+each speaker's utterances for evaluation (see Section~\ref{ssec:trials});
+the remaining 80\% form the training set ([M] utterances).
+
+\subsection{Trial construction}
+\label{ssec:trials}
+We construct verification trials at three operating points: monolingual
+Sinhala (test\_list\_si.txt; 1{,}000 target + 1{,}000 impostor pairs),
+monolingual Tamil (1{,}000 + 1{,}000), and cross-lingual
+(enrolment in one language, test in the other; [K] target +
+[K] impostor pairs for speakers present in both languages).
+Pair sampling is reproducible from a fixed random seed
+(\texttt{tools/sl\_dataprep.py --seed 42}).
+
+\subsection{Architecture}
+\label{ssec:arch}
+The speaker encoder is ECAPA-TDNN \cite{desplanques2020ecapa} with
+$C=1024$ channels, 80 log-mel filterbanks, embedding dimension 192,
+and channel-attentive statistical pooling. The training loss is
+additive-angular-margin softmax (AAM-Softmax) \cite{deng2019arcface}
+with margin 0.2 and scale 30. We use the open-source
+voxceleb\_trainer codebase \cite{slspv2026repo} extended with the
+features described below.
+
+\subsection{Cross-lingual transfer}
+\label{ssec:transfer}
+We initialise from an ECAPA-TDNN checkpoint trained on VoxCeleb1
+\cite{nagrani2017voxceleb} ([N=1{,}251] English speakers,
+[N=148{,}642] utterances). During fine-tuning the mel front-end
+(\texttt{torchfb}, \texttt{instancenorm}) is frozen
+(FEATURE-004), the learning rate is scaled by 0.1, and layer-wise
+LR decay (FEATURE-005) with $\gamma=0.9$ is applied across the four
+ECAPA layers (configured via the \texttt{ecapa} layer-pattern alias).
+
+\subsection{Multi-task language-ID head}
+\label{ssec:langaux}
+A linear head $W_{\mathrm{aux}}\in\mathbb{R}^{4\times 192}$ predicts
+the utterance's primary language (si / ta / en / mix) from the
+speaker embedding (FEATURE-007). Total loss:
+$\mathcal{L}_{\mathrm{total}}=\mathcal{L}_{\mathrm{speaker}}+
+\lambda\,\mathcal{L}_{\mathrm{lang}}$, with $\lambda=0.3$.
+
+\subsection{Score backends}
+\label{ssec:scoring}
+We compare three eval-time scoring backends: (i) cosine distance on
+length-normalised embeddings; (ii) two-covariance PLDA
+\cite{sizov2014unifying} (FEATURE-010, $d_{\mathrm{LDA}}=200$);
+and (iii) adaptive symmetric score normalisation (AS-Norm)
+\cite{matejka2017analysis} (FEATURE-002, top-$K=300$, cohort of
+500 in-domain impostors) on top of either backend.
+
+\subsection{Per-language evaluation}
+\label{ssec:perlang}
+EER and MinDCF \cite{nist2008sre} are reported per language and as a
+pooled cross-trial number (FEATURE-003).
+
+\subsection{Reproducibility}
+\label{ssec:repro}
+All experiments use the \texttt{--deterministic} switch (BUGFIX-017),
+which sets the cuDNN deterministic flag, disables TF32, and enables
+\texttt{torch.use\_deterministic\_algorithms}. Primary configurations
+are run with three random seeds (42, 123, 7); we report
+$\mathrm{mean}\pm\mathrm{std}$.
+\end{Verbatim}
+
+
+\section*{14. Results tables (LaTeX templates)}
+
+\subsection*{Headline table}
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+\begin{table}[t]
+\centering
+\caption{Speaker-verification performance on the SL-SPV evaluation set.
+Lower is better. Pooled = concatenation of Sinhala, Tamil, and
+cross-lingual trials. Numbers are $\mathrm{mean}\pm\mathrm{std}$ over
+three random seeds (42, 123, 7).}
+\label{tab:headline}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Config} & \multicolumn{4}{c}{\textbf{EER \% (Pooled / Si / Ta / Cs)}} \\
+\midrule
+P0 ECAPA-TDNN from scratch         & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] \\
+P1 + cross-lingual fine-tune       & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] & [X.X $\pm$ Y.Y] \\
+P2 full stack (ours)               & \textbf{[X.X $\pm$ Y.Y]} & \textbf{[X.X $\pm$ Y.Y]} & \textbf{[X.X $\pm$ Y.Y]} & \textbf{[X.X $\pm$ Y.Y]} \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{Verbatim}
+
+
+\subsection*{Ablation table}
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+\begin{table}[t]
+\centering
+\caption{Single-feature ablations on the SL-SPV evaluation set.
+Numbers are pooled EER (\%) with seed 42; $\Delta$ = increase in EER
+when the named feature is removed from the full stack (P2).}
+\label{tab:ablation}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Ablation} & \textbf{Pooled EER \%} & $\boldsymbol{\Delta}$ \\
+\midrule
+P2 (all features)              & [X.X] & 0 \\
+\midrule
+$-$ FEATURE-004 fine-tune      & [X.X] & $+$[Y.Y] \\
+$-$ FEATURE-005 LLRD           & [X.X] & $+$[Y.Y] \\
+$-$ FEATURE-007 lang-aux       & [X.X] & $+$[Y.Y] \\
+$-$ FEATURE-002 AS-Norm        & [X.X] & $+$[Y.Y] \\
+$-$ FEATURE-010 PLDA           & [X.X] & $+$[Y.Y] \\
+\bottomrule
+\end{tabular}
+\end{table}
+\end{Verbatim}
+
+
+\section*{15. Reproducibility checklist}
+
+Tick every box before submitting. Each maps to something the trainer / docs already provide:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item [ ] \textbf{Code is open-source.} The repo \texttt{voxceleb\_trainer} (this fork) is on GitHub at the commit-hash recorded in \texttt{result/run*.zip}.
+  \item [ ] \textbf{All hyperparameters in YAML.} No CLI-only flags in the protocol; every choice in \texttt{configs/sl\_full\_stack.yaml}.
+  \item [ ] \textbf{Seeds reported.} Three seeds (42, 123, 7) for primary configs; one (42) for ablations. Both \texttt{--seed} and \texttt{--deterministic} (BUGFIX-017).
+  \item [ ] \textbf{Software versions pinned.} \texttt{requirements.txt} + the \texttt{transformers>=4.30,<5} constraint for FEATURE-001. Record \texttt{torch.\_\_version\_\_} and \texttt{cuda} toolkit version in the methods section.
+  \item [ ] \textbf{Hardware reported.} Specify GPUs used (A40 / 2$\times$ T4 / A10) per primary config.
+  \item [ ] \textbf{Corpus prep deterministic.} \texttt{tools/sl\_dataprep.py --seed 42} produces identical lists.
+  \item [ ] \textbf{All artefacts saved.} \texttt{model/best.model}, \texttt{result/run<timestamp>.cmd}, \texttt{result/run<timestamp>.zip}, \texttt{speakers.csv}, \texttt{asnorm\_cohort.pt}, \texttt{plda.pkl} --- every file other practitioners need to reproduce.
+  \item [ ] \textbf{Trial pairs published.} \texttt{test\_list\_*.txt} files committed to a public dataset card (Zenodo, HuggingFace Datasets).
+  \item [ ] \textbf{Ablation included.} Single-feature ablation table demonstrates each contribution is real.
+  \item [ ] \textbf{Statistical claims supported.} Headline numbers reported as \$\textbackslash\{\}mathrm\{mean\}\textbackslash\{\}pm\textbackslash\{\}mathrm\{std\}\$ over 3 seeds.
+\end{itemize}
+
+\section*{16. Citation block}
+
+Paste this into your \texttt{.bib}:
+
+
+\begin{Verbatim}[fontsize=\small,frame=single,framesep=4pt]
+@misc{slspv2026repo,
+  title  = {SL-SPV: a low-resource Sinhala/Tamil speaker-verification toolkit
+            built on {voxceleb\_trainer}},
+  author = {[Your Name]},
+  year   = {2026},
+  url    = {https://github.com/[user]/voxceleb_trainer-SL-SPV},
+  note   = {Commit [HASH] at time of paper submission.}
+}
+
+@inproceedings{desplanques2020ecapa,
+  title     = {{ECAPA-TDNN}: Emphasized Channel Attention, Propagation and
+               Aggregation in {TDNN} Based Speaker Verification},
+  author    = {Desplanques, Brecht and Thienpondt, Jenthe and Demuynck, Kris},
+  booktitle = {Interspeech},
+  year      = {2020},
+}
+
+@inproceedings{deng2019arcface,
+  title     = {{ArcFace}: Additive Angular Margin Loss for Deep Face Recognition},
+  author    = {Deng, Jiankang and Guo, Jia and Xue, Niannan and Zafeiriou, Stefanos},
+  booktitle = {CVPR},
+  year      = {2019},
+}
+
+@inproceedings{matejka2017analysis,
+  title     = {Analysis of Score Normalization in Multilingual Speaker Recognition},
+  author    = {Matejka, Pavel and others},
+  booktitle = {Interspeech},
+  year      = {2017},
+}
+
+@inproceedings{sizov2014unifying,
+  title     = {Unifying Probabilistic Linear Discriminant Analysis Variants in
+               Biometric Authentication},
+  author    = {Sizov, Aleksandr and Lee, Kong Aik and Kinnunen, Tomi},
+  booktitle = {S+SSPR},
+  year      = {2014},
+}
+
+@inproceedings{nagrani2017voxceleb,
+  title     = {VoxCeleb: A Large-Scale Speaker Identification Dataset},
+  author    = {Nagrani, Arsha and Chung, Joon Son and Zisserman, Andrew},
+  booktitle = {Interspeech},
+  year      = {2017},
+}
+
+@inproceedings{ganin2015dann,
+  title     = {Unsupervised Domain Adaptation by Backpropagation},
+  author    = {Ganin, Yaroslav and Lempitsky, Victor},
+  booktitle = {ICML},
+  year      = {2015},
+}
+
+@inproceedings{baevski2020wav2vec2,
+  title     = {wav2vec 2.0: A Framework for Self-Supervised Learning of Speech
+               Representations},
+  author    = {Baevski, Alexei and Zhou, Henry and Mohamed, Abdelrahman and Auli, Michael},
+  booktitle = {NeurIPS},
+  year      = {2020},
+}
+
+@article{chen2022wavlm,
+  title   = {{WavLM}: Large-Scale Self-Supervised Pre-Training for Full Stack
+             Speech Processing},
+  author  = {Chen, Sanyuan and others},
+  journal = {IEEE Journal of Selected Topics in Signal Processing},
+  year    = {2022},
+}
+\end{Verbatim}
+
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\section*{Appendices}
+
+\section*{Appendix A --- Feature-by-feature flag reference}
+
+Quick map from analysis-doc item to the trainer flag(s) and the bugfix/feature doc:
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|}
+\hline
+Item & Doc & Trainer flags \\
+\hline
+§3.1 \#1 cross-lingual fine-tune & \href{docs/bugfixes/FEATURE-004-cross-lingual-finetune.md}{FEATURE-004} & \texttt{--finetune}, \texttt{--finetune\_freeze}, \texttt{--finetune\_lr\_multiplier}, \texttt{--initial\_model} \\
+\hline
+§3.1 \#1 LLRD & \href{docs/bugfixes/FEATURE-005-llrd.md}{FEATURE-005} & \texttt{--llrd}, \texttt{--llrd\_decay}, \texttt{--llrd\_layer\_pattern} \\
+\hline
+§3.1 \#2 learnable language-aware front-end & \href{docs/bugfixes/FEATURE-001-language-aware-frontend.md}{FEATURE-001} & \texttt{--model SSLFrontendSpeaker}, \texttt{--ssl\_encoder\_name}, \texttt{--ssl\_freeze}/\texttt{--no\_ssl\_freeze}, \texttt{--ssl\_layer} \\
+\hline
+§3.1 \#3 AS-Norm & \href{docs/bugfixes/FEATURE-002-as-norm-score-normalisation.md}{FEATURE-002} & \texttt{--as\_norm}, \texttt{--as\_norm\_cohort\_list}, \texttt{--as\_norm\_cohort\_path}, \texttt{--as\_norm\_top\_k} \\
+\hline
+§3.1 \#4 per-lang threshold & \href{docs/bugfixes/FEATURE-003-per-language-eval.md}{FEATURE-003} & \texttt{--per\_lang\_test\_lists} \\
+\hline
+§3.2 \#6 ECAPA-TDNN & \href{docs/bugfixes/FEATURE-006-ecapa-tdnn.md}{FEATURE-006} & \texttt{--model ECAPA\_TDNN}, \texttt{--channels}, \texttt{--n\_mels} \\
+\hline
+§3.2 \#7 lang-aux head & \href{docs/bugfixes/FEATURE-007-lang-aux-head.md}{FEATURE-007} & \texttt{--lang\_aux}, \texttt{--lang\_aux\_weight}, \texttt{--lang\_aux\_label\_file} \\
+\hline
+§3.3 \#11 DANN & \href{docs/bugfixes/FEATURE-008-dann-adversarial.md}{FEATURE-008} & \texttt{--dann\_lang}, \texttt{--dann\_channel}, \texttt{--dann\_lang\_lambda}, ... \\
+\hline
+§3.3 \#12 SSL pretraining (deferred) & \href{docs/bugfixes/FEATURE-009-ssl-pretraining.md}{FEATURE-009} & (no code yet --- design doc only) \\
+\hline
+§3.3 \#13 PLDA & \href{docs/bugfixes/FEATURE-010-plda-scoring.md}{FEATURE-010} & \texttt{--plda}, \texttt{--plda\_train\_list}, \texttt{--plda\_dim} \\
+\hline
+§4.2 \#12 corpus prep & \href{docs/bugfixes/FEATURE-011-sl-dataprep.md}{FEATURE-011} & \texttt{tools/sl\_dataprep.py} \\
+\hline
+\end{tabularx}
+\end{center}
+
+\section*{Appendix B --- Troubleshooting}
+
+\textbf{Out of memory on T4 (16GB)} during ECAPA-TDNN training:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Drop \texttt{batch\_size} from 200 $\rightarrow$ 128.
+  \item Drop \texttt{channels: 1024} $\rightarrow$ \texttt{channels: 512} (ECAPA-Small) for \textasciitilde{}3 GB less memory.
+  \item Ensure \texttt{mixedprec: true} is set (already in \texttt{configs/ecapa\_tdnn.yaml}).
+\end{itemize}
+
+\textbf{\texttt{CUDA error: device-side assert triggered}} during training with lang\_aux/dann:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item The \texttt{lang\_label} in \texttt{spk\_lang\_lookup.txt} is out of range. The lookup loader validates this and raises with a line number --- re-check.
+\end{itemize}
+
+\textbf{\texttt{PLDA fit needs >= 2*lda\_dim speakers}} error from \texttt{\_setup\_plda}:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Reduce \texttt{plda\_dim}. With 100 speakers, max \texttt{plda\_dim = 50}. For full PLDA performance, use a larger PLDA-train set (e.g. include English VoxCeleb1 speakers in \texttt{plda\_train\_list.txt}).
+\end{itemize}
+
+\textbf{Per-language EER for \texttt{cs} is 0\% or undefined}:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Cross-lingual trial list is empty because no speaker exists in both languages. Either provide cross-lingual recordings of the same speaker, or remove \texttt{cs:} from \texttt{per\_lang\_test\_lists} (the trainer will still produce pooled + monolingual numbers).
+\end{itemize}
+
+\textbf{\texttt{ssl\_freeze: true} config not honoured under \texttt{lang\_aux: true}}:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item These are separate flags; \texttt{lang\_aux\_head} is NOT under \texttt{\_\_L\_\_} so the loss-head freeze doesn't apply to it. Use FEATURE-004's \texttt{finetune\_freeze: [module.lang\_aux\_head]} to freeze it explicitly.
+\end{itemize}
+
+\textbf{Reproducibility check failing on T4}:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item TF32 must be disabled (\texttt{--deterministic} does this). Also disable cuDNN benchmark with \texttt{torch.backends.cudnn.benchmark = False} (BUGFIX-017 does it). T4 + Turing should be bit-exact with these flags.
+\end{itemize}
+
+\section*{Appendix C --- Expected EER ranges (sanity guidance)}
+
+These are \textit{order-of-magnitude} expectations for 100-speaker SL data, not promises. If your numbers are way off, something's wrong with the corpus or the pipeline.
+
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|Y|Y|Y|}
+\hline
+Config & Pooled EER expected range & Notes \\
+\hline
+P0 ECAPA from scratch & 8 \% -- 20 \% & Highly dependent on utterance count per speaker. If <50 utts/spk, expect upper end. \\
+\hline
+P0 ResNetSE34L baseline & 12 \% -- 25 \% & ECAPA outperforms ResNetSE34L by 2--4 \% EER on this corpus size (§3.2 \#6 estimate). \\
+\hline
+P1 fine-tune (frontend frozen) & 5 \% -- 12 \% & 30--50 \% relative drop vs P0 if the English checkpoint is reasonable. \\
+\hline
+P2 full stack & 3 \% -- 8 \% & 40--60 \% relative drop vs P0. AS-Norm + PLDA + lang-aux compound. \\
+\hline
+P2 with FEATURE-001 (SSL frontend instead of ECAPA mel) & 2 \% -- 6 \% & If your encoder is mHuBERT-147 (best multilingual coverage for SL). Higher cost. \\
+\hline
+\end{tabularx}
+\end{center}
+
+\textbf{Red flags}:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item P0 < 3 \%: probably trial-pair leakage. Re-check the prep \texttt{--seed} and verify enrolment/test utterances don't overlap.
+  \item P2 $\geq$ P0: a feature is broken. Single-feature ablation will isolate.
+  \item Per-lang EER asymmetric (si >>= ta or vice-versa): expected if your corpus is unbalanced; \textit{not} a bug. Worth a sentence in the discussion.
+\end{itemize}
+
+\vspace{0.5em}\hrule\vspace{0.5em}
+
+\textbf{End of guide.} If you find a section that doesn't match what the trainer actually does at the time of your run, the trainer is right; file an issue and update this guide.
+
+\end{document}
