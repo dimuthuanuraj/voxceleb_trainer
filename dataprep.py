@@ -6,7 +6,6 @@
 import argparse
 import os
 import subprocess
-import pdb
 import hashlib
 import time
 import glob
@@ -62,7 +61,12 @@ def download(args, lines):
         if md5ck == md5gt:
             print('Checksum successful %s.'%outfile)
         else:
-            raise Warning('Checksum failed %s.'%outfile)
+            # BUGFIX-023: was `raise Warning(...)` — Warning is a subclass of
+            # Exception so this WAS fatal, just misleadingly named. A corrupt
+            # download must abort the pipeline (proceeding would extract
+            # garbage into the train tree). Matches the ValueError convention
+            # used by the neighbouring download / conversion failure paths.
+            raise ValueError('Checksum failed %s. Expected MD5 %s, got %s.'%(outfile, md5gt, md5ck))
 
 ## ========== ===========
 ## Concatenate file parts
@@ -82,7 +86,10 @@ def concatenate(args,lines):
         if md5ck == md5gt:
             print('Checksum successful %s.'%outfile)
         else:
-            raise Warning('Checksum failed %s.'%outfile)
+            # BUGFIX-023: see download() for rationale. Crucially, do NOT
+            # delete the source parts on a checksum failure (the rm below);
+            # the operator may want to re-concatenate or inspect them.
+            raise ValueError('Checksum failed %s. Expected MD5 %s, got %s.'%(outfile, md5gt, md5ck))
 
         out     = subprocess.call('rm %s/%s' %(args.save_path,infile), shell=True)
 
@@ -127,8 +134,6 @@ def part_extract(args, fname, target):
         for infile in zf.namelist():
             if any([infile.startswith(x) for x in target]):
                 zf.extract(infile,args.save_path)
-            # pdb.set_trace()
-            # zf.extractall(args.save_path)
 
 ## ========== ===========
 ## Convert
