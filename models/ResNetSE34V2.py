@@ -7,18 +7,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 from models.ResNetBlocks import *
-from utils import PreEmphasis
+from models._frontend import make_mel_frontend  # BUGFIX-025
 
 class ResNetSE(nn.Module):
-    def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP', n_mels=40, log_input=True, **kwargs):
+    def __init__(self, block, layers, num_filters, nOut, encoder_type='SAP', n_mels=40, log_input=True, sample_rate=16000, **kwargs):
         super(ResNetSE, self).__init__()
 
         print('Embedding size is %d, encoder %s.'%(nOut, encoder_type))
-        
+
         self.inplanes   = num_filters[0]
         self.encoder_type = encoder_type
         self.n_mels     = n_mels
         self.log_input  = log_input
+        self.sample_rate = sample_rate
 
         self.conv1 = nn.Conv2d(1, num_filters[0] , kernel_size=3, stride=1, padding=1)
         self.relu = nn.ReLU(inplace=True)
@@ -30,11 +31,14 @@ class ResNetSE(nn.Module):
         self.layer3 = self._make_layer(block, num_filters[2], layers[2], stride=(2, 2))
         self.layer4 = self._make_layer(block, num_filters[3], layers[3], stride=(2, 2))
 
-        self.instancenorm   = nn.InstanceNorm1d(n_mels)
-        self.torchfb        = torch.nn.Sequential(
-                PreEmphasis(),
-                torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=512, win_length=400, hop_length=160, window_fn=torch.hamming_window, n_mels=n_mels)
-                )
+        # BUGFIX-025: PreEmphasis + mel + instance-norm frontend pulled
+        # to models/_frontend.py. pre_emphasis=True wraps the mel in a
+        # Sequential exactly as before so the state_dict layout
+        # (torchfb.0.flipped_filter, torchfb.1.spectrogram.window, ...)
+        # is byte-identical and existing checkpoints load unchanged.
+        self.torchfb, self.instancenorm = make_mel_frontend(
+            sample_rate=sample_rate, n_mels=n_mels, pre_emphasis=True,
+        )
 
         outmap_size = int(self.n_mels/8)
 

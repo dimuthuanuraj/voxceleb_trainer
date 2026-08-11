@@ -19,20 +19,19 @@ def accuracy(output, target, topk=(1,)):
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
 
-class PreEmphasis(torch.nn.Module):
+from models._frontend import PreEmphasis as _CanonicalPreEmphasis
 
-    def __init__(self, coef: float = 0.97):
-        super().__init__()
-        self.coef = coef
-        # make kernel
-        # In pytorch, the convolution operation uses cross-correlation. So, filter is flipped.
-        self.register_buffer(
-            'flipped_filter', torch.FloatTensor([-self.coef, 1.]).unsqueeze(0).unsqueeze(0)
-        )
 
-    def forward(self, input: torch.tensor) -> torch.tensor:
-        assert len(input.size()) == 2, 'The number of dimensions of input tensor must be 2!'
-        # reflect padding to match lengths of in/out
-        input = input.unsqueeze(1)
-        input = F.pad(input, (1, 0), 'reflect')
-        return F.conv1d(input, self.flipped_filter).squeeze(1)
+class PreEmphasis(_CanonicalPreEmphasis):
+    """Backwards-compatibility alias for :class:`models._frontend.PreEmphasis`.
+
+    This class is preserved (rather than removed) so existing imports —
+    ``from utils import PreEmphasis`` in ``models/ResNetSE34V2.py`` and
+    anywhere else — keep working. The historical behaviour (output
+    shape ``(B, T)`` via ``.squeeze(1)``) is pinned via the default
+    ``squeeze=True`` on the canonical class.
+
+    New code should import directly from :mod:`models._frontend`.
+    See ``docs/bugfixes/BUGFIX-025-shared-audio-frontend.md``.
+    """
+    pass
