@@ -111,7 +111,10 @@ class TeacherModelWrapper(nn.Module):
         
         # Load pre-trained weights
         if os.path.exists(checkpoint_path):
-            state_dict = torch.load(checkpoint_path, map_location='cpu')
+            # BUGFIX-019: weights_only=True blocks pickle-based RCE on the
+            # teacher checkpoint, which is the most likely path for an
+            # externally-sourced model file in this codebase.
+            state_dict = torch.load(checkpoint_path, map_location='cpu', weights_only=True)
             
             # Handle different checkpoint formats
             if 'model' in state_dict:
@@ -203,7 +206,17 @@ class DistillationSpeakerNet(nn.Module):
             )
         
         self.nPerSpeaker = nPerSpeaker
-        
+
+        # Resolve target device once at construction; honours kwargs['gpu'] from
+        # main_worker, falls back to current CUDA device, or CPU.
+        gpu = kwargs.get("gpu", None)
+        if gpu is not None and torch.cuda.is_available():
+            self.device = torch.device("cuda", int(gpu))
+        elif torch.cuda.is_available():
+            self.device = torch.device("cuda")
+        else:
+            self.device = torch.device("cpu")
+
         # Print summary
         student_params = sum(p.numel() for p in self.__S__.parameters())
         print(f'\nStudent parameters: {student_params:,}')
@@ -229,8 +242,8 @@ class DistillationSpeakerNet(nn.Module):
         if data.dim() == 3:
             data = data.reshape(-1, data.size()[-1])
         
-        data = data.cuda(non_blocking=True)
-        
+        data = data.to(self.device, non_blocking=True)
+
         # Student forward pass
         student_output = self.__S__.forward(data)
         
@@ -239,32 +252,39 @@ class DistillationSpeakerNet(nn.Module):
             return student_output
         
         # Training mode
-        # Reshape for classification loss
-        student_output_reshaped = student_output.reshape(
+        # Grouped form (B, nPerSpeaker, D); squeeze keeps prior behaviour for P=1.
+        student_grouped = student_output.reshape(
             self.nPerSpeaker, -1, student_output.size()[-1]
         ).transpose(1, 0).squeeze(1)
-        
-        # Classification loss
-        classification_loss, prec1 = self.__L__.forward(student_output_reshaped, label)
-        
-        # Distillation loss (if teacher exists)
+
+        # Classification loss: dispatch on whether the loss consumes grouped or flat input.
+        if getattr(self.__L__, "expects_grouped_input", False):
+            classification_loss, prec1 = self.__L__.forward(student_grouped, label)
+        else:
+            if student_grouped.dim() == 3:
+                # nPerSpeaker > 1 + classification loss: flatten + replicate labels.
+                clf_input = student_grouped.reshape(-1, student_grouped.size(-1))
+                clf_label = label.repeat_interleave(self.nPerSpeaker)
+            else:
+                clf_input, clf_label = student_grouped, label
+            classification_loss, prec1 = self.__L__.forward(clf_input, clf_label)
+
+        # Distillation loss (if teacher exists). Teacher/student kept in the same
+        # grouped form they used before, so distillation behaviour is unchanged.
         if self.use_distillation and self.training:
-            # Teacher forward pass (no gradients)
             with torch.no_grad():
                 teacher_output = self.__T__.forward(data)
-            
-            # Reshape teacher output to match student
-            teacher_output_reshaped = teacher_output.reshape(
+
+            teacher_grouped = teacher_output.reshape(
                 self.nPerSpeaker, -1, teacher_output.size()[-1]
             ).transpose(1, 0).squeeze(1)
-            
-            # Combined loss
+
             total_loss, distillation_loss_value = self.__D__.forward(
-                student_output_reshaped,
-                teacher_output_reshaped,
+                student_grouped,
+                teacher_grouped,
                 classification_loss
             )
-            
+
             return total_loss, prec1, distillation_loss_value
         else:
             # No distillation - return classification loss only

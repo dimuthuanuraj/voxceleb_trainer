@@ -25,12 +25,27 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy, sys, random
 import time, itertools, importlib
+import os, hashlib, functools  # BUGFIX-018: streaming evaluation
 
 from DatasetLoader import test_dataset_loader
 from torch.cuda.amp import autocast, GradScaler
 
 # Import distillation wrapper
 from DistillationWrapper import DistillationSpeakerNet
+
+
+def _resolve_device(gpu):
+    """Resolve a torch.device from a (possibly None) GPU index.
+
+    - int + CUDA available -> cuda:<gpu>
+    - None + CUDA available -> cuda (current device, typically set by main_worker)
+    - otherwise              -> cpu
+    """
+    if gpu is not None and torch.cuda.is_available():
+        return torch.device("cuda", int(gpu))
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    return torch.device("cpu")
 
 
 class WrappedModel(nn.Module):
@@ -97,6 +112,7 @@ class SpeakerNet(nn.Module):
 
             self.nPerSpeaker = nPerSpeaker
             self.use_distillation = False
+            self.device = _resolve_device(kwargs.get("gpu", None))
 
     def forward(self, data, label=None):
         """
@@ -113,17 +129,23 @@ class SpeakerNet(nn.Module):
             # OPTIMIZATION: Avoid unnecessary reshape if already correct shape
             if data.dim() == 3:
                 data = data.reshape(-1, data.size()[-1])
-            
-            data = data.cuda(non_blocking=True)  # OPTIMIZATION: Non-blocking transfer
+
+            data = data.to(self.device, non_blocking=True)
             outp = self.__S__.forward(data)
 
             if label == None:
                 return outp
 
-            else:
-                outp = outp.reshape(self.nPerSpeaker, -1, outp.size()[-1]).transpose(1, 0).squeeze(1)
+            outp = outp.reshape(self.nPerSpeaker, -1, outp.size()[-1]).transpose(1, 0)
+
+            if getattr(self.__L__, "expects_grouped_input", False):
                 nloss, prec1 = self.__L__.forward(outp, label)
-                return nloss, prec1
+            else:
+                outp = outp.reshape(-1, outp.size(-1))
+                label = label.repeat_interleave(self.nPerSpeaker)
+                nloss, prec1 = self.__L__.forward(outp, label)
+
+            return nloss, prec1
 
 
 class ModelTrainer(object):
@@ -147,6 +169,7 @@ class ModelTrainer(object):
         )
 
         self.gpu = gpu
+        self.device = _resolve_device(gpu)
 
         self.mixedprec = mixedprec
 
@@ -176,7 +199,7 @@ class ModelTrainer(object):
             data = data.transpose(1, 0)
 
             # OPTIMIZATION: Move label to GPU with non_blocking
-            label = torch.LongTensor(data_label).cuda(non_blocking=True)
+            label = torch.LongTensor(data_label).to(self.device, non_blocking=True)
 
             # OPTIMIZATION: Mixed precision with gradient accumulation
             if self.mixedprec:
@@ -263,8 +286,24 @@ class ModelTrainer(object):
 
         lines = []
         files = []
-        feats = {}
+        feats = {}                  # only populated when not streaming
+        stream_keys = set()         # only populated when streaming
         tstart = time.time()
+
+        # BUGFIX-018: streaming evaluation. See SpeakerNet.evaluateFromList
+        # and docs/bugfixes/BUGFIX-018 for the full rationale.
+        eval_streaming = bool(kwargs.get('eval_streaming', False))
+        eval_feat_cache_size = int(kwargs.get('eval_feat_cache_size', 4096))
+        if eval_streaming:
+            feat_dir = os.path.join(kwargs.get('save_path', '.'), 'eval_feats_tmp')
+            os.makedirs(feat_dir, exist_ok=True)
+            def _feat_path(filename):
+                return os.path.join(feat_dir, hashlib.sha1(filename.encode()).hexdigest() + '.pt')
+            @functools.lru_cache(maxsize=eval_feat_cache_size)
+            def _load_feat(filename):
+                # BUGFIX-019: weights_only=True; we wrote these files
+                # ourselves moments earlier as pure torch.Tensor pickles.
+                return torch.load(_feat_path(filename), map_location='cpu', weights_only=True)
 
         ## Read all lines
         with open(test_list) as f:
@@ -305,7 +344,7 @@ class ModelTrainer(object):
 
         ## Extract features for every batch
         for idx, data in enumerate(test_loader):
-            inp1 = data[0].cuda(non_blocking=True)  # OPTIMIZATION: Non-blocking transfer (batch now)
+            inp1 = data[0].to(self.device, non_blocking=True)
             
             # OPTIMIZATION: Use inference mode instead of no_grad for better performance
             with torch.inference_mode():
@@ -315,7 +354,12 @@ class ModelTrainer(object):
             for batch_idx in range(ref_feat.size(0)):
                 file_idx = idx * eval_batch_size + batch_idx
                 if file_idx < len(setfiles):
-                    feats[setfiles[file_idx]] = ref_feat[batch_idx]
+                    fname = setfiles[file_idx]
+                    if eval_streaming:
+                        torch.save(ref_feat[batch_idx], _feat_path(fname))
+                        stream_keys.add(fname)
+                    else:
+                        feats[fname] = ref_feat[batch_idx]
             
             telapsed = time.time() - tstart
 
@@ -331,9 +375,17 @@ class ModelTrainer(object):
         all_trials = []
 
         if distributed:
-            ## Gather features from all GPUs
-            feats_all = [None for _ in range(0, torch.distributed.get_world_size())]
-            torch.distributed.all_gather_object(feats_all, feats)
+            if eval_streaming:
+                # Only gather filename keys (cheap); tensors live on the
+                # shared filesystem. Barrier first so all writes are visible
+                # on rank 0 before it starts reading.
+                torch.distributed.barrier()
+                all_keys = [None for _ in range(0, torch.distributed.get_world_size())]
+                torch.distributed.all_gather_object(all_keys, stream_keys)
+            else:
+                ## Gather features from all GPUs
+                feats_all = [None for _ in range(0, torch.distributed.get_world_size())]
+                torch.distributed.all_gather_object(feats_all, feats)
 
         if rank == 0:
 
@@ -342,9 +394,13 @@ class ModelTrainer(object):
 
             ## Combine gathered features
             if distributed:
-                feats = feats_all[0]
-                for feats_batch in feats_all[1:]:
-                    feats.update(feats_batch)
+                if eval_streaming:
+                    for ks in all_keys[1:]:
+                        stream_keys |= ks
+                else:
+                    feats = feats_all[0]
+                    for feats_batch in feats_all[1:]:
+                        feats.update(feats_batch)
 
             ## Read files and compute all scores - OPTIMIZED
             for idx, line in enumerate(lines):
@@ -355,8 +411,12 @@ class ModelTrainer(object):
                 if len(data) == 2:
                     data = [random.randint(0, 1)] + data
 
-                ref_feat = feats[data[1]].cuda(non_blocking=True)  # OPTIMIZATION: Non-blocking
-                com_feat = feats[data[2]].cuda(non_blocking=True)
+                if eval_streaming:
+                    ref_feat = _load_feat(data[1]).to(self.device, non_blocking=True)
+                    com_feat = _load_feat(data[2]).to(self.device, non_blocking=True)
+                else:
+                    ref_feat = feats[data[1]].to(self.device, non_blocking=True)
+                    com_feat = feats[data[2]].to(self.device, non_blocking=True)
 
                 # OPTIMIZATION: Use inference mode
                 with torch.inference_mode():
@@ -390,7 +450,8 @@ class ModelTrainer(object):
                     sys.stdout.flush()
 
             # OPTIMIZATION: Clear GPU cache after evaluation
-            torch.cuda.empty_cache()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
         return (all_scores, all_labels, all_trials)
 
@@ -409,7 +470,10 @@ class ModelTrainer(object):
     def loadParameters(self, path):
 
         self_state = self.__model__.module.state_dict()
-        loaded_state = torch.load(path, map_location="cuda:%d" % self.gpu)
+        # BUGFIX-019: weights_only=True blocks pickle-based RCE on
+        # untrusted checkpoints; safe for any checkpoint this repo wrote
+        # (pure state_dict via saveParameters).
+        loaded_state = torch.load(path, map_location=self.device, weights_only=True)
         
         if len(loaded_state.keys()) == 1 and "model" in loaded_state:
             loaded_state = loaded_state["model"]
