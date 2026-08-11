@@ -4,6 +4,9 @@
 *.mp4
 *.pcm
 *.yaml
+# Experiment configs ARE source and must be tracked. The blanket *.yaml rule
+# above was silently hiding every new config in configs/ from git.
+!configs/*.yaml
 data
 data/
 exps/
@@ -120,3 +123,13 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# LaTeX build intermediates (the .pdf deliverables are tracked)
+*.aux
+*.bbl
+*.blg
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
