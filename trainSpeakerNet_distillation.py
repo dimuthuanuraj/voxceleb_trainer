@@ -22,6 +22,7 @@ Optimizations applied:
 """
 
 import sys, time, os, argparse
+import random
 import yaml
 import numpy
 import torch
@@ -62,10 +63,11 @@ parser.add_argument('--config',         type=str,   default=None,   help='Config
 
 ## Data loader - OPTIMIZED DEFAULTS
 parser.add_argument('--max_frames',     type=int,   default=200,    help='Input length to the network for training')
+parser.add_argument('--sample_rate',    type=int,   default=16000,  help='Target audio sample rate (Hz). Files at other rates are resampled at load time')
 parser.add_argument('--eval_frames',    type=int,   default=300,    help='Input length to the network for testing 0 uses the whole files')
 parser.add_argument('--batch_size',     type=int,   default=128,    help='Batch size (increased from 100 to 128)')
 parser.add_argument('--max_seg_per_spk', type=int,  default=500,    help='Maximum number of utterances per speaker per epoch')
-parser.add_argument('--nDataLoaderThread', type=int, default=8,     help='Number of loader threads (increased from 5 to 8)')
+parser.add_argument('--nDataLoaderThread', '--n_data_loader_thread', type=int, default=8,     help='Number of loader threads (increased from 5 to 8). snake_case alias accepted (BUGFIX-022).')
 parser.add_argument('--augment',        type=bool,  default=False,  help='Augment input')
 parser.add_argument('--seed',           type=int,   default=10,     help='Seed for the random number generator')
 
@@ -87,8 +89,8 @@ parser.add_argument("--hard_prob",      type=float, default=0.5,    help='Hard n
 parser.add_argument("--hard_rank",      type=int,   default=10,     help='Hard negative mining rank in the batch, only for some loss functions')
 parser.add_argument('--margin',         type=float, default=0.1,    help='Loss margin, only for some loss functions')
 parser.add_argument('--scale',          type=float, default=30,     help='Loss scale, only for some loss functions')
-parser.add_argument('--nPerSpeaker',    type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses')
-parser.add_argument('--nClasses',       type=int,   default=5991,   help='Number of speakers in the softmax layer, only for softmax-based losses')
+parser.add_argument('--nPerSpeaker',    '--n_per_speaker', type=int,   default=1,      help='Number of utterances per speaker per batch, only for metric learning based losses. snake_case alias accepted (BUGFIX-022).')
+parser.add_argument('--nClasses',       '--n_classes',     type=int,   default=5991,   help='Number of speakers in the softmax layer, only for softmax-based losses. snake_case alias accepted (BUGFIX-022).')
 
 ## Evaluation parameters
 parser.add_argument('--dcf_p_target',   type=float, default=0.05,   help='A priori probability of the specified target speaker')
@@ -113,7 +115,7 @@ parser.add_argument('--n_mels',         type=int,   default=40,     help='Number
 parser.add_argument('--log_input',      type=bool,  default=False,  help='Log input features')
 parser.add_argument('--model',          type=str,   default="",     help='Name of model definition')
 parser.add_argument('--encoder_type',   type=str,   default="SAP",  help='Type of encoder')
-parser.add_argument('--nOut',           type=int,   default=512,    help='Embedding size in the last FC layer')
+parser.add_argument('--nOut',           '--n_out',         type=int,   default=512,    help='Embedding size in the last FC layer. snake_case alias accepted (BUGFIX-022).')
 parser.add_argument('--sinc_stride',    type=int,   default=10,    help='Stride size of the first analytic filterbank layer of RawNet3')
 
 ## For test only
@@ -123,6 +125,14 @@ parser.add_argument('--eval',           dest='eval', action='store_true', help='
 parser.add_argument('--port',           type=str,   default="8888", help='Port for distributed training, input as text')
 parser.add_argument('--distributed',    dest='distributed', action='store_true', help='Enable distributed training')
 parser.add_argument('--mixedprec',      dest='mixedprec',   action='store_true', default=True, help='Enable mixed precision training (DEFAULT: True)')
+parser.add_argument('--deterministic',  dest='deterministic', action='store_true', help='Reproducibility mode for paper / ablation runs: seeds Python/NumPy/Torch with --seed, sets cudnn.deterministic, disables cudnn.benchmark and TF32, and enables torch.use_deterministic_algorithms (warn_only). ~10-30%% slower; some ops emit warnings when no deterministic kernel exists. See BUGFIX-017.')
+parser.add_argument('--augment_chain',  type=str,   default="",     help='Augmentation probability config (BUGFIX-016). Empty/uniform = legacy 0.2 over {clean, reverb, music, speech, noise}. CLI: JSON like \'{"noise":0.3,"music":0.2}\'. YAML: native dict or list-of-single-key-dicts. Missing labels get 0.0; unspecified mass drains into clean.')
+parser.add_argument('--eval_streaming', dest='eval_streaming', action='store_true', help='Streaming evaluation (BUGFIX-018). Writes per-file embeddings to <save_path>/eval_feats_tmp/ and lazy-loads with an LRU cache, instead of holding the full feats dict in memory on every rank. Required for SL-benchmark-scale (~1M-pair) test lists; safe to enable for smaller lists with a small disk cost.')
+parser.add_argument('--eval_feat_cache_size', type=int, default=4096, help='LRU cache size (in #embeddings) for --eval_streaming. Default 4096 covers VoxCeleb1-O comfortably; increase for very wide hot-set distributions.')
+parser.add_argument('--ssl_encoder_name',   type=str,   default="microsoft/wavlm-base", help='SSL encoder HuggingFace model ID for model=SSLFrontendSpeaker (FEATURE-001). Tested defaults: microsoft/wavlm-base, facebook/wav2vec2-xls-r-300m, utter-project/mHuBERT-147. All three cover Sinhala/Tamil.')
+parser.add_argument('--ssl_freeze',         dest='ssl_freeze', action='store_true', default=True, help='Freeze the SSL encoder during training (FEATURE-001). Default True; recommended for small downstream corpora. Use --no_ssl_freeze (or set ssl_freeze: false in YAML) to fine-tune the encoder.')
+parser.add_argument('--no_ssl_freeze',      dest='ssl_freeze', action='store_false', help='Allow the SSL encoder to be fine-tuned (FEATURE-001).')
+parser.add_argument('--ssl_layer',          type=int,   default=-1, help='Which transformer layer of the SSL encoder to use as features. -1 = last layer (default). Mid-layer features sometimes transfer better for speaker tasks; experiment if accuracy plateaus.')
 
 ## Performance optimization options - NEW
 parser.add_argument('--prefetch_factor', type=int,  default=3,      help='Prefetch batches per worker (NEW)')
@@ -173,13 +183,43 @@ def find_option_type(key, parser):
            return str
     raise ValueError
 
+def _expand_env_vars(value, key):
+    # Resolve ${VAR} in YAML string values so configs can be portable across
+    # machines (see paths.env.example and BUGFIX-013). Unresolved references
+    # fail loudly at startup.
+    if not isinstance(value, str):
+        return value
+    expanded = os.path.expandvars(value)
+    if "${" in expanded:
+        raise ValueError(
+            f"Config key '{key}={value}' references an undefined environment "
+            f"variable. Set the required variable (see paths.env.example) or "
+            f"override on the CLI with --{key} <abs-path>."
+        )
+    return expanded
+
+# BUGFIX-022: snake_case YAML aliases for camelCase argparse args.
+_CAMEL_YAML_ALIASES = {
+    'n_classes': 'nClasses',
+    'n_data_loader_thread': 'nDataLoaderThread',
+    'n_out': 'nOut',
+    'n_per_speaker': 'nPerSpeaker',
+}
+
 if args.config is not None:
     with open(args.config, "r") as f:
         yml_config = yaml.load(f, Loader=yaml.FullLoader)
+    yml_config = {_CAMEL_YAML_ALIASES.get(k, k): v for k, v in yml_config.items()}
     for k, v in yml_config.items():
         if k in args.__dict__:
-            typ = find_option_type(k, parser)
-            args.__dict__[k] = typ(v)
+            v = _expand_env_vars(v, k)
+            if isinstance(v, (dict, list)):
+                # Structured YAML values (e.g., augment_chain dict per
+                # BUGFIX-016) pass through without scalar type coercion.
+                args.__dict__[k] = v
+            else:
+                typ = find_option_type(k, parser)
+                args.__dict__[k] = typ(v)
         else:
             sys.stderr.write(f"Ignored unknown parameter {k} in yaml.\n")
 
@@ -188,17 +228,34 @@ if args.config is not None:
 ## Trainer script
 ## ===== ===== ===== ===== ===== ===== ===== =====
 
+def _configure_determinism(args):
+    # Default (training) path: cudnn benchmark + TF32 on Ampere for speed.
+    # --deterministic path: force reproducibility for paper / ablation runs.
+    # See docs/bugfixes/BUGFIX-017 for the trade-offs.
+    if getattr(args, "deterministic", False):
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+        random.seed(args.seed)
+        numpy.random.seed(args.seed)
+        torch.manual_seed(args.seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(args.seed)
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        if torch.cuda.is_available():
+            torch.backends.cuda.matmul.allow_tf32 = False
+            torch.backends.cudnn.allow_tf32 = False
+        torch.use_deterministic_algorithms(True, warn_only=True)
+    else:
+        torch.backends.cudnn.benchmark = True
+        if torch.cuda.is_available():
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cudnn.allow_tf32 = True
+
 def main_worker(gpu, ngpus_per_node, args):
 
     args.gpu = gpu
 
-    # OPTIMIZATION: Enable cudnn benchmark for faster training
-    torch.backends.cudnn.benchmark = True
-    
-    # OPTIMIZATION: Enable TF32 on Ampere GPUs (A100, RTX 3090, etc.)
-    if torch.cuda.is_available():
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
+    _configure_determinism(args)
 
     ## Load models (with distillation support)
     # Distillation is handled automatically by SpeakerNet_distillation
@@ -321,7 +378,9 @@ def main_worker(gpu, ngpus_per_node, args):
             fnrs, fprs, thresholds = ComputeErrorRates(sc, lab)
             mindcf, threshold = ComputeMinDcf(fnrs, fprs, thresholds, args.dcf_p_target, args.dcf_c_miss, args.dcf_c_fa)
 
-            print(f'\n{time.strftime("%Y-%m-%d %H:%M:%S")}, VEER {result[1]:2.4f}, MinDCF {mindcf:2.5f}, Threshold {result[2]:f}')
+            # VEER is the conservative max(FPR,FNR) definition; VEER_avg is the
+            # standard literature (FPR+FNR)/2 definition (BUGFIX-020).
+            print(f'\n{time.strftime("%Y-%m-%d %H:%M:%S")}, VEER {result[1]:2.4f}, VEER_avg {result[5]:2.4f}, MinDCF {mindcf:2.5f}, Threshold {result[4]:f}')
 
         return
 
@@ -403,21 +462,15 @@ def main_worker(gpu, ngpus_per_node, args):
             if args.gpu == 0:
                 
                 result = tuneThresholdfromScore(sc, lab, [1, 0.1])
-                current_eer = float(result[1])  # Convert to float to avoid numpy array formatting issues
-                current_threshold = result[2]
+                current_eer = float(result[1])
+                threshold_val = float(result[4])  # EER-point decision threshold (scalar)
 
                 fnrs, fprs, thresholds = ComputeErrorRates(sc, lab)
                 mindcf, threshold = ComputeMinDcf(fnrs, fprs, thresholds, args.dcf_p_target, args.dcf_c_miss, args.dcf_c_fa)
-                mindcf = float(mindcf)  # Convert to float to avoid numpy array formatting issues
-                
+                mindcf = float(mindcf)
+
                 eers.append(current_eer)
-                
-                # Handle threshold which might be an array or tuple
-                if hasattr(current_threshold, '__iter__') and not isinstance(current_threshold, str):
-                    threshold_val = float(current_threshold[0]) if len(current_threshold) > 0 else 0.0
-                else:
-                    threshold_val = float(current_threshold)
-                
+
                 print(f'\n{time.strftime("%Y-%m-%d %H:%M:%S")} Epoch {it}, VEER {current_eer:2.4f}, MinDCF {mindcf:2.5f}, Threshold {threshold_val:f}')
                 scorefile.write(f"Epoch {it}, VEER {current_eer:2.4f}, MinDCF {mindcf:2.5f}, Threshold {threshold_val:f}\n")
 
@@ -439,7 +492,7 @@ def main_worker(gpu, ngpus_per_node, args):
                     
                     # Save the best threshold
                     with open(best_threshold_path, 'w') as f:
-                        f.write(f'{threshold_val:f}')  # Use threshold_val (converted to float) instead of current_threshold
+                        f.write(f'{threshold_val:f}')
 
                     print(f'SAVING BEST MODEL (Epoch {it}) to {best_model_path}')
                     print(f'SAVING BEST THRESHOLD ({threshold_val:.6f}) to {best_threshold_path}')
