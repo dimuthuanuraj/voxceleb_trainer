@@ -1,0 +1,30 @@
+{
+  "corpus": "kathbath_tamil",
+  "language": "ta",
+  "role": "heldout_generalisation_probe",
+  "seed": 42,
+  "built_utc": "2026-08-12T11:46:26.133083+00:00",
+  "speakers": {
+    "total": 60,
+    "used_in_trials": 60
+  },
+  "duration_hours": {
+    "total": 13.2
+  },
+  "trials": {
+    "test": {
+      "n_target": 9960,
+      "n_nontarget": 9960,
+      "n_speakers": 60,
+      "target_pairs_cross_session": 9960,
+      "cross_session_fraction": 1.0
+    }
+  },
+  "test_mde_pp": 7.306,
+  "test_n_eff_cap": 85.7,
+  "sha256": {
+    "test_trials.txt": "2dcd38f12c9fe8abfa1ca916320bf2aa30e784eb5a575d968572f3f121ef06a3"
+  },
+  "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/kathbath_tamil/wav",
+  "note": "No training partition: this corpus is never trained on."
+}

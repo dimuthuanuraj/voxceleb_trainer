@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "checked": "2026-09-12T08:07:36+00:00",
+  "usable_gpus": 2,
+  "largest_free_mb": 14914,
+  "arbiter_placeable": false,
+  "notes": [
+    "arbiter blocked: largest GPU 14914 MiB < 30000",
+    "compute-node-2 driver mismatch 580.173.02 vs 580.178.04 -- needs root reload/reboot (W0.4)",
+    "compute-node-3 unreachable",
+    "compute-node-4 driver mismatch 580.173.02 vs 580.178.04 -- needs root reload/reboot (W0.4)",
+    "voxceleb_trainer has 2 tracked modifications -- review before running"
+  ]
+}

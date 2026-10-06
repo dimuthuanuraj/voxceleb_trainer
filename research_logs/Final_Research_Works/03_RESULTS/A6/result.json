@@ -1,0 +1,13 @@
+{
+  "task": "A6",
+  "ok": false,
+  "a7_pllw_per_language": {
+    "eer_cosine": 3.024498437342474,
+    "eer_asnorm": 2.6313136404879534
+  },
+  "v1_shared_si_only": {
+    "eer_cosine": 3.296703296703297,
+    "eer_asnorm": 2.9640084685956247
+  },
+  "control_shared_combined": null
+}

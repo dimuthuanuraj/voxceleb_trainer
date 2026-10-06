@@ -1,0 +1,637 @@
+{
+  "stage": "A",
+  "generated_utc": "2026-08-17T11:52:31.356363+00:00",
+  "n_experiments": 28,
+  "experiments": [
+    {
+      "exp_id": "A_ecapa1024_aamsoftmax_si_celeb_s42",
+      "stage": "A",
+      "architecture": "ecapa1024",
+      "model": "ECAPA_TDNN",
+      "loss": "aamsoftmax",
+      "condition": "si_celeb",
+      "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 82,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ecapa1024_aamsoftmax_si_pooled_s42",
+      "stage": "A",
+      "architecture": "ecapa1024",
+      "model": "ECAPA_TDNN",
+      "loss": "aamsoftmax",
+      "condition": "si_pooled",
+      "condition_label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+      "corpus": "si_pooled",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 418,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ecapa1024_aamsoftmax_si_s42",
+      "stage": "A",
+      "architecture": "ecapa1024",
+      "model": "ECAPA_TDNN",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ecapa1024_aamsoftmax_ta_s42",
+      "stage": "A",
+      "architecture": "ecapa1024",
+      "model": "ECAPA_TDNN",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ecapa512_aamsoftmax_si_celeb_s42",
+      "stage": "A",
+      "architecture": "ecapa512",
+      "model": "ECAPA_TDNN_C512",
+      "loss": "aamsoftmax",
+      "condition": "si_celeb",
+      "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 82,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ecapa512_aamsoftmax_si_pooled_s42",
+      "stage": "A",
+      "architecture": "ecapa512",
+      "model": "ECAPA_TDNN_C512",
+      "loss": "aamsoftmax",
+      "condition": "si_pooled",
+      "condition_label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+      "corpus": "si_pooled",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 418,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ecapa512_aamsoftmax_si_s42",
+      "stage": "A",
+      "architecture": "ecapa512",
+      "model": "ECAPA_TDNN_C512",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ecapa512_aamsoftmax_ta_s42",
+      "stage": "A",
+      "architecture": "ecapa512",
+      "model": "ECAPA_TDNN_C512",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_mlpmixer_aamsoftmax_si_celeb_s42",
+      "stage": "A",
+      "architecture": "mlpmixer",
+      "model": "MLPMixerSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si_celeb",
+      "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 82,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_mlpmixer_aamsoftmax_si_pooled_s42",
+      "stage": "A",
+      "architecture": "mlpmixer",
+      "model": "MLPMixerSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si_pooled",
+      "condition_label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+      "corpus": "si_pooled",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 418,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_mlpmixer_aamsoftmax_si_s42",
+      "stage": "A",
+      "architecture": "mlpmixer",
+      "model": "MLPMixerSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_mlpmixer_aamsoftmax_ta_s42",
+      "stage": "A",
+      "architecture": "mlpmixer",
+      "model": "MLPMixerSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34l_aamsoftmax_si_celeb_s42",
+      "stage": "A",
+      "architecture": "resnetse34l",
+      "model": "ResNetSE34L",
+      "loss": "aamsoftmax",
+      "condition": "si_celeb",
+      "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 82,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34l_aamsoftmax_si_pooled_s42",
+      "stage": "A",
+      "architecture": "resnetse34l",
+      "model": "ResNetSE34L",
+      "loss": "aamsoftmax",
+      "condition": "si_pooled",
+      "condition_label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+      "corpus": "si_pooled",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 418,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34l_aamsoftmax_si_s42",
+      "stage": "A",
+      "architecture": "resnetse34l",
+      "model": "ResNetSE34L",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34l_aamsoftmax_ta_s42",
+      "stage": "A",
+      "architecture": "resnetse34l",
+      "model": "ResNetSE34L",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34v2_aamsoftmax_si_celeb_s42",
+      "stage": "A",
+      "architecture": "resnetse34v2",
+      "model": "ResNetSE34V2",
+      "loss": "aamsoftmax",
+      "condition": "si_celeb",
+      "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 82,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34v2_aamsoftmax_si_pooled_s42",
+      "stage": "A",
+      "architecture": "resnetse34v2",
+      "model": "ResNetSE34V2",
+      "loss": "aamsoftmax",
+      "condition": "si_pooled",
+      "condition_label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+      "corpus": "si_pooled",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 418,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34v2_aamsoftmax_si_s42",
+      "stage": "A",
+      "architecture": "resnetse34v2",
+      "model": "ResNetSE34V2",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_resnetse34v2_aamsoftmax_ta_s42",
+      "stage": "A",
+      "architecture": "resnetse34v2",
+      "model": "ResNetSE34V2",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_ssl_wavlm_aamsoftmax_si_celeb_s42",
+      "stage": "A",
+      "architecture": "ssl_wavlm",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si_celeb",
+      "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 82,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "A_ssl_wavlm_aamsoftmax_si_pooled_s42",
+      "stage": "A",
+      "architecture": "ssl_wavlm",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si_pooled",
+      "condition_label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+      "corpus": "si_pooled",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 418,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "A_ssl_wavlm_aamsoftmax_si_s42",
+      "stage": "A",
+      "architecture": "ssl_wavlm",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "A_ssl_wavlm_aamsoftmax_ta_s42",
+      "stage": "A",
+      "architecture": "ssl_wavlm",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "A_vggvox_aamsoftmax_si_celeb_s42",
+      "stage": "A",
+      "architecture": "vggvox",
+      "model": "VGGVox",
+      "loss": "aamsoftmax",
+      "condition": "si_celeb",
+      "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 82,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {
+        "n_mels": "40 (architecturally fixed; all other mel backbones use 80)"
+      },
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_vggvox_aamsoftmax_si_pooled_s42",
+      "stage": "A",
+      "architecture": "vggvox",
+      "model": "VGGVox",
+      "loss": "aamsoftmax",
+      "condition": "si_pooled",
+      "condition_label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+      "corpus": "si_pooled",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 418,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {
+        "n_mels": "40 (architecturally fixed; all other mel backbones use 80)"
+      },
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_vggvox_aamsoftmax_si_s42",
+      "stage": "A",
+      "architecture": "vggvox",
+      "model": "VGGVox",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {
+        "n_mels": "40 (architecturally fixed; all other mel backbones use 80)"
+      },
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "A_vggvox_aamsoftmax_ta_s42",
+      "stage": "A",
+      "architecture": "vggvox",
+      "model": "VGGVox",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage A architecture sweep",
+      "deviations_from_controlled_factors": {
+        "n_mels": "40 (architecturally fixed; all other mel backbones use 80)"
+      },
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    }
+  ],
+  "selection": {
+    "conditions": [
+      "si",
+      "ta"
+    ]
+  },
+  "selection_history": [
+    {
+      "conditions": [
+        "si_celeb"
+      ]
+    },
+    {
+      "conditions": [
+        "si_celeb"
+      ]
+    },
+    {
+      "conditions": [
+        "si_pooled"
+      ]
+    },
+    {
+      "conditions": [
+        "si_pooled"
+      ]
+    },
+    {
+      "conditions": [
+        "si_celeb"
+      ]
+    }
+  ],
+  "scripts_on_disk_not_in_manifest": []
+}

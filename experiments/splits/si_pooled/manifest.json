@@ -1,0 +1,27 @@
+{
+  "corpus": "si_pooled",
+  "language": "si",
+  "role": "pooled_domain_sinhala",
+  "sources": [
+    "slr52_sinhala",
+    "slceleb2026_sinhala"
+  ],
+  "seed": 42,
+  "built_utc": "2026-08-14T16:10:44.159441+00:00",
+  "speakers": {
+    "train": 418
+  },
+  "utterances": {
+    "train": 160326
+  },
+  "domains": {
+    "read": "slr52_sinhala",
+    "wild": "slceleb2026_sinhala"
+  },
+  "evaluation": "kept per-domain: *_read_abs.txt and *_wild_abs.txt, so the read-speech cost and the in-the-wild gain are separately visible rather than averaged into one number",
+  "cohort_utterances": 996,
+  "why": "slceleb2026 alone has 82 speakers and does not generalise (85% train acc, 25% val EER); slr52 alone is single-condition read speech and degrades ~4x on cross-session trials.",
+  "sha256": {
+    "train_list.txt": "52a78ebd36aa66f628067a0b8851f2cd301481fcec220d2e9ab7a5655f89643e"
+  }
+}

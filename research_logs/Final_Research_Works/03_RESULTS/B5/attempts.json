@@ -1,0 +1,38 @@
+{
+  "task": "B5",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "result.json[ok]=False",
+      "log": "03_RESULTS/B5/autopilot_01_20260914-113701.log",
+      "started": "2026-09-14T06:07:01+00:00",
+      "finished": "2026-09-14T06:07:29+00:00",
+      "finished_epoch": 1789366049.5003626,
+      "elapsed_s": 27.7
+    },
+    {
+      "n": 2,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "result.json[ok]=False",
+      "log": "03_RESULTS/B5/autopilot_02_20260914-123207.log",
+      "started": "2026-09-14T07:02:07+00:00",
+      "finished": "2026-09-14T07:02:39+00:00",
+      "finished_epoch": 1789369359.1714785,
+      "elapsed_s": 31.2
+    },
+    {
+      "n": 3,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "result.json[ok]=False",
+      "log": "03_RESULTS/B5/autopilot_03_20260915-092728.log",
+      "started": "2026-09-15T03:57:28+00:00",
+      "finished": "2026-09-15T03:57:58+00:00",
+      "finished_epoch": 1789444678.9706433,
+      "elapsed_s": 30.8
+    }
+  ]
+}

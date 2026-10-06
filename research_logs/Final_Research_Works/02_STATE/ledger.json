@@ -1,0 +1,141 @@
+{
+  "A1": {
+    "exit_test": "1 match",
+    "finished": "2026-09-12T08:45:48+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/A1_score_a7_pllw.sh",
+    "started": "2026-09-12T08:17:44+00:00",
+    "status": "passed"
+  },
+  "A2": {
+    "exit_test": "all 2 present",
+    "finished": "2026-09-14T06:30:03+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/A2_score_a4_a5_si.sh",
+    "started": "2026-09-14T06:09:52+00:00",
+    "status": "passed"
+  },
+  "A3": {
+    "exit_test": "no match for transformer_sv/T6_span_probe/out/*MFAConformer_full_si_s42*.json",
+    "finished": "2026-09-14T06:58:45+00:00",
+    "forced": false,
+    "rc": 1,
+    "script": "tasks/A3_t6_span_probe.sh",
+    "started": "2026-09-15T03:56:20+00:00",
+    "status": "running"
+  },
+  "A4": {
+    "exit_test": "5 missing: MFAConformer_full_ta_s42.eval.json, MFAConformer_no_attention_si_s42.eval.json, MFAConformer_no_attention_ta_s42.eval.json ...",
+    "finished": "2026-09-15T03:56:37+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/A4_resume_tseries.sh",
+    "started": "2026-09-15T03:56:23+00:00",
+    "status": "ran-but-incomplete"
+  },
+  "A6": {
+    "exit_test": "result.json[ok]=False",
+    "finished": "2026-09-15T03:56:32+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/A6_combined_shared_weight_control.sh",
+    "started": "2026-09-15T03:56:26+00:00",
+    "status": "ran-but-incomplete"
+  },
+  "B4": {
+    "exit_test": "result.json[ok]=False",
+    "finished": "2026-09-15T03:56:42+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/B4_seed_replication.sh",
+    "started": "2026-09-15T03:56:29+00:00",
+    "status": "ran-but-incomplete"
+  },
+  "B5": {
+    "exit_test": "result.json[ok]=False",
+    "finished": "2026-09-15T03:57:52+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/B5_seed_a9.sh",
+    "started": "2026-09-15T03:57:34+00:00",
+    "status": "ran-but-incomplete"
+  },
+  "C1": {
+    "exit_test": "result.json[ok]=False",
+    "finished": "2026-09-15T04:00:07+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/C1_short_duration.sh",
+    "started": "2026-09-15T03:58:38+00:00",
+    "status": "ran-but-incomplete"
+  },
+  "C4": {
+    "exit_test": "result.json[ok]=True",
+    "finished": "2026-09-12T08:21:17+00:00",
+    "forced": true,
+    "forced_over": [],
+    "rc": 0,
+    "script": "tasks/C4_score_shift_histogram.py",
+    "started": "2026-09-12T08:21:16+00:00",
+    "status": "passed"
+  },
+  "C5": {
+    "exit_test": "result.json[ok]=True",
+    "finished": "2026-09-12T08:19:47+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/C5_peft_twostage_check.py",
+    "started": "2026-09-12T08:19:46+00:00",
+    "status": "passed"
+  },
+  "G2-G6": {
+    "exit_test": "result.json[ok]=True",
+    "finished": "2026-09-12T08:28:59+00:00",
+    "forced": true,
+    "forced_over": [],
+    "rc": 0,
+    "script": "tasks/G2_errata.py",
+    "started": "2026-09-12T08:28:58+00:00",
+    "status": "passed"
+  },
+  "W0.2": {
+    "exit_test": "result.json[ok]=True",
+    "finished": "2026-09-12T08:08:19+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/W0.2_fix_test_normalize.py",
+    "started": "2026-09-12T08:08:19+00:00",
+    "status": "passed"
+  },
+  "W0.3": {
+    "exit_test": "result.json[ok]=True",
+    "finished": "2026-09-12T08:10:39+00:00",
+    "forced": true,
+    "forced_over": [],
+    "rc": 0,
+    "script": "tasks/W0.3_fix_fp16_mel.py",
+    "started": "2026-09-12T08:10:15+00:00",
+    "status": "passed"
+  },
+  "W0.5": {
+    "exit_test": "result.json[ok]=True",
+    "finished": "2026-09-12T08:12:29+00:00",
+    "forced": false,
+    "rc": 0,
+    "script": "tasks/W0.5_register_arbiter.py",
+    "started": "2026-09-12T08:12:29+00:00",
+    "status": "passed"
+  },
+  "W0.6": {
+    "exit_test": "result.json[ok]=True",
+    "finished": "2026-09-12T08:34:24+00:00",
+    "forced": true,
+    "forced_over": [],
+    "rc": 0,
+    "script": "tasks/W0.6_fix_proposal_scorer_path.py",
+    "started": "2026-09-12T08:34:21+00:00",
+    "status": "passed"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "task": "A4",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "5 missing: MFAConformer_full_ta_s42.eval.json, MFAConformer_no_attention_si_s42.eval.json, MFAConformer_no_attention_ta_s42.eval.json ...",
+      "log": "03_RESULTS/A4/autopilot_01_20260914-113503.log",
+      "started": "2026-09-14T06:05:03+00:00",
+      "finished": "2026-09-14T06:05:35+00:00",
+      "finished_epoch": 1789365935.0290976,
+      "elapsed_s": 31.6
+    },
+    {
+      "n": 2,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "5 missing: MFAConformer_full_ta_s42.eval.json, MFAConformer_no_attention_si_s42.eval.json, MFAConformer_no_attention_ta_s42.eval.json ...",
+      "log": "03_RESULTS/A4/autopilot_02_20260914-122852.log",
+      "started": "2026-09-14T06:58:52+00:00",
+      "finished": "2026-09-14T06:59:23+00:00",
+      "finished_epoch": 1789369163.0902,
+      "elapsed_s": 30.8
+    },
+    {
+      "n": 3,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "5 missing: MFAConformer_full_ta_s42.eval.json, MFAConformer_no_attention_si_s42.eval.json, MFAConformer_no_attention_ta_s42.eval.json ...",
+      "log": "03_RESULTS/A4/autopilot_03_20260915-092617.log",
+      "started": "2026-09-15T03:56:17+00:00",
+      "finished": "2026-09-15T03:56:57+00:00",
+      "finished_epoch": 1789444617.1633053,
+      "elapsed_s": 40.1
+    }
+  ]
+}

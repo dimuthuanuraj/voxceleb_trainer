@@ -1,0 +1,16 @@
+{
+  "task": "A4",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 1,
+      "passed": false,
+      "exit_test": "5 missing: MFAConformer_full_ta_s42.eval.json, MFAConformer_no_attention_si_s42.eval.json, MFAConformer_no_attention_ta_s42.eval.json ...",
+      "log": "03_RESULTS/A4/autopilot_01_20260914-113112.log",
+      "started": "2026-09-14T06:01:12+00:00",
+      "finished": "2026-09-14T06:01:43+00:00",
+      "finished_epoch": 1789365703.9195426,
+      "elapsed_s": 31.6
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "stage": null,
+  "scale": "full",
+  "finished_utc": "2026-08-21T04:27:53.145234+00:00",
+  "wall_hours": 8.62,
+  "results": {
+    "E_ecapa1024_aamsoftmax_en_full_s42": {
+      "rc": 0,
+      "hours": 7.617,
+      "slot": "compute-node-1:gpu1",
+      "gpu_free_mb": 14914,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    },
+    "A_ssl_wavlm_aamsoftmax_si_pooled_s42": {
+      "rc": 0,
+      "hours": 8.618,
+      "slot": "compute-node-1:gpu0",
+      "gpu_free_mb": 14914,
+      "gpu_required_mb": 8000,
+      "attempts": 1
+    }
+  }
+}

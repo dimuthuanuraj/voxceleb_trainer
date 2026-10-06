@@ -1,0 +1,38 @@
+{
+  "task": "A3",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 1,
+      "passed": false,
+      "exit_test": "no match for transformer_sv/T6_span_probe/out/*MFAConformer_full_si_s42*.json",
+      "log": "03_RESULTS/A3/autopilot_01_20260914-113949.log",
+      "started": "2026-09-14T06:09:49+00:00",
+      "finished": "2026-09-14T06:38:18+00:00",
+      "finished_epoch": 1789367898.0616634,
+      "elapsed_s": 1709.0
+    },
+    {
+      "n": 2,
+      "rc": 1,
+      "passed": false,
+      "exit_test": "no match for transformer_sv/T6_span_probe/out/*MFAConformer_full_si_s42*.json",
+      "log": "03_RESULTS/A3/autopilot_02_20260914-120821.log",
+      "started": "2026-09-14T06:38:21+00:00",
+      "finished": "2026-09-14T06:48:51+00:00",
+      "finished_epoch": 1789368531.1872952,
+      "elapsed_s": 630.1
+    },
+    {
+      "n": 3,
+      "rc": 1,
+      "passed": false,
+      "exit_test": "no match for transformer_sv/T6_span_probe/out/*MFAConformer_full_si_s42*.json",
+      "log": "03_RESULTS/A3/autopilot_03_20260914-121854.log",
+      "started": "2026-09-14T06:48:54+00:00",
+      "finished": "2026-09-14T06:58:49+00:00",
+      "finished_epoch": 1789369129.2628918,
+      "elapsed_s": 594.7
+    }
+  ]
+}

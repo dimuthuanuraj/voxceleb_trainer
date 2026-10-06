@@ -1,0 +1,136 @@
+{
+  "stage": "H",
+  "generated_utc": "2026-08-16T10:09:30.340988+00:00",
+  "n_experiments": 4,
+  "experiments": [
+    {
+      "exp_id": "H_ssl_mhubert_ecapa_aamsoftmax_si_s42",
+      "stage": "H",
+      "architecture": "ssl_mhubert_ecapa",
+      "model": "SSL_ECAPA",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage H front-end x backbone interaction: mHuBERT-147 + full ECAPA backbone \u2014 coverage x backbone",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "H_ssl_mhubert_ecapa_aamsoftmax_ta_s42",
+      "stage": "H",
+      "architecture": "ssl_mhubert_ecapa",
+      "model": "SSL_ECAPA",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage H front-end x backbone interaction: mHuBERT-147 + full ECAPA backbone \u2014 coverage x backbone",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "H_ssl_wavlm_ecapa_aamsoftmax_si_s42",
+      "stage": "H",
+      "architecture": "ssl_wavlm_ecapa",
+      "model": "SSL_ECAPA",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage H front-end x backbone interaction: WavLM + full ECAPA backbone \u2014 the standard strong recipe",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "H_ssl_wavlm_ecapa_aamsoftmax_ta_s42",
+      "stage": "H",
+      "architecture": "ssl_wavlm_ecapa",
+      "model": "SSL_ECAPA",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage H front-end x backbone interaction: WavLM + full ECAPA backbone \u2014 the standard strong recipe",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    }
+  ],
+  "selection": {
+    "conditions": [
+      "si",
+      "ta"
+    ],
+    "hybrids": {
+      "ssl_wavlm_ecapa": "WavLM + full ECAPA backbone \u2014 the standard strong recipe",
+      "ssl_mhubert_ecapa": "mHuBERT-147 + full ECAPA backbone \u2014 coverage x backbone"
+    },
+    "compare_against": [
+      "Stage A ecapa1024 (log-mel + ECAPA)",
+      "Stage F ssl_wavlm_lw (WavLM + pooling head)"
+    ]
+  },
+  "selection_history": [
+    {
+      "conditions": [
+        "si",
+        "ta"
+      ],
+      "hybrids": {
+        "ssl_wavlm_ecapa": "WavLM + full ECAPA backbone \u2014 the standard strong recipe",
+        "ssl_mhubert_ecapa": "mHuBERT-147 + full ECAPA backbone \u2014 coverage x backbone"
+      },
+      "compare_against": [
+        "Stage A ecapa1024 (log-mel + ECAPA)",
+        "Stage F ssl_wavlm_lw (WavLM + pooling head)"
+      ]
+    },
+    {
+      "conditions": [
+        "si",
+        "ta"
+      ],
+      "hybrids": {
+        "ssl_wavlm_ecapa": "WavLM + full ECAPA backbone \u2014 the standard strong recipe",
+        "ssl_mhubert_ecapa": "mHuBERT-147 + full ECAPA backbone \u2014 coverage x backbone"
+      },
+      "compare_against": [
+        "Stage A ecapa1024 (log-mel + ECAPA)",
+        "Stage F ssl_wavlm_lw (WavLM + pooling head)"
+      ]
+    }
+  ],
+  "scripts_on_disk_not_in_manifest": []
+}

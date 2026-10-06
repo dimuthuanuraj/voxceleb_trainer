@@ -1,0 +1,16 @@
+{
+  "updated": "2026-09-15T04:09:04+00:00",
+  "pass": 27,
+  "running": {
+    "A3": {
+      "attempt": 1,
+      "elapsed_min": 12.8,
+      "log": "03_RESULTS/A3/autopilot_01_20260915-092614.log"
+    }
+  },
+  "passed": 10,
+  "total": 37,
+  "gpus": "n1:2gpu/14653MiB n2:2gpu/14229MiB n3:DEAD n4:DEAD",
+  "largest_free_mb": 14653,
+  "elapsed_h": 0.22
+}

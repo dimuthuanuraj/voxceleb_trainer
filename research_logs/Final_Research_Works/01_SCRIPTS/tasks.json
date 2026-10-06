@@ -1,0 +1,708 @@
+{
+  "_comment": "Task graph for Final_Research_Works. Read by runner.py. Every task has an exit_test that runner.py evaluates from the filesystem, so the ledger cannot drift from what actually exists -- the same principle as each strand's scaffold.py --check.",
+  "_version": "1.0",
+  "_created": "2026-09-12",
+  "tasks": [
+    {
+      "id": "W0.1",
+      "wave": "W0",
+      "title": "Preflight: cluster, env, splits, disk",
+      "script": "preflight.sh",
+      "deps": [],
+      "cost": "3 min CPU",
+      "gpu_mb": 0,
+      "source": "AUD 3",
+      "exit_test": {
+        "type": "json_true",
+        "path": "02_STATE/preflight.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "W0.2",
+      "wave": "W0",
+      "title": "Fix test_normalize on A1/A8 wrapper losses",
+      "script": "tasks/W0.2_fix_test_normalize.py",
+      "deps": [],
+      "cost": "5 min CPU",
+      "gpu_mb": 0,
+      "source": "AUD 5.1",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/W0.2/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "W0.3",
+      "wave": "W0",
+      "title": "Fix fp16 mel overflow in DK_CAMPP.features()",
+      "script": "tasks/W0.3_fix_fp16_mel.py",
+      "deps": [],
+      "cost": "10 min CPU",
+      "gpu_mb": 0,
+      "source": "AR 7.2, AUD 5.1",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/W0.3/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "W0.4",
+      "wave": "W0",
+      "title": "Escalate A40/T4 driver mismatch to cluster admin",
+      "script": "tasks/W0.4_driver_ticket.sh",
+      "deps": [],
+      "cost": "operator",
+      "gpu_mb": 0,
+      "source": "AUD 3",
+      "manual": true,
+      "exit_test": {
+        "type": "gpu_count",
+        "min": 3,
+        "min_free_mb": 20000,
+        "note": "Passes only when 3+ GPUs answer nvidia-smi AND at least one has >=20 GB free. The count alone is not enough: the arbiter run (B1/B2) needs 30 GB, so recovering more 15 GB T4s does not unblock it. The ticket's purpose is the A40 (node-4) or the A10s (node-3)."
+      }
+    },
+    {
+      "id": "W0.5",
+      "wave": "W0",
+      "title": "Register arbiter front-ends ssl_wavlm_lw_ft / ssl_mhubert_lw_ft",
+      "script": "tasks/W0.5_register_arbiter.py",
+      "deps": [],
+      "cost": "15 min CPU",
+      "gpu_mb": 0,
+      "source": "AR 11.1, AUD 8",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/W0.5/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "W0.6",
+      "wave": "W0",
+      "title": "Fix evaluate_proposal.py sys.path: shim models cannot be scored",
+      "script": "tasks/W0.6_fix_proposal_scorer_path.py",
+      "deps": [],
+      "cost": "10 min CPU",
+      "gpu_mb": 0,
+      "source": "found 2026-09-12 during A1",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/W0.6/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "A1",
+      "wave": "A",
+      "title": "Score A7_pllw_combined_s42 (report open item 3)",
+      "script": "tasks/A1_score_a7_pllw.sh",
+      "deps": [
+        "W0.1",
+        "W0.6"
+      ],
+      "cost": "25 min GPU",
+      "gpu_mb": 8000,
+      "source": "AR 11 item 3",
+      "exit_test": {
+        "type": "file_glob",
+        "path": "proposals/A7_pllw/out/A7_pllw_combined_s42*.eval.json",
+        "root": "SL_SPV"
+      }
+    },
+    {
+      "id": "A2",
+      "wave": "A",
+      "title": "Score LSCAM_si_s42 (A4) and DKCAMPP_si_s42 (A5)",
+      "script": "tasks/A2_score_a4_a5_si.sh",
+      "deps": [
+        "W0.1",
+        "W0.6"
+      ],
+      "cost": "50 min GPU",
+      "gpu_mb": 8000,
+      "source": "AUD 5",
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "proposals/A4_ls_cam/out/LSCAM_si_s42*.eval.json",
+          "proposals/A5_dk_campp/out/DKCAMPP_si_s42*.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "A3",
+      "wave": "A",
+      "title": "T6 span probe on MFAConformer_full_si_s42 (training-free)",
+      "script": "tasks/A3_t6_span_probe.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "40 min GPU",
+      "gpu_mb": 8000,
+      "source": "AR 11 item 4, TEP P3",
+      "exit_test": {
+        "type": "file_glob",
+        "root": "SL_SPV",
+        "path": "transformer_sv/T6_span_probe/out/*MFAConformer_full_si_s42*.json"
+      }
+    },
+    {
+      "id": "A4",
+      "wave": "A",
+      "title": "Resume 5 interrupted T-arms to their own stopping criterion, then score",
+      "script": "tasks/A4_resume_tseries.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "60-90 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AUD 4.2",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "transformer_sv/T1_mfa_conformer/out/MFAConformer_full_ta_s42.eval.json",
+          "transformer_sv/T1_mfa_conformer/out/MFAConformer_no_attention_si_s42.eval.json",
+          "transformer_sv/T1_mfa_conformer/out/MFAConformer_no_attention_ta_s42.eval.json",
+          "transformer_sv/T2_res2former/out/Res2Former_tf0_si_s42.eval.json",
+          "transformer_sv/T2_res2former/out/Res2Former_tf4_si_s42.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "A5",
+      "wave": "A",
+      "title": "Paired bootstrap: T1 si contrast vs A_ecapa512 baseline",
+      "script": "tasks/A5_t1_paired_bootstrap.sh",
+      "deps": [
+        "A4"
+      ],
+      "cost": "15 min CPU",
+      "gpu_mb": 0,
+      "source": "AR 7.2 caveat",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/A5/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "A6",
+      "wave": "A",
+      "title": "Combined-condition shared-weight control (makes A7 interpretable)",
+      "script": "tasks/A6_combined_shared_weight_control.sh",
+      "deps": [
+        "A1"
+      ],
+      "cost": "~8 GPU-h",
+      "gpu_mb": 8000,
+      "source": "found 2026-09-12 while scoring A1",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/A6/result.json",
+        "key": "ok"
+      },
+      "long": true
+    },
+    {
+      "id": "B1",
+      "wave": "B",
+      "title": "Arbiter run: layer-weighted AND fine-tuned SSL, si",
+      "script": "tasks/B1_arbiter_si.sh",
+      "deps": [
+        "W0.4",
+        "W0.5"
+      ],
+      "cost": "~20 GPU-h A40",
+      "gpu_mb": 30000,
+      "source": "AR 11 item 1",
+      "long": true,
+      "exit_test": {
+        "type": "file_glob",
+        "root": "SL_SPV",
+        "path": "voxceleb_trainer/experiments/results/*ssl_wavlm_lw_ft*si_s42/final.json"
+      }
+    },
+    {
+      "id": "B2",
+      "wave": "B",
+      "title": "Arbiter run, ta",
+      "script": "tasks/B2_arbiter_ta.sh",
+      "deps": [
+        "B1"
+      ],
+      "cost": "~20 GPU-h A40",
+      "gpu_mb": 30000,
+      "source": "AR 11 item 1",
+      "long": true,
+      "exit_test": {
+        "type": "file_glob",
+        "root": "SL_SPV",
+        "path": "voxceleb_trainer/experiments/results/*ssl_wavlm_lw_ft*ta_s42/final.json"
+      }
+    },
+    {
+      "id": "B3",
+      "wave": "B",
+      "title": "Analyse the 2x2: {last, layer-weighted} x {frozen, fine-tuned}",
+      "script": "tasks/B3_arbiter_analysis.sh",
+      "deps": [
+        "B2"
+      ],
+      "cost": "20 min CPU",
+      "gpu_mb": 0,
+      "source": "AR 11 item 1",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/B3/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "B4",
+      "wave": "B",
+      "title": "Seed replication: top 3 systems per language, seeds {123,7}",
+      "script": "tasks/B4_seed_replication.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "~180 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AR 11 item 2",
+      "long": true,
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/B4/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "B5",
+      "wave": "B",
+      "title": "Seed replication: A9 sub-centre, seeds {123,7}",
+      "script": "tasks/B5_seed_a9.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "~60 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AR 11 item 2",
+      "long": true,
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/B5/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "B6",
+      "wave": "B",
+      "title": "Seed replication: T1 full_si, seeds {123,7}",
+      "script": "tasks/B6_seed_t1.sh",
+      "deps": [
+        "A4"
+      ],
+      "cost": "~60 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AR 7.2 caveat",
+      "long": true,
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/B6/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "C1",
+      "wave": "C",
+      "title": "Short-duration table: 2/3/5 s across Stage A checkpoints",
+      "script": "tasks/C1_short_duration.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "3 GPU-h",
+      "gpu_mb": 8000,
+      "source": "MS 5",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/C1/result.json",
+        "key": "ok"
+      },
+      "long": true
+    },
+    {
+      "id": "C2",
+      "wave": "C",
+      "title": "Enrolment/privacy table: N = 1,5,10,15 utterances",
+      "script": "tasks/C2_enrolment_table.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "2 GPU-h",
+      "gpu_mb": 8000,
+      "source": "MS 5",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/C2/result.json",
+        "key": "ok"
+      },
+      "long": true
+    },
+    {
+      "id": "C3",
+      "wave": "C",
+      "title": "nisp_tamil bilingual control: is Tamil easier by language or by channel?",
+      "script": "tasks/C3_nisp_bilingual_control.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "2 GPU-h",
+      "gpu_mb": 8000,
+      "source": "FLT 5.5, AR 10.2",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/C3/result.json",
+        "key": "ok"
+      },
+      "long": true
+    },
+    {
+      "id": "C4",
+      "wave": "C",
+      "title": "Score-shift histogram (Thienpondt Fig 1) for si/ta",
+      "script": "tasks/C4_score_shift_histogram.py",
+      "deps": [],
+      "cost": "45 min CPU",
+      "gpu_mb": 0,
+      "source": "MS 5 P1",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/C4/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "C5",
+      "wave": "C",
+      "title": "PEFT two-stage fine-tuning confound check (publication gate)",
+      "script": "tasks/C5_peft_twostage_check.py",
+      "deps": [],
+      "cost": "30 min CPU",
+      "gpu_mb": 0,
+      "source": "MS 6 risk 3",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/C5/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "C6",
+      "wave": "C",
+      "title": "Dialect gap: train Indian Tamil, evaluate Sri Lankan Tamil",
+      "script": "tasks/C6_dialect_gap.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "1 GPU-h",
+      "gpu_mb": 8000,
+      "source": "MS 5",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/C6/result.json",
+        "key": "ok"
+      },
+      "long": true
+    },
+    {
+      "id": "D1",
+      "wave": "D",
+      "title": "Retrain A4 LSCAM_ta + A5 DKCAMPP_ta under the fp32 mel fix",
+      "script": "tasks/D1_retrain_a4_a5_ta.sh",
+      "deps": [
+        "W0.3",
+        "W0.6"
+      ],
+      "cost": "~70 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AR 11 item 5",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "proposals/A4_ls_cam/out/LSCAM_ta_s42*.eval.json",
+          "proposals/A5_dk_campp/out/DKCAMPP_ta_s42*.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "D2",
+      "wave": "D",
+      "title": "A1 DA2-LoRA anchored + control on combined",
+      "script": "tasks/D2_run_a1_da2lora.sh",
+      "deps": [
+        "W0.2",
+        "W0.6"
+      ],
+      "cost": "~70 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AUD 5.1",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "proposals/A1_da2_lora/out/A1_da2lora_anchored_combined_s42*.eval.json",
+          "proposals/A1_da2_lora/out/A1_da2lora_control_combined_s42*.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "D3",
+      "wave": "D",
+      "title": "A8 CD-NDAL adv0.3 + control on combined",
+      "script": "tasks/D3_run_a8_cdndal.sh",
+      "deps": [
+        "W0.2",
+        "W0.6"
+      ],
+      "cost": "~70 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AUD 5.1",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "proposals/A8_cd_ndal/out/A8_cdndal_adv0.3_combined_s42*.eval.json",
+          "proposals/A8_cd_ndal/out/A8_cdndal_control_combined_s42*.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "D4",
+      "wave": "D",
+      "title": "A2 CC-NAP consolidation into a reportable result",
+      "script": "tasks/D4_consolidate_a2.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "1 GPU-h",
+      "gpu_mb": 8000,
+      "source": "MS 5 P1",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/D4/result.json",
+        "key": "ok"
+      },
+      "long": true
+    },
+    {
+      "id": "E1",
+      "wave": "E",
+      "title": "T1 no_mfa_si and m1024_si",
+      "script": "tasks/E1_t1_remaining.sh",
+      "deps": [
+        "A4"
+      ],
+      "cost": "~70 GPU-h",
+      "gpu_mb": 8000,
+      "source": "TEP 4, AR 11 item 4",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "transformer_sv/T1_mfa_conformer/out/MFAConformer_no_mfa_si_s42.eval.json",
+          "transformer_sv/T1_mfa_conformer/out/MFAConformer_m1024_si_s42.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "E2",
+      "wave": "E",
+      "title": "T2 tf4_ta and tf0_ta",
+      "script": "tasks/E2_t2_tamil.sh",
+      "deps": [
+        "A4"
+      ],
+      "cost": "~70 GPU-h",
+      "gpu_mb": 8000,
+      "source": "TEP P4",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "transformer_sv/T2_res2former/out/Res2Former_tf4_ta_s42.eval.json",
+          "transformer_sv/T2_res2former/out/Res2Former_tf0_ta_s42.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "E3",
+      "wave": "E",
+      "title": "T3 VOT r124_si and r1_si",
+      "script": "tasks/E3_t3_vot.sh",
+      "deps": [
+        "E1"
+      ],
+      "cost": "~80 GPU-h",
+      "gpu_mb": 8000,
+      "source": "TEP P5",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "transformer_sv/T3_vot/out/VOT_r124_si_s42.eval.json",
+          "transformer_sv/T3_vot/out/VOT_r1_si_s42.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "E4",
+      "wave": "E",
+      "title": "T4 SpecViT p16x4_si and frame_si",
+      "script": "tasks/E4_t4_specvit.sh",
+      "deps": [
+        "E3"
+      ],
+      "cost": "~90 GPU-h",
+      "gpu_mb": 8000,
+      "source": "TEP P6",
+      "long": true,
+      "exit_test": {
+        "type": "all_globs",
+        "root": "SL_SPV",
+        "paths": [
+          "transformer_sv/T4_spec_vit/out/SpecViT_p16x4_si_s42.eval.json",
+          "transformer_sv/T4_spec_vit/out/SpecViT_frame_si_s42.eval.json"
+        ]
+      }
+    },
+    {
+      "id": "F1",
+      "wave": "F",
+      "title": "Run V4 (SE) and V5 (Res2Net) properly under the v1 harness",
+      "script": "tasks/F1_v4_v5.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "~70 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AR 11 item 9",
+      "long": true,
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/F1/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "F3",
+      "wave": "F",
+      "title": "The mel-scale question: is an English-fitted scale right for si/ta?",
+      "script": "tasks/F3_mel_scale.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "~40 GPU-h",
+      "gpu_mb": 8000,
+      "source": "AR 11 item 11",
+      "long": true,
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/F3/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "G1",
+      "wave": "G",
+      "title": "R7: re-run Phase I 10.32% at 3 seeds, or formally retire the claim",
+      "script": "tasks/G1_phase1_r7.sh",
+      "deps": [
+        "W0.1"
+      ],
+      "cost": "~30 GPU-h or 0",
+      "gpu_mb": 8000,
+      "source": "AR 10.3 item 3",
+      "long": true,
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/G1/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "G2-G6",
+      "wave": "G",
+      "title": "Errata and withdrawals (AR 10.3 items 1,2,4,5,6)",
+      "script": "tasks/G2_errata.py",
+      "deps": [],
+      "cost": "2 h CPU",
+      "gpu_mb": 0,
+      "source": "AR 10.3",
+      "exit_test": {
+        "type": "json_true",
+        "path": "03_RESULTS/G2-G6/result.json",
+        "key": "ok"
+      }
+    },
+    {
+      "id": "G7",
+      "wave": "G",
+      "title": "Final consolidated report and paper drafts",
+      "script": "tasks/G7_final_report.sh",
+      "deps": [
+        "A5",
+        "B3",
+        "C5",
+        "G2-G6",
+        "A6"
+      ],
+      "cost": "2 days",
+      "gpu_mb": 0,
+      "source": "-",
+      "exit_test": {
+        "type": "file_glob",
+        "path": "04_REPORTS/final_research_report.md"
+      },
+      "long": true
+    }
+  ],
+  "manual_tracking": [
+    {
+      "id": "H1",
+      "title": "SLCeleb integration -- binding blocker on any Sri Lankan claim",
+      "source": "AR 11 item 6",
+      "owner": "PI"
+    },
+    {
+      "id": "H2",
+      "title": "Acquire within-speaker, cross-channel Sri Lankan recordings -- unlocks 4 of 9 proposals",
+      "source": "AR 11 item 7",
+      "owner": "PI"
+    },
+    {
+      "id": "H3",
+      "title": "Listening pass on slr52_sinhala -- shortlists exist, no metric can close it",
+      "source": "AR 11 item 8",
+      "owner": "PI + annotator"
+    },
+    {
+      "id": "H4",
+      "title": "Code-switched SL corpus with frame-level language tags",
+      "source": "MS 5 P3",
+      "owner": "PI"
+    }
+  ]
+}

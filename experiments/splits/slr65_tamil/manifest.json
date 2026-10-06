@@ -1,0 +1,30 @@
+{
+  "corpus": "slr65_tamil",
+  "language": "ta",
+  "role": "heldout_generalisation_probe",
+  "seed": 42,
+  "built_utc": "2026-08-12T11:46:26.025255+00:00",
+  "speakers": {
+    "total": 50,
+    "used_in_trials": 50
+  },
+  "duration_hours": {
+    "total": 7.08
+  },
+  "trials": {
+    "test": {
+      "n_target": 9366,
+      "n_nontarget": 9366,
+      "n_speakers": 50,
+      "target_pairs_cross_session": 9366,
+      "cross_session_fraction": 1.0
+    }
+  },
+  "test_mde_pp": 8.002,
+  "test_n_eff_cap": 71.4,
+  "sha256": {
+    "test_trials.txt": "e0c2b70cb2bf3035ddb4634636a66729bfa3299e1a23c35d7fd8e9cb90819420"
+  },
+  "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr65_tamil/wav",
+  "note": "No training partition: this corpus is never trained on."
+}

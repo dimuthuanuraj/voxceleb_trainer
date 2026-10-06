@@ -1,0 +1,16 @@
+{
+  "task": "C1",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "result.json[ok]=False",
+      "log": "03_RESULTS/C1/autopilot_01_20260915-092832.log",
+      "started": "2026-09-15T03:58:32+00:00",
+      "finished": "2026-09-15T04:00:30+00:00",
+      "finished_epoch": 1789444830.2782698,
+      "elapsed_s": 118.0
+    }
+  ]
+}

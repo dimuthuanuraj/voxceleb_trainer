@@ -1,0 +1,55 @@
+{
+  "exp_id": "A_resnetse34v2_aamsoftmax_si_s42",
+  "checkpoint": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/exps/A_resnetse34v2_aamsoftmax_si_s42/model/model_best.model",
+  "checkpoint_load": {
+    "tensors_loaded": 295,
+    "skipped": 1,
+    "backbone_skipped": []
+  },
+  "device": "cuda",
+  "evaluated_utc": "2026-08-22T10:11:50",
+  "sets": [
+    {
+      "set": "test",
+      "trials": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/test_trials.txt",
+      "cosine": {
+        "eer": 4.708135900796451,
+        "eer_threshold": 0.29974690079689026,
+        "mindcf": 0.30396209295291843,
+        "mindcf_threshold": 0.4794435501098633,
+        "n_trials": 19838,
+        "n_target": 9919
+      },
+      "as_norm": {
+        "eer": 4.6174009476761775,
+        "eer_threshold": 1.289870023727417,
+        "mindcf": 0.2918640992035478,
+        "mindcf_threshold": 3.3861632347106934,
+        "n_trials": 19838,
+        "n_target": 9919,
+        "cohort_size": 1008
+      }
+    },
+    {
+      "set": "transfer_ta",
+      "trials": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr127_tamil/test_trials.txt",
+      "cosine": {
+        "eer": 3.0333467255926077,
+        "eer_threshold": 0.5497426390647888,
+        "mindcf": 0.23543591803937228,
+        "mindcf_threshold": 0.6901266574859619,
+        "n_trials": 19912,
+        "n_target": 9956
+      },
+      "as_norm": {
+        "eer": 3.2744073925271193,
+        "eer_threshold": 4.512906551361084,
+        "mindcf": 0.26225391723583846,
+        "mindcf_threshold": 6.028023719787598,
+        "n_trials": 19912,
+        "n_target": 9956,
+        "cohort_size": 1008
+      }
+    }
+  ]
+}

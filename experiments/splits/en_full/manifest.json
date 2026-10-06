@@ -1,0 +1,33 @@
+{
+  "corpus": "en_full",
+  "language": "en",
+  "role": "reference_standard_protocol",
+  "seed": 42,
+  "built_utc": "2026-08-12T13:06:03.640433+00:00",
+  "speakers": {
+    "train": 5871,
+    "val": 120,
+    "test": "VoxCeleb1-O (40, disjoint by construction)"
+  },
+  "utterances": {
+    "train": 1065152
+  },
+  "trials": {
+    "val": {
+      "n_target": 4920,
+      "n_nontarget": 4920,
+      "n_speakers": 120,
+      "target_pairs_cross_session": 4412,
+      "cross_session_fraction": 0.8967
+    }
+  },
+  "test_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/voxceleb_new/test_list.txt",
+  "test_list_note": "canonical VoxCeleb1-O; deliberately NOT regenerated, so the EER is comparable with published numbers",
+  "cohort_utterances": 1500,
+  "purpose": "positive control \u2014 ECAPA here should land near the ~1% EER this recipe is known to give on VoxCeleb1-O. A large deviation invalidates the SL numbers too.",
+  "sha256": {
+    "train_list.txt": "f93924ca9c959418afda9f05dc8a7972a9bcae99d35eea82b9e9910acb76cba1",
+    "val_trials.txt": "59cdb96ea728b7a2da912237980e37b643bab92b2fd3063cce66b2a0377b21cf",
+    "asnorm_cohort.txt": "d03f8df977ff8621ded4e5031073f16f60b93aee5dfd3472e9b0d44577e8175d"
+  }
+}

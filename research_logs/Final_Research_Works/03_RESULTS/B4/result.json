@@ -1,0 +1,7 @@
+{
+  "task": "B4",
+  "ok": false,
+  "completed_replicas": [],
+  "target": 12,
+  "prediction_P24": "ordering stable, at least one absolute EER moves > 0.5 pp"
+}

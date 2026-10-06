@@ -1,0 +1,51 @@
+{
+  "corpus": "slr52_sinhala",
+  "language": "si",
+  "role": "primary",
+  "seed": 42,
+  "built_utc": "2026-08-12T11:46:24.862947+00:00",
+  "speakers": {
+    "total": 478,
+    "train": 336,
+    "val": 51,
+    "test": 91,
+    "disjoint": true,
+    "overlap_train_test": 0
+  },
+  "duration_hours": {
+    "train": 157.06,
+    "val": 23.95,
+    "test": 43.49
+  },
+  "utterances": {
+    "train": 129042
+  },
+  "trials": {
+    "val": {
+      "n_target": 4998,
+      "n_nontarget": 4998,
+      "n_speakers": 51,
+      "target_pairs_cross_session": 4998,
+      "cross_session_fraction": 1.0
+    },
+    "test": {
+      "n_target": 9919,
+      "n_nontarget": 9919,
+      "n_speakers": 91,
+      "target_pairs_cross_session": 9919,
+      "cross_session_fraction": 1.0
+    }
+  },
+  "cohort_utterances": 1008,
+  "test_mde_pp": 5.936,
+  "val_mde_pp": 7.931,
+  "test_n_eff_cap": 130.0,
+  "power_note": "test_mde_pp bounds a SINGLE system's absolute EER and is capped by speaker count (test_n_eff_cap = S/rho), not by trial count. Architecture ranking uses the paired speaker-level bootstrap on EER differences in experiments/tools/analyze.py, which resolves much finer differences because speaker difficulty cancels.",
+  "sha256": {
+    "train_list.txt": "ef1ae1a8e47a46b395cd33c93c43f731701c07cbca10f3e6103f33d51fedd6c2",
+    "val_trials.txt": "c9d60a30033f20d96a3c0729aa46c9952dd72120f625a14d0ea1f92befa302e2",
+    "test_trials.txt": "a52608f56e24cf627d57892a8f77fc97aa088b02401891979d7a3caacd2b9215",
+    "asnorm_cohort.txt": "0bf6a8ee547009dc52170790908aa3c41a0b0be90f51028178ebb2d8bdb84539"
+  },
+  "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav"
+}

@@ -1,0 +1,38 @@
+{
+  "task": "A6",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "result.json[ok]=False",
+      "log": "03_RESULTS/A6/autopilot_01_20260914-113506.log",
+      "started": "2026-09-14T06:05:06+00:00",
+      "finished": "2026-09-14T06:06:30+00:00",
+      "finished_epoch": 1789365990.6801944,
+      "elapsed_s": 84.1
+    },
+    {
+      "n": 2,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "result.json[ok]=False",
+      "log": "03_RESULTS/A6/autopilot_02_20260914-113658.log",
+      "started": "2026-09-14T06:06:58+00:00",
+      "finished": "2026-09-14T06:07:29+00:00",
+      "finished_epoch": 1789366049.4995656,
+      "elapsed_s": 30.8
+    },
+    {
+      "n": 3,
+      "rc": 0,
+      "passed": false,
+      "exit_test": "result.json[ok]=False",
+      "log": "03_RESULTS/A6/autopilot_03_20260914-122957.log",
+      "started": "2026-09-14T06:59:57+00:00",
+      "finished": "2026-09-14T07:00:27+00:00",
+      "finished_epoch": 1789369227.9468212,
+      "elapsed_s": 30.9
+    }
+  ]
+}

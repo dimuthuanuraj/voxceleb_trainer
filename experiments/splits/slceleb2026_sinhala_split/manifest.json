@@ -1,0 +1,51 @@
+{
+  "corpus": "slceleb2026_sinhala_split",
+  "language": "si",
+  "role": "primary_in_the_wild_sinhala",
+  "source": "slceleb2026_sinhala",
+  "seed": 42,
+  "built_utc": "2026-08-14T05:54:32.447284+00:00",
+  "speakers": {
+    "total": 123,
+    "train": 82,
+    "val": 10,
+    "test": 31,
+    "disjoint": true,
+    "overlap_train_test": 0
+  },
+  "duration_hours": {
+    "train": 55.96,
+    "test": 22.0
+  },
+  "utterances": {
+    "train": 31284
+  },
+  "trials": {
+    "val": {
+      "n_target": 4995,
+      "n_nontarget": 4995,
+      "n_speakers": 9,
+      "target_pairs_cross_session": 4995,
+      "cross_session_fraction": 1.0
+    },
+    "test": {
+      "n_target": 9848,
+      "n_nontarget": 9848,
+      "n_speakers": 24,
+      "target_pairs_cross_session": 9848,
+      "cross_session_fraction": 1.0
+    }
+  },
+  "cohort_utterances": 246,
+  "test_mde_pp": 11.542,
+  "test_n_eff_cap": 34.3,
+  "protocol": "target pairs are STRICTLY cross-session (session = YouTube video id, so a different session is a different day, studio, microphone and background)",
+  "why_it_matters": "slr52_sinhala has n_utts == n_sessions, so it has no within-speaker session structure and its cross-session trials are indistinguishable from cross-utterance ones. This corpus is the only Sinhala data here where a cross-session target trial is genuine.",
+  "caveat": "123 speakers total, so the test partition is small and the absolute EER is imprecise (see test_n_eff_cap). The protocol is honest; the precision is not. Use the paired contrasts.",
+  "sha256": {
+    "train_list.txt": "914d82d7148eb091f255cc11ea1d89be2ead854e382b1a4bbf2c8ab028b49507",
+    "val_trials.txt": "314bf350198bb3df9d823414c1b356a04773a8035c4bbe88a55f6fbc3f5a6851",
+    "test_trials.txt": "e0a162cceafd6b604ea3683cabcb3593b9b3ef30c234d2f81dd028593a92f971"
+  },
+  "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav"
+}

@@ -1,0 +1,344 @@
+{
+  "stopped_at": "2026-09-15T04:08:55+00:00",
+  "reason": "user requested a temporary stop",
+  "checkpoints": {
+    "MFAConformer_full_si_s42": {
+      "epochs": 31,
+      "last": 31,
+      "best_epoch": 28,
+      "best_val_eer": 4.0416
+    },
+    "MFAConformer_full_ta_s42": {
+      "epochs": 41,
+      "last": 41,
+      "best_epoch": 31,
+      "best_val_eer": 1.1739
+    },
+    "MFAConformer_no_attention_si_s42": {
+      "epochs": 36,
+      "last": 36,
+      "best_epoch": 31,
+      "best_val_eer": 3.7815
+    },
+    "MFAConformer_no_attention_ta_s42": {
+      "epochs": 18,
+      "last": 18,
+      "best_epoch": 18,
+      "best_val_eer": 1.5179
+    },
+    "Res2Former_tf0_si_s42": {
+      "epochs": 42,
+      "last": 42,
+      "best_epoch": 32,
+      "best_val_eer": 4.3417
+    },
+    "Res2Former_tf4_si_s42": {
+      "epochs": 41,
+      "last": 41,
+      "best_epoch": 21,
+      "best_val_eer": 5.2021
+    },
+    "LSCAM_si_s42": {
+      "epochs": 60,
+      "last": 60,
+      "best_epoch": 49,
+      "best_val_eer": 4.3417
+    },
+    "DKCAMPP_si_s42": {
+      "epochs": 60,
+      "last": 60,
+      "best_epoch": 55,
+      "best_val_eer": 4.0416
+    },
+    "A6_channel_aware_si_pooled_s42": {
+      "epochs": 41,
+      "last": 41,
+      "best_epoch": 25,
+      "best_val_eer": 15.5909
+    },
+    "A6_plain_ssps_si_pooled_s42": {
+      "epochs": 60,
+      "last": 60,
+      "best_epoch": 50,
+      "best_val_eer": 14.9605
+    },
+    "A7_pllw_combined_s42": {
+      "epochs": 53,
+      "last": 53,
+      "best_epoch": 37,
+      "best_val_eer": 1.9217
+    },
+    "A9_subcenter_measured_si_s123": {
+      "epochs": 20,
+      "last": 20,
+      "best_epoch": 20,
+      "best_val_eer": 4.2617
+    },
+    "A9_subcenter_measured_si_s42": {
+      "epochs": 59,
+      "last": 59,
+      "best_epoch": 43,
+      "best_val_eer": 3.5414
+    },
+    "A9_subcenter_measured_ta_s123": {
+      "epochs": 13,
+      "last": 13,
+      "best_epoch": 8,
+      "best_val_eer": 1.3762
+    },
+    "A9_subcenter_measured_ta_s42": {
+      "epochs": 60,
+      "last": 60,
+      "best_epoch": 44,
+      "best_val_eer": 0.9512
+    },
+    "A_ecapa1024_aamsoftmax_si_s42": {
+      "epochs": 57,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_mid_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34l_aamsoftmax_si_pooled_s42": {
+      "epochs": 30,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ecapa512_aamsoftmax_ta_s42": {
+      "epochs": 54,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34v2_aamsoftmax_si_pooled_s42": {
+      "epochs": 42,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_mlpmixer_aamsoftmax_en_matched_s42__smoke": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "H_ssl_wavlm_ecapa_aamsoftmax_si_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_ft_aamsoftmax_ta_s42": {
+      "epochs": 31,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_lw_aamsoftmax_combined_s42": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "H_ssl_mhubert_ecapa_aamsoftmax_si_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_lw_aamsoftmax_si_s42": {
+      "epochs": 56,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_ecapa1024_aamsoftmax_en_full_s42__smoke": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_low_aamsoftmax_ta_s42": {
+      "epochs": 22,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_mlpmixer_aamsoftmax_si_s42": {
+      "epochs": 48,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34l_aamsoftmax_si_celeb_s42": {
+      "epochs": 21,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_resnetse34l_aamsoftmax_en_matched_s42": {
+      "epochs": 59,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34l_aamsoftmax_si_s42": {
+      "epochs": 37,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ecapa1024_aamsoftmax_si_pooled_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34v2_aamsoftmax_si_s42": {
+      "epochs": 25,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ssl_wavlm_aamsoftmax_ta_s42": {
+      "epochs": 51,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_mid_aamsoftmax_si_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_mlpmixer_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_resnetse34l_aamsoftmax_en_matched_s42__smoke": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_resnetse34v2_aamsoftmax_en_matched_s42": {
+      "epochs": 58,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ssl_wavlm_aamsoftmax_si_pooled_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_vggvox_aamsoftmax_en_matched_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_ecapa1024_aamsoftmax_en_matched_s42": {
+      "epochs": 49,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_vggvox_aamsoftmax_en_matched_s42__smoke": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_lw_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_mfcc80_aamsoftmax_si_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_vggvox_aamsoftmax_si_pooled_s42": {
+      "epochs": 39,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_mfcc80_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_mlpmixer_aamsoftmax_en_matched_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34v2_aamsoftmax_si_celeb_s42": {
+      "epochs": 46,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_ecapa1024_aamsoftmax_en_full_s42": {
+      "epochs": 10,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_mhubert_lw_aamsoftmax_si_s42": {
+      "epochs": 55,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "H_ssl_mhubert_ecapa_aamsoftmax_ta_s42": {
+      "epochs": 45,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_mlpmixer_aamsoftmax_si_pooled_s42": {
+      "epochs": 59,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ssl_wavlm_aamsoftmax_si_celeb_s42": {
+      "epochs": 38,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ecapa512_aamsoftmax_si_pooled_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_ecapa512_aamsoftmax_en_matched_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34l_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_vggvox_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_ecapa512_aamsoftmax_en_matched_s42__smoke": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_ssl_wavlm_aamsoftmax_en_matched_s42": {
+      "epochs": 58,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ssl_wavlm_aamsoftmax_si_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ecapa1024_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_mfcc40d_aamsoftmax_si_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ecapa512_aamsoftmax_si_celeb_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_ft_aamsoftmax_si_s42": {
+      "epochs": 19,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_ecapa1024_aamsoftmax_en_matched_s42__smoke": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "E_resnetse34v2_aamsoftmax_en_matched_s42__smoke": {
+      "epochs": 2,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_wavlm_low_aamsoftmax_si_s42": {
+      "epochs": 49,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "H_ssl_wavlm_ecapa_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_vggvox_aamsoftmax_si_s42": {
+      "epochs": 46,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_mfcc40d_aamsoftmax_ta_s42": {
+      "epochs": 60,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_resnetse34v2_aamsoftmax_ta_s42": {
+      "epochs": 51,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ecapa1024_aamsoftmax_si_celeb_s42": {
+      "epochs": 40,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_mlpmixer_aamsoftmax_si_celeb_s42": {
+      "epochs": 50,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "F_ssl_mhubert_lw_aamsoftmax_ta_s42": {
+      "epochs": 30,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_ecapa512_aamsoftmax_si_s42": {
+      "epochs": 43,
+      "tree": "voxceleb_trainer/exps"
+    },
+    "A_vggvox_aamsoftmax_si_celeb_s42": {
+      "epochs": 38,
+      "tree": "voxceleb_trainer/exps"
+    }
+  }
+}

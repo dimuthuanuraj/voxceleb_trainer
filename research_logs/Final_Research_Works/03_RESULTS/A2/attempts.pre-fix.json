@@ -1,0 +1,16 @@
+{
+  "task": "A2",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 1,
+      "passed": false,
+      "exit_test": "2 missing: LSCAM_si_s42*.eval.json, DKCAMPP_si_s42*.eval.json",
+      "log": "03_RESULTS/A2/autopilot_01_20260914-113106.log",
+      "started": "2026-09-14T06:01:06+00:00",
+      "finished": "2026-09-14T06:01:43+00:00",
+      "finished_epoch": 1789365703.9182613,
+      "elapsed_s": 37.8
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "encoder": "wavlm-base-plus",
+  "condition": "si",
+  "n_trials": 4000,
+  "n_files": 2822,
+  "seconds_per_file": 4.0,
+  "protocol": "frozen encoder, mean-pool over time, cosine, NO training",
+  "layers": [
+    {
+      "layer": 0,
+      "eer": 22.3
+    },
+    {
+      "layer": 1,
+      "eer": 23.3749
+    },
+    {
+      "layer": 2,
+      "eer": 26.275
+    },
+    {
+      "layer": 3,
+      "eer": 29.275
+    },
+    {
+      "layer": 4,
+      "eer": 32.1251
+    },
+    {
+      "layer": 5,
+      "eer": 33.7001
+    },
+    {
+      "layer": 6,
+      "eer": 36.5001
+    },
+    {
+      "layer": 7,
+      "eer": 37.525
+    },
+    {
+      "layer": 8,
+      "eer": 37.9251
+    },
+    {
+      "layer": 9,
+      "eer": 38.9
+    },
+    {
+      "layer": 10,
+      "eer": 38.1252
+    },
+    {
+      "layer": 11,
+      "eer": 41.2999
+    },
+    {
+      "layer": 12,
+      "eer": 40.325
+    }
+  ],
+  "best_layer": {
+    "layer": 0,
+    "eer": 22.3
+  },
+  "last_layer": {
+    "layer": 12,
+    "eer": 40.325
+  },
+  "last_over_best_ratio": 1.808
+}

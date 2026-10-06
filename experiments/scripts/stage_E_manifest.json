@@ -1,0 +1,228 @@
+{
+  "stage": "E",
+  "generated_utc": "2026-08-16T10:09:44.995754+00:00",
+  "n_experiments": 8,
+  "experiments": [
+    {
+      "exp_id": "E_ecapa1024_aamsoftmax_en_full_s42",
+      "stage": "E",
+      "architecture": "ecapa1024",
+      "model": "ECAPA_TDNN",
+      "loss": "aamsoftmax",
+      "condition": "en_full",
+      "condition_label": "English, standard VoxCeleb protocol",
+      "corpus": "en_full",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 5871,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "E_ecapa1024_aamsoftmax_en_matched_s42",
+      "stage": "E",
+      "architecture": "ecapa1024",
+      "model": "ECAPA_TDNN",
+      "loss": "aamsoftmax",
+      "condition": "en_matched",
+      "condition_label": "English, scale-matched to Sinhala",
+      "corpus": "en_matched",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "E_ecapa512_aamsoftmax_en_matched_s42",
+      "stage": "E",
+      "architecture": "ecapa512",
+      "model": "ECAPA_TDNN_C512",
+      "loss": "aamsoftmax",
+      "condition": "en_matched",
+      "condition_label": "English, scale-matched to Sinhala",
+      "corpus": "en_matched",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "E_mlpmixer_aamsoftmax_en_matched_s42",
+      "stage": "E",
+      "architecture": "mlpmixer",
+      "model": "MLPMixerSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "en_matched",
+      "condition_label": "English, scale-matched to Sinhala",
+      "corpus": "en_matched",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "E_resnetse34l_aamsoftmax_en_matched_s42",
+      "stage": "E",
+      "architecture": "resnetse34l",
+      "model": "ResNetSE34L",
+      "loss": "aamsoftmax",
+      "condition": "en_matched",
+      "condition_label": "English, scale-matched to Sinhala",
+      "corpus": "en_matched",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "E_resnetse34v2_aamsoftmax_en_matched_s42",
+      "stage": "E",
+      "architecture": "resnetse34v2",
+      "model": "ResNetSE34V2",
+      "loss": "aamsoftmax",
+      "condition": "en_matched",
+      "condition_label": "English, scale-matched to Sinhala",
+      "corpus": "en_matched",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "E_ssl_wavlm_aamsoftmax_en_matched_s42",
+      "stage": "E",
+      "architecture": "ssl_wavlm",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "en_matched",
+      "condition_label": "English, scale-matched to Sinhala",
+      "corpus": "en_matched",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "E_vggvox_aamsoftmax_en_matched_s42",
+      "stage": "E",
+      "architecture": "vggvox",
+      "model": "VGGVox",
+      "loss": "aamsoftmax",
+      "condition": "en_matched",
+      "condition_label": "English, scale-matched to Sinhala",
+      "corpus": "en_matched",
+      "languages": [
+        "en"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage E English reference",
+      "deviations_from_controlled_factors": {
+        "n_mels": "40 (architecturally fixed; all other mel backbones use 80)"
+      },
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    }
+  ],
+  "selection": {
+    "conditions": [
+      "en_full"
+    ],
+    "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+  },
+  "selection_history": [
+    {
+      "conditions": [
+        "en_matched"
+      ],
+      "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+    },
+    {
+      "conditions": [
+        "en_full"
+      ],
+      "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+    },
+    {
+      "conditions": [
+        "en_matched"
+      ],
+      "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+    },
+    {
+      "conditions": [
+        "en_full"
+      ],
+      "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+    },
+    {
+      "conditions": [
+        "en_full"
+      ],
+      "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+    },
+    {
+      "conditions": [
+        "en_full"
+      ],
+      "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+    },
+    {
+      "conditions": [
+        "en_matched"
+      ],
+      "note": "English reference: en_full validates the harness against published VoxCeleb1-O numbers; en_matched makes the cross-language ranking comparison valid"
+    }
+  ],
+  "scripts_on_disk_not_in_manifest": []
+}

@@ -1,0 +1,24 @@
+{
+  "stage": "F",
+  "scale": "full",
+  "finished_utc": "2026-08-14T22:57:32.523084+00:00",
+  "wall_hours": 6.89,
+  "results": {
+    "F_ssl_wavlm_ft_aamsoftmax_si_s42": {
+      "rc": 0,
+      "hours": 3.1,
+      "slot": "compute-node-4:gpu0",
+      "gpu_free_mb": 45489,
+      "gpu_required_mb": 40000,
+      "attempts": 1
+    },
+    "F_ssl_wavlm_ft_aamsoftmax_ta_s42": {
+      "rc": 0,
+      "hours": 3.787,
+      "slot": "compute-node-4:gpu0",
+      "gpu_free_mb": 45489,
+      "gpu_required_mb": 40000,
+      "attempts": 1
+    }
+  }
+}

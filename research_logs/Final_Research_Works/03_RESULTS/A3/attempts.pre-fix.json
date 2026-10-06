@@ -1,0 +1,16 @@
+{
+  "task": "A3",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 1,
+      "passed": false,
+      "exit_test": "no match for transformer_sv/T6_span_probe/out/*MFAConformer_full_si_s42*.json",
+      "log": "03_RESULTS/A3/autopilot_01_20260914-113109.log",
+      "started": "2026-09-14T06:01:09+00:00",
+      "finished": "2026-09-14T06:01:43+00:00",
+      "finished_epoch": 1789365703.918989,
+      "elapsed_s": 34.8
+    }
+  ]
+}

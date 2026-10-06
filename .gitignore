@@ -133,3 +133,49 @@ venv.bak/
 *.fls
 *.fdb_latexmk
 *.synctex.gz
+
+# ---------------------------------------------------------------------------
+# experiments/ — the SL architecture study (see experiments/README.md)
+#
+# Tracked: the code, the generated experiment scripts, and the per-run RECORDS
+# (manifest / epochs / final / test_eval / command). Those are the audit trail.
+# Ignored: bulk artefacts that are either large or regenerable. The split lists
+# are deterministic from --seed and every one carries a SHA-256 in its
+# manifest.json, so re-running build_splits.py reproduces them byte-for-byte.
+# ---------------------------------------------------------------------------
+experiments/splits/*/*.txt
+experiments/results/*/stdout.log
+experiments/results/*/scores/
+experiments/results/*/script.py
+experiments/results/*__smoke/
+experiments/results/*__dev/
+experiments/results/*.superseded-*/
+experiments/queue_logs/
+experiments/analysis/figures/
+
+# config.yaml inside a run directory is a per-run artefact, but the blanket
+# *.yaml rule above already covers it; the same content is in manifest.json
+# under resolved_parameters.
+!experiments/splits/*/manifest.json
+
+# ---------------------------------------------------------------------------
+# Added 2026-10-07, completing the experiments/ block above.
+#
+# Pretrained SSL encoder weights — 720 MB across two files, fetched from
+# their upstream publishers rather than authored here.
+# tools/fetch_ssl_encoder.py re-downloads them.
+models/weights/
+*.safetensors
+
+# results_backup/ is the pre-rebuild snapshot from 2026-08-22. Its per-run
+# RECORDS are kept as history; its score archives are not, for the same
+# reason the live tree's are not (rule above: experiments/results/*/scores/).
+# 280 .npz files, 56 MB, all regenerable from a checkpoint.
+experiments/results_backup/*/*/scores/
+experiments/results_backup/*/*/*.npz
+*.npz
+
+# Per-run model directories: checkpoints and TensorBoard events.
+exps/*/model/
+exps/*/logs/
+events.out.tfevents.*

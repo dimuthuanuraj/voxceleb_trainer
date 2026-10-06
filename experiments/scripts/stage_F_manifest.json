@@ -1,0 +1,743 @@
+{
+  "stage": "F",
+  "generated_utc": "2026-09-15T03:56:29.228267+00:00",
+  "n_experiments": 23,
+  "experiments": [
+    {
+      "exp_id": "F_mfcc40d_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "mfcc40d",
+      "model": "ECAPA_TDNN_MFCC40D",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (cepstral): 40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "F_mfcc40d_aamsoftmax_si_s42",
+      "stage": "F",
+      "architecture": "mfcc40d",
+      "model": "ECAPA_TDNN_MFCC40D",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (cepstral): 40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "F_mfcc40d_aamsoftmax_ta_s42",
+      "stage": "F",
+      "architecture": "mfcc40d",
+      "model": "ECAPA_TDNN_MFCC40D",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (cepstral): 40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "F_mfcc80_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "mfcc80",
+      "model": "ECAPA_TDNN_MFCC",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (cepstral): 80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "F_mfcc80_aamsoftmax_si_s42",
+      "stage": "F",
+      "architecture": "mfcc80",
+      "model": "ECAPA_TDNN_MFCC",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (cepstral): 80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "F_mfcc80_aamsoftmax_ta_s42",
+      "stage": "F",
+      "architecture": "mfcc80",
+      "model": "ECAPA_TDNN_MFCC",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (cepstral): 80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 9000
+    },
+    {
+      "exp_id": "F_ssl_mhubert_lw_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "ssl_mhubert_lw",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted): mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_mhubert_lw_aamsoftmax_si_s42",
+      "stage": "F",
+      "architecture": "ssl_mhubert_lw",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted): mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_mhubert_lw_aamsoftmax_ta_s42",
+      "stage": "F",
+      "architecture": "ssl_mhubert_lw",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted): mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_mhubert_lw_ft_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "ssl_mhubert_lw_ft",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted_finetuned): The arbiter on the encoder that won v1 (mHuBERT-147 beat WavLM on both languages at matched capacity, p = 0.000 / 0.005)",
+      "deviations_from_controlled_factors": {
+        "lr": "1e-4 with LLRD 0.9 (inherited from ssl_wavlm_ft)",
+        "ssl_freeze": "False"
+      },
+      "extra_flags": [],
+      "overrides": {
+        "lr": 0.0001,
+        "llrd_decay": 0.9
+      },
+      "min_gpu_mb": 30000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_ft_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_ft",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_finetuned): WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+      "deviations_from_controlled_factors": {
+        "lr": "1e-4 with LLRD 0.9 (pinned value 1e-3 is unusable for a pretrained transformer)",
+        "ssl_freeze": "False (all other SSL runs freeze the encoder)"
+      },
+      "extra_flags": [],
+      "overrides": {
+        "lr": 0.0001,
+        "llrd_decay": 0.9
+      },
+      "min_gpu_mb": 30000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_ft_aamsoftmax_si_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_ft",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_finetuned): WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+      "deviations_from_controlled_factors": {
+        "lr": "1e-4 with LLRD 0.9 (pinned value 1e-3 is unusable for a pretrained transformer)",
+        "ssl_freeze": "False (all other SSL runs freeze the encoder)"
+      },
+      "extra_flags": [],
+      "overrides": {
+        "lr": 0.0001,
+        "llrd_decay": 0.9
+      },
+      "min_gpu_mb": 30000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_ft_aamsoftmax_ta_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_ft",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_finetuned): WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+      "deviations_from_controlled_factors": {
+        "lr": "1e-4 with LLRD 0.9 (pinned value 1e-3 is unusable for a pretrained transformer)",
+        "ssl_freeze": "False (all other SSL runs freeze the encoder)"
+      },
+      "extra_flags": [],
+      "overrides": {
+        "lr": 0.0001,
+        "llrd_decay": 0.9
+      },
+      "min_gpu_mb": 30000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_low_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_low",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_single_layer): WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_low_aamsoftmax_si_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_low",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_single_layer): WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_low_aamsoftmax_ta_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_low",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_single_layer): WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_lw_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_lw",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted): WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_lw_aamsoftmax_si_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_lw",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted): WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_lw_aamsoftmax_ta_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_lw",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted): WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_lw_ft_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_lw_ft",
+      "model": "SSLFrontendSpeakerLW",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_layer_weighted_finetuned): THE ARBITER: WavLM layer-weighted AND fine-tuned \u2014 the cell v1 never measured, and the one P3's headline claim rests on",
+      "deviations_from_controlled_factors": {
+        "lr": "1e-4 with LLRD 0.9 (inherited from ssl_wavlm_ft verbatim so the layer-weighting contrast is the single changed factor)",
+        "ssl_freeze": "False (as ssl_wavlm_ft)"
+      },
+      "extra_flags": [],
+      "overrides": {
+        "lr": 0.0001,
+        "llrd_decay": 0.9
+      },
+      "min_gpu_mb": 30000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_mid_aamsoftmax_combined_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_mid",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "combined",
+      "condition_label": "Sinhala + Tamil jointly",
+      "corpus": "combined_si_ta",
+      "languages": [
+        "si",
+        "ta"
+      ],
+      "n_classes": 782,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_single_layer): WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_mid_aamsoftmax_si_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_mid",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "si",
+      "condition_label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "n_classes": 336,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_single_layer): WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    },
+    {
+      "exp_id": "F_ssl_wavlm_mid_aamsoftmax_ta_s42",
+      "stage": "F",
+      "architecture": "ssl_wavlm_mid",
+      "model": "SSLFrontendSpeaker",
+      "loss": "aamsoftmax",
+      "condition": "ta",
+      "condition_label": "Tamil only",
+      "corpus": "slr127_tamil",
+      "languages": [
+        "ta"
+      ],
+      "n_classes": 446,
+      "seed": 42,
+      "embedding_dim": 256,
+      "note": "Stage F front-end sweep (ssl_single_layer): WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+      "deviations_from_controlled_factors": {},
+      "extra_flags": [],
+      "overrides": {},
+      "min_gpu_mb": 8000
+    }
+  ],
+  "selection": {
+    "conditions": [
+      "combined"
+    ],
+    "frontends": {
+      "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+      "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+      "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+      "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+      "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+      "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+      "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+      "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+      "ssl_wavlm_lw_ft": "THE ARBITER: WavLM layer-weighted AND fine-tuned \u2014 the cell v1 never measured, and the one P3's headline claim rests on",
+      "ssl_mhubert_lw_ft": "The arbiter on the encoder that won v1 (mHuBERT-147 beat WavLM on both languages at matched capacity, p = 0.000 / 0.005)",
+      "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+    },
+    "reused_from_stage_A": [
+      "mel80",
+      "ssl_wavlm_last"
+    ]
+  },
+  "selection_history": [
+    {
+      "conditions": [
+        "si",
+        "ta"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 tests the layer-depth hypothesis directly",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "si",
+        "ta"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 tests the layer-depth hypothesis directly",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "si",
+        "ta"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+        "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+        "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "si",
+        "ta"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+        "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+        "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "si",
+        "ta"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+        "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+        "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "combined"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+        "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+        "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_wavlm_lw_ft": "THE ARBITER: WavLM layer-weighted AND fine-tuned \u2014 the cell v1 never measured, and the one P3's headline claim rests on",
+        "ssl_mhubert_lw_ft": "The arbiter on the encoder that won v1 (mHuBERT-147 beat WavLM on both languages at matched capacity, p = 0.000 / 0.005)",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "combined"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+        "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+        "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_wavlm_lw_ft": "THE ARBITER: WavLM layer-weighted AND fine-tuned \u2014 the cell v1 never measured, and the one P3's headline claim rests on",
+        "ssl_mhubert_lw_ft": "The arbiter on the encoder that won v1 (mHuBERT-147 beat WavLM on both languages at matched capacity, p = 0.000 / 0.005)",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "combined"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+        "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+        "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_wavlm_lw_ft": "THE ARBITER: WavLM layer-weighted AND fine-tuned \u2014 the cell v1 never measured, and the one P3's headline claim rests on",
+        "ssl_mhubert_lw_ft": "The arbiter on the encoder that won v1 (mHuBERT-147 beat WavLM on both languages at matched capacity, p = 0.000 / 0.005)",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    },
+    {
+      "conditions": [
+        "combined"
+      ],
+      "frontends": {
+        "mel80": "80-bin log-mel \u2014 the study's baseline representation",
+        "mfcc80": "80 MFCCs, static only \u2014 same channel count as mel80, so the contrast is purely the DCT",
+        "mfcc40d": "40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+        "ssl_wavlm_last": "WavLM last layer \u2014 the trainer's current default",
+        "ssl_wavlm_mid": "WavLM layer 6 \u2014 mid-stack control; the probe says this is NOT the optimum, so it measures how far off the middle is",
+        "ssl_wavlm_low": "WavLM layer 0 (CNN output) \u2014 the probe's measured optimum",
+        "ssl_wavlm_ft": "WavLM fine-tuned end-to-end \u2014 tests the frozen-encoder ceiling",
+        "ssl_wavlm_lw": "WavLM with learned layer weights \u2014 the design the VoiceID product deploys, never before measured against the alternatives",
+        "ssl_wavlm_lw_ft": "THE ARBITER: WavLM layer-weighted AND fine-tuned \u2014 the cell v1 never measured, and the one P3's headline claim rests on",
+        "ssl_mhubert_lw_ft": "The arbiter on the encoder that won v1 (mHuBERT-147 beat WavLM on both languages at matched capacity, p = 0.000 / 0.005)",
+        "ssl_mhubert_lw": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) \u2014 same size, so this isolates PRETRAINING COVERAGE from capacity"
+      },
+      "reused_from_stage_A": [
+        "mel80",
+        "ssl_wavlm_last"
+      ]
+    }
+  ],
+  "scripts_on_disk_not_in_manifest": []
+}

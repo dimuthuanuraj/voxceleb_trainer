@@ -1,0 +1,348 @@
+{
+  "task": "G2-G6",
+  "ok": true,
+  "generated": "2026-09-12T08:28:58+00:00",
+  "documents_scanned": 72,
+  "forbidden_claims": [
+    {
+      "id": "E1",
+      "claim": "Any experimental result dated January-June 2026",
+      "pattern": null,
+      "status": "WITHDRAWN",
+      "reason": "Not reproducible from the repository; contradicted by the project audit of 2026-07-03.",
+      "source": "annual report 10.3 item 1, section 5",
+      "replacement": "None. This period has no citable experimental record."
+    },
+    {
+      "id": "E2",
+      "claim": "Nested learning: 9.84 % EER, validated for efficiency",
+      "pattern": "(?<![\\d.])9\\.84(?![\\d])",
+      "status": "WITHDRAWN",
+      "reason": "The measured record is three NaN collapses across three attempts.",
+      "source": "annual report 10.3 item 2, section 3.6",
+      "replacement": "NestedSpeakerNet failed: 3 attempts, NaN x2, 1.09x faster at best."
+    },
+    {
+      "id": "E3",
+      "claim": "Phase I MLP-Mixer student 10.32 % EER (headline)",
+      "pattern": "(?<![\\d.])10\\.32(?![\\d])",
+      "status": "UNDER REVIEW (G1)",
+      "reason": "Single seed, unreplicated, predates --deterministic; one log in the same record gives 14.62 %; a duplicated result set is suspected.",
+      "source": "annual report 10.3 item 3; audit item R7",
+      "replacement": "Pending G1: either 3 seeds with an interval, or formal retirement."
+    },
+    {
+      "id": "E4",
+      "claim": "ResNetSE34L is 34 layers / 6.8 M params / ~8-10 % EER",
+      "pattern": "6\\.8\\s*M|34 layers",
+      "status": "CORRECTED",
+      "reason": "The logs give 1.50 M parameters and 15.48 % EER.",
+      "source": "annual report 10.3 item 4",
+      "replacement": "ResNetSE34L: 1.50 M parameters, 15.48 % EER."
+    },
+    {
+      "id": "E5",
+      "claim": "Tamil speaker pool expanded 50 -> 752",
+      "pattern": "(?<![\\d.])752\\b(?!\\s*%)",
+      "status": "CORRECTED",
+      "reason": "The measured build is 706 speakers, 802 after QC corrections.",
+      "source": "annual report 10.3 item 5",
+      "replacement": "Tamil pool expanded 50 -> 706 (802 after QC correction)."
+    },
+    {
+      "id": "E6",
+      "claim": "Any v0 EER quoted without caveats",
+      "pattern": null,
+      "status": "CAVEAT REQUIRED",
+      "reason": "v0 lists were 100 % closed-set, and read speech is ~5x optimistic against genuine cross-session audio.",
+      "source": "annual report 10.3 item 6, sections 6.8.1 and 6.12",
+      "replacement": "Every v0 EER must carry both the closed-set caveat and the ~5x read-vs-wild optimism factor."
+    }
+  ],
+  "occurrences": {
+    "E2": [
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 435,
+        "text": "| Nested learning: 9.84 % EER, 12 layers, 4.2 M params, \"validated for efficiency\" | **[U]** **Directly contradicted.** The measured record (Dec 2025) is three "
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 1433,
+        "text": "2. **The nested-learning \"9.84 % EER, validated for efficiency\" claim** in"
+      }
+    ],
+    "E3": [
+      {
+        "file": "voxceleb_trainer/README_RAW_WAVEFORM_EXPERIMENT.md",
+        "line": 74,
+        "text": "1. **Performance:** Can raw waveform + distillation match mel-based V2 (10.32% EER)?"
+      },
+      {
+        "file": "voxceleb_trainer/README_RAW_WAVEFORM_EXPERIMENT.md",
+        "line": 93,
+        "text": "- Expected EER: 10.5-11.5% (vs mel-based V2: 10.32%)"
+      },
+      {
+        "file": "voxceleb_trainer/README_RAW_WAVEFORM_EXPERIMENT.md",
+        "line": 302,
+        "text": "- V2: 10.32% EER (Cosine loss fix) \u2190 **Baseline to beat**"
+      },
+      {
+        "file": "voxceleb_trainer/SAMPLING_RATE_GUIDE.md",
+        "line": 276,
+        "text": "A: Three reasons: (i) you cannot use any pretrained model \u2014 the 10.32% EER MLP-Mixer V2 in this repo, WavLM, ECAPA, XLS-R are all 16 kHz; (ii) FFT/mel-spec comp"
+      },
+      {
+        "file": "voxceleb_trainer/SL_LANGUAGE_SPV_ANALYSIS.md",
+        "line": 26,
+        "text": "- **MLP-Mixer V2 student** (2.66M params, cosine-similarity distillation, \u03b1=0.7): **10.32% EER** \u2014 current SOTA in this repo"
+      },
+      {
+        "file": "voxceleb_trainer/SL_LANGUAGE_SPV_ANALYSIS.md",
+        "line": 244,
+        "text": "- The repo is a **well-instrumented English speaker-verification trainer** with novel MLP-Mixer + distillation contributions (10.32% EER on VoxCeleb1) \u2014 it is n"
+      },
+      {
+        "file": "voxceleb_trainer/SL_LANGUAGE_SPV_ANALYSIS.md",
+        "line": 537,
+        "text": "- **The MLP-Mixer V2 \"10.32% EER\" headline number** in \u00a71 is"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 14,
+        "text": "- \u2705 **V2 (Cosine Loss, 2.66M params)** achieved **10.32% EER** - Best overall student model"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 172,
+        "text": "| **Best VEER** | **10.32%** (Epoch 60) | **-5.81%** \u2705 |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 173,
+        "text": "| Final VEER (epoch 100) | 10.32% | -5.81% |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 222,
+        "text": "- Gap from teacher: 10.32% - 9.68% = **0.64%** (acceptable for 31% smaller model)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 234,
+        "text": "- V2 (\u03b1=0.7, Cosine): 10.32% EER - distillation dominant (70%)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 239,
+        "text": "- Cosine: 10.32% EER (working)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 246,
+        "text": "**Recommendation:** Use as production model (10.32% EER, 2.66M params, 2\u00d7 faster)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 374,
+        "text": "| Final VEER | 10.32% | 0.00% | -5.16% | +0.64% |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 400,
+        "text": "| 100 | 10.32% | 15.48% \u274c | **10.32%** \ud83e\udd47 |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 518,
+        "text": "| **V2** | 2.66M | Mini | 0.7 | Cosine | **10.32%** | 60 | 10.32% | 292/s | \u2705 **BEST** |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 520,
+        "text": "| **V2_Large_LA** | 7.84M | Mini | 0.4 | Cosine | **10.11%** | 90 | 10.32% | 220/s | \u2705 Validated |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 527,
+        "text": "3. \ud83e\udd49 V2: 10.32% (+0.64% vs teacher)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 532,
+        "text": "1. \ud83e\udd47 V2: 10.32% / 2.66M = **3.88% per M**"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 637,
+        "text": "- V2 (ratio=0.69, \u03b1=0.7): 10.32% EER \u2705"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 684,
+        "text": "- V2:      10.32% EER, 2.66M params, 292 samples/sec (best efficiency)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 702,
+        "text": "- V2 (mini, \u03b1=0.7): 10.32% EER"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 726,
+        "text": "| **Cosine** | V2 (\u03b1=0.7, 2.66M) | 10.32% | 0.371570 | 93.8% | \u2705 Works |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 736,
+        "text": "| **0.7** | V2 (2.66M, Cosine) | 10.32% | 23% | 77% | \u2705 **Best** |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 747,
+        "text": "| **Small** | V2 (2.66M, \u03b1=0.7) | 10.32% | 2.66M | 0.7 | \u2705 Optimal |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 768,
+        "text": "| **Mini** | 30K | V2 (2.66M, \u03b1=0.7, Cosine) | 10.32% | ~60 min |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 785,
+        "text": "- **Model:** V2 (2.66M params, 10.32% EER)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 893,
+        "text": "Current: V2 on mini (30K samples) \u2192 10.32% EER"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 1037,
+        "text": "- **Impact:** 5.81% EER improvement (V1: 16.13% \u2192 V2: 10.32%)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 1081,
+        "text": "EER: 10.32%"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 1104,
+        "text": "- \u2705 **V2:** 10.32% EER (+0.64%) with 2.66M params (-31%), 2\u00d7 faster"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 1181,
+        "text": "100     10.32%   \u2193 Final (near best)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2025-12-30-31-experimental-results-analysis.md",
+        "line": 1204,
+        "text": "100     10.32%   \u2191        Same"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-07-03-project-audit-sota-roadmap.md",
+        "line": 47,
+        "text": "| R1 | Custom MLP-Mixer + LSTM-AE distillation track is far off SOTA | Best repo result: 10.32% EER @2.66M params (mini-Vox); teacher 9.68% | ReDimNet-B1 (Inter"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-07-03-project-audit-sota-roadmap.md",
+        "line": 53,
+        "text": "| R7 | Headline 10.32% MLP-Mixer number unreplicated | predates `--deterministic`; single seed | Re-run 3 seeds or retire the claim from the thesis. |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 209,
+        "text": "| **V2** | 2.66 M | 0.7 | cosine | mini | 13--14 % | **10.32 %** | Beat prediction |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 231,
+        "text": "loss, and EER fell **16.13 % -> 10.32 %** (36 % relative)."
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 261,
+        "text": "over V2_Large) but the model did **not** beat V2 (10.32 %) in any meaningful"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 273,
+        "text": "every logged epoch** --- 12.90 % at 20, 10.75 % at 60, 10.11 % at 90, 10.32 % at"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 285,
+        "text": "**V2 at 10.32 %**. Both describe the same configuration. **[U]**"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 366,
+        "text": "2. **Every headline number is a single seed**, and the best of them (10.32 %)"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 368,
+        "text": "3. **The best result, 10.32 % EER, is roughly 12x worse than the contemporary"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 489,
+        "text": "| R7 | The 10.32 % headline is unreplicated, single-seed, pre-`--deterministic` | Re-run 3 seeds or retire the claim |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 1317,
+        "text": "| **F4** | The whole Phase I strategic direction | competitive lightweight SV | **~12x off SOTA at matched size** | Training small models from scratch on VoxCel"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 1362,
+        "text": "| 2 | MLP-Mixer student reaches 10--11 % | Phase I | 16.13 % (V1), then 10.32 % (V2) | **Failed, then met after diagnosis** |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 1435,
+        "text": "3. **The Phase I 10.32 % headline** --- unreplicated, single seed, predates"
+      }
+    ],
+    "E4": [
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 155,
+        "text": "baseline as \"34 layers, 6.8 M parameters\" and elsewhere quotes ResNetSE34L at"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 1439,
+        "text": "4. **The Period 2 report's ResNetSE34L specification** (34 layers / 6.8 M / ~8--10 %"
+      }
+    ],
+    "E5": [
+      {
+        "file": "voxceleb_trainer/research_logs/2026-08-17-progress-report-architecture-frontend-and-corpus-study.md",
+        "line": 28,
+        "text": "| **Dataset build + QC** | 2026-08-10 | Eight corpora rebuilt into one VoxCeleb-format collection. Full quality audit; **two speaker-identity bugs found** (SLR1"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-08-22-progress-report-v1-benchmark-complete.md",
+        "line": 27,
+        "text": "| Dataset build + QC | 2026-08-10 | Eight corpora unified; two speaker-identity bugs found; Tamil pool 50 -> 752 speakers. |"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 632,
+        "text": "*Note: the 17 August report quotes \"50 -> 752\", which reconciles with neither"
+      },
+      {
+        "file": "voxceleb_trainer/research_logs/2026-09-10-annual-research-progress-report-may2025-aug2026.md",
+        "line": 1441,
+        "text": "5. **The \"Tamil pool 50 -> 752\" figure** in the 17 August report --- the measured"
+      }
+    ]
+  },
+  "errata_document": "04_REPORTS/ERRATA.md"
+}

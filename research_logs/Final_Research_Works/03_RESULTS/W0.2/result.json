@@ -1,0 +1,20 @@
+{
+  "task": "W0.2",
+  "files": [
+    {
+      "file": "proposals/_trainer_shim/loss/da2_lora_adv.py",
+      "status": "patched",
+      "after_line": 68,
+      "backup": "da2_lora_adv.py.pre-W0.2"
+    },
+    {
+      "file": "proposals/_trainer_shim/loss/cd_ndal_adv.py",
+      "status": "patched",
+      "after_line": 75,
+      "backup": "cd_ndal_adv.py.pre-W0.2"
+    }
+  ],
+  "ok": true,
+  "checked": "2026-09-12T08:08:19+00:00",
+  "isolation_ok": true
+}

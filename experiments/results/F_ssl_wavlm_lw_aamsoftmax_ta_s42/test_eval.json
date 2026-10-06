@@ -1,0 +1,76 @@
+{
+  "exp_id": "F_ssl_wavlm_lw_aamsoftmax_ta_s42",
+  "checkpoint": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/exps/F_ssl_wavlm_lw_aamsoftmax_ta_s42/model/model_best.model",
+  "checkpoint_load": {
+    "tensors_loaded": 265,
+    "skipped": 1,
+    "backbone_skipped": []
+  },
+  "device": "cuda",
+  "evaluated_utc": "2026-08-22T12:37:20",
+  "sets": [
+    {
+      "set": "test",
+      "trials": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr127_tamil/test_trials.txt",
+      "cosine": {
+        "eer": 0.6227400562474839,
+        "eer_threshold": 0.5108227729797363,
+        "mindcf": 0.04298915226998847,
+        "mindcf_threshold": 0.6111974120140076,
+        "n_trials": 19912,
+        "n_target": 9956
+      },
+      "as_norm": {
+        "eer": 0.4519887505022097,
+        "eer_threshold": 3.19020938873291,
+        "mindcf": 0.026416231418240777,
+        "mindcf_threshold": 4.02215576171875,
+        "n_trials": 19912,
+        "n_target": 9956,
+        "cohort_size": 1338
+      }
+    },
+    {
+      "set": "transfer_si",
+      "trials": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/test_trials.txt",
+      "cosine": {
+        "eer": 5.5045871559633035,
+        "eer_threshold": 0.5296337008476257,
+        "mindcf": 0.30093759451557583,
+        "mindcf_threshold": 0.6385201215744019,
+        "n_trials": 19838,
+        "n_target": 9919
+      },
+      "as_norm": {
+        "eer": 5.101320697650973,
+        "eer_threshold": 4.283378601074219,
+        "mindcf": 0.35769734852303714,
+        "mindcf_threshold": 5.944494724273682,
+        "n_trials": 19838,
+        "n_target": 9919,
+        "cohort_size": 1338
+      }
+    },
+    {
+      "set": "test_samebatch",
+      "trials": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr127_tamil_samebatch/test_trials.txt",
+      "cosine": {
+        "eer": 0.7959619491360901,
+        "eer_threshold": 0.5261257886886597,
+        "mindcf": 0.049780907474151884,
+        "mindcf_threshold": 0.6111974120140076,
+        "n_trials": 15107,
+        "n_target": 9956
+      },
+      "as_norm": {
+        "eer": 0.542386500602654,
+        "eer_threshold": 3.3590004444122314,
+        "mindcf": 0.0369970327214929,
+        "mindcf_threshold": 4.0227437019348145,
+        "n_trials": 15107,
+        "n_target": 9956,
+        "cohort_size": 1338
+      }
+    }
+  ]
+}

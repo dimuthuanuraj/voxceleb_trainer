@@ -1,0 +1,57 @@
+{
+  "_comment": "Pre-registered predictions for the Final Research Works plan, recorded BEFORE the runs. Each must have an outcome written against it when its task completes -- including, and especially, the falsified ones. The annual report scores ~40% of its predictions as falsified and argues that rate is a healthy sign: it means the predictions were specific enough to be wrong, and that they were scored rather than rationalised.",
+  "_registered": "2026-09-12",
+  "_continues_from": "annual report section 9, predictions 1-20",
+
+  "P21": {
+    "task": "B1/B2",
+    "prediction": "Layer-weighted AND fine-tuned will beat layer-weighted + frozen on si, but by LESS than the 2.369 -> 1.69 gap that full fine-tuning showed at last-layer",
+    "rationale": "If layer weighting already recovers most of what depth costs (Finding III-3), fine-tuning has less left to recover. A large gain would mean the two mechanisms are independent; a null would mean layer weighting IS the cheap substitute for fine-tuning -- the more useful result of the two.",
+    "outcome": null,
+    "verdict": null
+  },
+  "P22": {
+    "task": "A3",
+    "prediction": "A 41-frame attention cap will cost < 0.3 pp on MFAConformer_full_si",
+    "rationale": "Finding III-8 showed the quadratic term is a minority of cost at these lengths; and if long range were doing work, the from-scratch Conformer would not have lost to ECAPA in the first place.",
+    "outcome": null,
+    "verdict": null
+  },
+  "P23": {
+    "task": "C3",
+    "prediction": "The Tamil advantage will shrink by more than half when measured within one corpus on the same speakers",
+    "rationale": "feature_level_testing measured Tamil cleaner on all four periodicity measures, and the si/ta gap GROWS with system quality (1.03x on bispectrum, 6.41x on ECAPA) -- the signature of headroom, not of language.",
+    "outcome": null,
+    "verdict": null
+  },
+  "P24": {
+    "task": "B4",
+    "prediction": "The ordering of the top 3 systems per language will be stable, but at least one absolute EER will move by more than 0.5 pp",
+    "rationale": "Finding III-5 says the regime is data-limited; seed variance at S = 91 should exceed the differences between adjacent systems.",
+    "outcome": null,
+    "verdict": null
+  },
+  "P25": {
+    "task": "D3",
+    "prediction": "The corpus adversary will NOT reverse PLDA's sign on si",
+    "rationale": "MASTER_SYNTHESIS section 6 risk 2 names this as the falsifiable half of the channel-confound hypothesis, and A6 already showed the confound is real but shallow -- it does not dominate neighbourhood structure.",
+    "outcome": null,
+    "verdict": null
+  },
+  "P26": {
+    "task": "G1",
+    "prediction": "The Phase I 10.32 % headline will NOT replicate within +/- 1 pp at 3 seeds",
+    "rationale": "It is single-seed, predates --deterministic, and one log in the same record gives 14.62 %.",
+    "outcome": null,
+    "verdict": null
+  },
+  "P27": {
+    "task": "C5",
+    "prediction": "The PEFT and full-FT arms will be MATCHED on two-stage-ness, so the confound named in MASTER_SYNTHESIS risk 3 will not apply",
+    "rationale": "The v1 harness generates every run from one registry with a shared recipe; warm-starting is not part of any registry entry.",
+    "outcome": "CONFIRMED on the staging axis: 0 of 74 runs were warm-started (no --initial_model, no --finetune) in either arm. BUT the arms differ in learning rate (fine-tuned 1e-4, frozen 1e-3), a declared registry deviation that is nonetheless a second uncontrolled factor and must be stated wherever the PEFT contrast is reported.",
+    "verdict": "MET, with a caveat the prediction did not anticipate",
+    "scored": "2026-09-12",
+    "consequence": "Prediction 9's 'Falsified' verdict stands on the staging axis. The PEFT negative may enter paper P2, provided the learning-rate deviation travels with it."
+  }
+}

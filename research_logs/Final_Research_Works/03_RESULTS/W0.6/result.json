@@ -1,0 +1,26 @@
+{
+  "task": "W0.6",
+  "ok": true,
+  "checked": "2026-09-12T08:34:21+00:00",
+  "file": "proposals/evaluate_proposal.py",
+  "status": "patched",
+  "probe": {
+    "proposals_shim_models": {
+      "DA2LoRA": "ok",
+      "DKCAMPP": "ok",
+      "LSCAM": "ok",
+      "PLLW": "ok"
+    },
+    "transformer_shim_models": {
+      "EffAttnConformer": "ok",
+      "MFAConformer": "ok",
+      "Res2Former": "ok",
+      "SpecViT": "ok",
+      "VOT": "ok"
+    },
+    "proposals_ok": true,
+    "transformer_ok": true,
+    "no_cross_shadowing": true,
+    "all_ok": true
+  }
+}

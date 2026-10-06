@@ -1,0 +1,29 @@
+{
+  "corpus": "slr127_tamil_samebatch",
+  "language": "ta",
+  "role": "channel_controlled_evaluation",
+  "derived_from": "experiments/splits/slr127_tamil",
+  "built_utc": "2026-08-14T05:54:31.515117+00:00",
+  "change": "impostor pairs restricted to the same collection batch (ISTL / MILE / MICI); target pairs untouched",
+  "why": "cross-batch impostors are rejected on channel rather than speaker identity: measured mean score -0.0433 vs +0.0527 for same-batch, and EER 0.475% vs 1.298% on ecapa1024_ta. ~48% of the original impostors were cross-batch, inflating the headline EER about 2.7x.",
+  "no_retraining_required": "this changes only the trial list, so existing checkpoints are re-scored, not retrained",
+  "trials": {
+    "test_trials.txt": {
+      "targets": 9956,
+      "impostors_kept_same_batch": 5151,
+      "impostors_dropped_cross_batch": 4805,
+      "total": 15107
+    },
+    "val_trials.txt": {
+      "targets": 4941,
+      "impostors_kept_same_batch": 2403,
+      "impostors_dropped_cross_batch": 2538,
+      "total": 7344
+    }
+  },
+  "sha256": {
+    "test_trials.txt": "db3f6174fa7d7a55f86bd527d9568496f9dbbc296186d3dbe8c38059dae56326",
+    "val_trials.txt": "9182dacb374f7fb179c5de50955c63a946f346859ca32efda9a4ac782a1c88d1"
+  },
+  "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr127_tamil/wav"
+}

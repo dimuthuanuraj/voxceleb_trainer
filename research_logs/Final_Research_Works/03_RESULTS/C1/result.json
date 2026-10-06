@@ -1,0 +1,6 @@
+{
+  "task": "C1",
+  "ok": false,
+  "eer_by_eval_frames": {},
+  "note": "eval_frames are 10 ms frames: 200=2s, 300=3s (benchmark default), 500=5s"
+}

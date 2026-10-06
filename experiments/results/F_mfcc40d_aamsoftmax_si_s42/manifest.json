@@ -1,0 +1,411 @@
+{
+  "experiment": {
+    "exp_id": "F_mfcc40d_aamsoftmax_si_s42",
+    "stage": "F",
+    "architecture": "mfcc40d",
+    "model": "ECAPA_TDNN_MFCC40D",
+    "loss": "aamsoftmax",
+    "condition": "si",
+    "condition_label": "Sinhala only",
+    "corpus": "slr52_sinhala",
+    "languages": [
+      "si"
+    ],
+    "n_classes": 336,
+    "seed": 42,
+    "embedding_dim": 256,
+    "note": "Stage F front-end sweep (cepstral): 40 MFCCs + delta + delta-delta \u2014 the classical i-vector front end",
+    "deviations_from_controlled_factors": {},
+    "extra_flags": [],
+    "overrides": {},
+    "min_gpu_mb": 9000
+  },
+  "scale": "full",
+  "resolved_parameters": {
+    "max_frames": 200,
+    "eval_frames": 300,
+    "sample_rate": 16000,
+    "max_seg_per_spk": 300,
+    "n_data_loader_thread": 8,
+    "prefetch_factor": 2,
+    "persistent_workers": true,
+    "optimizer": "adam",
+    "scheduler": "steplr",
+    "lr": 0.001,
+    "lr_decay": 0.95,
+    "weight_decay": 2e-05,
+    "max_epoch": 60,
+    "test_interval": 1,
+    "patience": 16,
+    "dcf_p_target": 0.05,
+    "dcf_c_miss": 1,
+    "dcf_c_fa": 1,
+    "seed": 42,
+    "model": "ECAPA_TDNN_MFCC40D",
+    "nOut": 256,
+    "n_mels": 80,
+    "log_input": false,
+    "encoder_type": "ASP",
+    "batch_size": 200,
+    "trainfunc": "aamsoftmax",
+    "margin": 0.2,
+    "scale": 30,
+    "n_per_speaker": 1,
+    "n_classes": 336,
+    "train_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/train_list.txt",
+    "train_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav",
+    "test_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav",
+    "musan_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/musan",
+    "rir_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/RIRS_NOISES/simulated_rirs",
+    "test_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/val_trials.txt",
+    "save_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/exps/F_mfcc40d_aamsoftmax_si_s42"
+  },
+  "flags": [
+    "--mixedprec",
+    "--augment",
+    "True",
+    "--ddp_find_unused_parameters=False"
+  ],
+  "command": [
+    "/home/anuraj/anaconda2025/envs/SL_SPV/bin/python",
+    "trainSpeakerNet.py",
+    "--batch_size",
+    "200",
+    "--dcf_c_fa",
+    "1",
+    "--dcf_c_miss",
+    "1",
+    "--dcf_p_target",
+    "0.05",
+    "--encoder_type",
+    "ASP",
+    "--eval_frames",
+    "300",
+    "--lr",
+    "0.001",
+    "--lr_decay",
+    "0.95",
+    "--margin",
+    "0.2",
+    "--max_epoch",
+    "60",
+    "--max_frames",
+    "200",
+    "--max_seg_per_spk",
+    "300",
+    "--model",
+    "ECAPA_TDNN_MFCC40D",
+    "--musan_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/musan",
+    "--nOut",
+    "256",
+    "--n_classes",
+    "336",
+    "--n_data_loader_thread",
+    "8",
+    "--n_mels",
+    "80",
+    "--n_per_speaker",
+    "1",
+    "--optimizer",
+    "adam",
+    "--patience",
+    "16",
+    "--persistent_workers",
+    "True",
+    "--prefetch_factor",
+    "2",
+    "--rir_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/RIRS_NOISES/simulated_rirs",
+    "--sample_rate",
+    "16000",
+    "--save_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/exps/F_mfcc40d_aamsoftmax_si_s42",
+    "--scale",
+    "30",
+    "--scheduler",
+    "steplr",
+    "--seed",
+    "42",
+    "--test_interval",
+    "1",
+    "--test_list",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/val_trials.txt",
+    "--test_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav",
+    "--train_list",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/train_list.txt",
+    "--train_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav",
+    "--trainfunc",
+    "aamsoftmax",
+    "--weight_decay",
+    "2e-05",
+    "--mixedprec",
+    "--augment",
+    "True",
+    "--ddp_find_unused_parameters=False"
+  ],
+  "architecture_spec": {
+    "display": "ECAPA-TDNN + classical MFCC (40 + \u0394 + \u0394\u0394)",
+    "family": "TDNN / 1-D convolutional",
+    "temporal_aggregation": "attentive statistics pooling (ASP)",
+    "structure": "As ECAPA_TDNN_MFCC but with the classical configuration: 40 coefficients plus first and second time derivatives.",
+    "inductive_bias": "Explicit delta features hand the network local temporal dynamics that a static cepstrum discards. A TDNN already sees a wide temporal context through dilation, so the deltas may be redundant.",
+    "params_scale_with": "n_mfcc x 3",
+    "predicted_effect": "Better than static MFCC, still below log-mel. If it matches mfcc80, the deltas are adding nothing a dilated TDNN could not already compute for itself."
+  },
+  "model_card": {
+    "model": "ECAPA_TDNN_MFCC40D",
+    "kwargs": {
+      "nOut": 256,
+      "n_mels": 80,
+      "log_input": false,
+      "encoder_type": "ASP"
+    },
+    "parameters_total": 14665856,
+    "parameters_trainable": 14665856,
+    "parameters_frozen": 0,
+    "parameters_total_human": "14.67M",
+    "trainable_fraction": 1.0,
+    "modules": {
+      "torchfb": {
+        "parameters": 0,
+        "type": "Sequential"
+      },
+      "instancenorm": {
+        "parameters": 0,
+        "type": "InstanceNorm1d"
+      },
+      "layer1": {
+        "parameters": 617472,
+        "type": "Conv1dReluBn"
+      },
+      "layer2": {
+        "parameters": 2713344,
+        "type": "SE_Res2Block"
+      },
+      "layer3": {
+        "parameters": 2713344,
+        "type": "SE_Res2Block"
+      },
+      "layer4": {
+        "parameters": 2713344,
+        "type": "SE_Res2Block"
+      },
+      "mfa": {
+        "parameters": 4720128,
+        "type": "Conv1d"
+      },
+      "attention": {
+        "parameters": 394880,
+        "type": "AttentiveStatsPool"
+      },
+      "bn": {
+        "parameters": 6144,
+        "type": "BatchNorm1d"
+      },
+      "fc": {
+        "parameters": 786688,
+        "type": "Linear"
+      },
+      "bn_out": {
+        "parameters": 512,
+        "type": "BatchNorm1d"
+      },
+      "_deltas": {
+        "parameters": 0,
+        "type": "ComputeDeltas"
+      }
+    },
+    "parameters_by_tensor_rank": {
+      "1": 43136,
+      "2": 1572864,
+      "3": 13049856
+    },
+    "embedding_dim": 256,
+    "probe_input": {
+      "seconds": 2.0,
+      "samples": 32000
+    },
+    "macs_per_2s_utterance": 2624593920,
+    "macs_human": "2.62G",
+    "gflops_per_2s_utterance": 5.2492
+  },
+  "loss_spec": {
+    "family": "classification",
+    "display": "Additive-angular-margin softmax (ArcFace)",
+    "objective": "\\mathcal{L} = -\\frac{1}{N}\\sum_i \\log \\frac{e^{s\\cos(\\theta_{y_i} + m)}}{e^{s\\cos(\\theta_{y_i}+m)} + \\sum_{j\\neq y_i} e^{s\\cos\\theta_j}}",
+    "geometry": "Adds the margin to the ANGLE, giving a constant geodesic margin on the unit hypersphere independent of theta. The maximum number of classes separable with angular margin m in dimension d is bounded by the hypersphere packing limit; when C grows past that bound the margin becomes unsatisfiable and gradients fight each other. This is the mechanism that makes the si-only (336 class) / ta-only (446) / combined (782) comparison informative rather than a data-volume effect.",
+    "hyperparams": [
+      "margin",
+      "scale"
+    ],
+    "n_classes_dep": true,
+    "batch_dep": false,
+    "test_normalize": true,
+    "predicted_effect": "Best single classification loss in the per-language conditions. In the combined condition the packing pressure at C=782 may erode the advantage unless nOut is raised or the margin lowered -- which is exactly what the Stage C margin sweep measures."
+  },
+  "data": {
+    "condition": {
+      "label": "Sinhala only",
+      "corpus": "slr52_sinhala",
+      "languages": [
+        "si"
+      ],
+      "train_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/train_list.txt",
+      "train_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav",
+      "val_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/val_trials.txt",
+      "test_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/test_trials.txt",
+      "test_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav",
+      "cohort_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/asnorm_cohort.txt",
+      "cohort_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav",
+      "n_classes": 336
+    },
+    "fingerprints": {
+      "train_list": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/train_list.txt",
+        "exists": true,
+        "sha256": "ef1ae1a8e47a46b395cd33c93c43f731701c07cbca10f3e6103f33d51fedd6c2",
+        "lines": 129042,
+        "bytes": 4645512,
+        "head": [
+          "00349 si/00349/00161a961c/00001.wav",
+          "00349 si/00349/00dc47f62c/00001.wav"
+        ]
+      },
+      "val_or_test_list": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/val_trials.txt",
+        "exists": true,
+        "sha256": "c9d60a30033f20d96a3c0729aa46c9952dd72120f625a14d0ea1f92befa302e2",
+        "lines": 9996,
+        "bytes": 619752,
+        "head": [
+          "1 si/be173/04771164ad/00001.wav si/be173/91c3482170/00001.wav",
+          "0 si/271cb/fdeb3836e0/00001.wav si/64af4/3c027d4484/00001.wav"
+        ]
+      },
+      "heldout_test_list": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/test_trials.txt",
+        "exists": true,
+        "sha256": "a52608f56e24cf627d57892a8f77fc97aa088b02401891979d7a3caacd2b9215",
+        "lines": 19838,
+        "bytes": 1229956
+      },
+      "asnorm_cohort": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slr52_sinhala/asnorm_cohort.txt",
+        "exists": true,
+        "sha256": "0bf6a8ee547009dc52170790908aa3c41a0b0be90f51028178ebb2d8bdb84539",
+        "lines": 1008,
+        "bytes": 30240
+      }
+    },
+    "split_manifest": {
+      "corpus": "slr52_sinhala",
+      "language": "si",
+      "role": "primary",
+      "seed": 42,
+      "built_utc": "2026-08-12T11:46:24.862947+00:00",
+      "speakers": {
+        "total": 478,
+        "train": 336,
+        "val": 51,
+        "test": 91,
+        "disjoint": true,
+        "overlap_train_test": 0
+      },
+      "duration_hours": {
+        "train": 157.06,
+        "val": 23.95,
+        "test": 43.49
+      },
+      "utterances": {
+        "train": 129042
+      },
+      "trials": {
+        "val": {
+          "n_target": 4998,
+          "n_nontarget": 4998,
+          "n_speakers": 51,
+          "target_pairs_cross_session": 4998,
+          "cross_session_fraction": 1.0
+        },
+        "test": {
+          "n_target": 9919,
+          "n_nontarget": 9919,
+          "n_speakers": 91,
+          "target_pairs_cross_session": 9919,
+          "cross_session_fraction": 1.0
+        }
+      },
+      "cohort_utterances": 1008,
+      "test_mde_pp": 5.936,
+      "val_mde_pp": 7.931,
+      "test_n_eff_cap": 130.0,
+      "power_note": "test_mde_pp bounds a SINGLE system's absolute EER and is capped by speaker count (test_n_eff_cap = S/rho), not by trial count. Architecture ranking uses the paired speaker-level bootstrap on EER differences in experiments/tools/analyze.py, which resolves much finer differences because speaker difficulty cancels.",
+      "sha256": {
+        "train_list.txt": "ef1ae1a8e47a46b395cd33c93c43f731701c07cbca10f3e6103f33d51fedd6c2",
+        "val_trials.txt": "c9d60a30033f20d96a3c0729aa46c9952dd72120f625a14d0ea1f92befa302e2",
+        "test_trials.txt": "a52608f56e24cf627d57892a8f77fc97aa088b02401891979d7a3caacd2b9215",
+        "asnorm_cohort.txt": "0bf6a8ee547009dc52170790908aa3c41a0b0be90f51028178ebb2d8bdb84539"
+      },
+      "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav"
+    }
+  },
+  "controlled_factors": {
+    "embedding_dim": 256,
+    "max_frames": 200,
+    "eval_frames": 300,
+    "optimizer": "adam",
+    "lr": 0.001,
+    "lr_decay": 0.95,
+    "weight_decay": 2e-05,
+    "augmentation": true,
+    "as_norm_during_training": false,
+    "model_selection": "validation trials only; test set touched once by evaluate.py"
+  },
+  "environment": {
+    "captured_utc": "2026-08-14T10:47:44.071129+00:00",
+    "hostname": "compute-node-1",
+    "user": "anuraj",
+    "platform": "Linux-5.15.0-187-generic-x86_64-with-glibc2.35",
+    "python": "3.11.15",
+    "python_executable": "/home/anuraj/anaconda2025/envs/SL_SPV/bin/python",
+    "cwd": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer",
+    "conda_env": null,
+    "cuda_visible_devices": "0",
+    "git": {
+      "commit": "73b7aedb527324a686987c16520b64d93c783e0c",
+      "branch": "master",
+      "dirty": true
+    },
+    "torch": {
+      "version": "2.5.1",
+      "cuda_available": true,
+      "cuda_version": "12.1",
+      "cudnn": 90100,
+      "device_count": 1,
+      "devices": [
+        {
+          "name": "Tesla T4",
+          "total_memory_gb": 15.64,
+          "capability": "7.5"
+        }
+      ]
+    },
+    "packages": {
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "soundfile": "0.13.1",
+      "torchaudio": "2.5.1",
+      "transformers": "4.57.6",
+      "sklearn": "1.8.0"
+    },
+    "nvidia_smi": [
+      "Tesla T4, 15360 MiB, 570.211.01",
+      "Tesla T4, 15360 MiB, 570.211.01"
+    ],
+    "cpu_count": 48
+  },
+  "recorder_started_utc": "2026-08-14T10:47:49.938108+00:00"
+}

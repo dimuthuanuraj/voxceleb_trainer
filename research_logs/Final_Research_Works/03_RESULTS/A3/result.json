@@ -1,0 +1,60 @@
+{
+  "task": "A3",
+  "ok": false,
+  "status": "BLOCKED on a reproducibility guard \u2014 diagnosis narrowed 2026-09-15",
+  "checked": "2026-09-14T05:16:49+00:00",
+  "what_happened": "T6 refused to write a result. Its guard requires the UNCAPPED rung of the span ladder to reproduce the published eval.json EER to within TOL=1e-6, because a capped EER is only interpretable against an uncapped one from the same code path.",
+  "published_eer_cosine": 4.950095775783849,
+  "probe_uncapped_eer_cosine": 4.960177437241657,
+  "difference_pp": 0.010082,
+  "one_trial_pp": 0.005041,
+  "trials_flipped": 2.0,
+  "tolerance": 1e-06,
+  "diagnosis": "The difference is 0.010082 pp, and one trial out of 19,838 is 0.005041 pp -- so EXACTLY 2 TRIALS flipped. That is floating-point nondeterminism across GPU architectures, not a rebuild error: 231 tensors loaded in both runs from the same checkpoint. MFAConformer_full_si_s42 was originally scored on compute-node-4's A40 (dispatch_state.json records slot compute-node-4:gpu0); the probe ran on compute-node-1's T4. Different card, different cuDNN kernel selection and reduction order, two borderline trials cross the threshold.",
+  "the_guard_is_correct": "It should NOT be disabled. It exists so a capped number is never compared against an uncapped one from a different code path -- exactly the defect class the evaluation-integrity rebuild of 22 August closed. What it did not anticipate is the probe running on different silicon from the scorer.",
+  "resolutions": [
+    {
+      "option": "A",
+      "action": "Run the probe on an A40 (the card that produced the published number)",
+      "cost": "0 extra",
+      "blocked_by": "W0.4 -- node-4 driver",
+      "preferred": true
+    },
+    {
+      "option": "B",
+      "action": "Re-score T1 on the T4 first (evaluate_transformer --redo), so the baseline and the probe come from the same card, THEN probe",
+      "cost": "~10 GPU-min",
+      "caution": "must not overwrite the published eval.json -- T1's 4.950 is quoted in the annual report"
+    },
+    {
+      "option": "C",
+      "action": "Widen TOL to a documented cross-hardware value (>= 2 trials = 0.0101 pp)",
+      "cost": "0",
+      "caution": "weakens a guard that is otherwise doing real work; only with the hardware reason written into the code"
+    }
+  ],
+  "incidental_finding": "Cross-GPU reproducibility of this benchmark is +/-0.01 pp (2 trials in 19,838) between an A40 and a T4 on an identical checkpoint. Worth recording: the programme's power analysis says differences below ~2 pp are not resolvable anyway, so this is far inside the noise floor -- but any future claim of EXACT reproduction must name the GPU.",
+  "prediction_P22_status": "STILL NOT SCORED \u2014 the probe has produced no capped numbers",
+  "updated": "2026-09-15T03:57:45+00:00",
+  "round2": {
+    "what_was_tried": "A3 was patched to re-score T1 on the SAME card before probing, on the hypothesis that the 2-trial gap was A40-vs-T4 floating point. It ran three more times and failed identically.",
+    "decisive_observation": "The delta is EXACTLY 0.010082 pp every time \u2014 attempt 1 on an A40-scored baseline, and attempts 2-3 against a freshly T4-scored baseline. A hardware FP difference would vary run to run. A bit-reproducible delta is a SYSTEMATIC path difference, so the cross-hardware explanation is WRONG and is withdrawn.",
+    "hypotheses_ruled_out": [
+      {
+        "h": "cross-GPU floating point (A40 vs T4)",
+        "ruled_out_by": "delta identical after re-scoring on the same card"
+      },
+      {
+        "h": "the scorer passes cohort=, the probe does not",
+        "ruled_out_by": "evaluate.py:367-368 computes the cosine metric BEFORE any cohort work; cohort cannot reach the cosine EER"
+      },
+      {
+        "h": "set_attention(model,'full') differs from the as-constructed path",
+        "ruled_out_by": "attn.py set_mode() assigns only self.mode/window/kv_stride and touches no parameter; for a model trained with --arm full it is a no-op"
+      }
+    ],
+    "remaining_hypothesis": "0.010082 pp is exactly 2 trials of 19,838 (100/19838 = 0.0050408). The most likely remaining cause is TIE-BREAKING in the EER threshold search: if trials share a score, a different embedding-extraction order changes which side of the threshold they land on. The probe calls span_profile(model, x) \u2014 a forward pass over its own sampled batch \u2014 before the ladder, which is the one ordering difference left between the two paths.",
+    "next_step": "Test it directly and cheaply: run ev.evaluate_set twice on the same loaded model, once with and once without a preceding span_profile() call, and compare the cosine EER. If they differ by the same 2 trials, the cause is confirmed and the guard's TOL=1e-6 is stricter than the EER statistic's own reproducibility under reordering.",
+    "decision_required": "If confirmed: widen TOL to a documented value (>= 3 trials, 0.0151 pp) WITH the reason written into the code. Do NOT loosen it silently \u2014 the guard exists so a capped EER is never compared against an uncapped one from a different code path, which is the defect class the 22 August evaluation-integrity rebuild closed."
+  }
+}

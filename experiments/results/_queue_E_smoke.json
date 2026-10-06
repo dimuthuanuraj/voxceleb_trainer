@@ -1,0 +1,64 @@
+{
+  "stage": "E",
+  "scale": "smoke",
+  "finished_utc": "2026-08-15T05:23:59.392300+00:00",
+  "wall_hours": 0.2,
+  "results": {
+    "E_ecapa1024_aamsoftmax_en_matched_s42": {
+      "rc": 0,
+      "hours": 0.068,
+      "slot": "compute-node-2:gpu1",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    },
+    "E_ecapa512_aamsoftmax_en_matched_s42": {
+      "rc": 0,
+      "hours": 0.024,
+      "slot": "compute-node-2:gpu1",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    },
+    "E_ecapa1024_aamsoftmax_en_full_s42": {
+      "rc": 1,
+      "hours": 0.132,
+      "slot": "compute-node-2:gpu0",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    },
+    "E_mlpmixer_aamsoftmax_en_matched_s42": {
+      "rc": 0,
+      "hours": 0.043,
+      "slot": "compute-node-2:gpu1",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    },
+    "E_resnetse34l_aamsoftmax_en_matched_s42": {
+      "rc": 0,
+      "hours": 0.024,
+      "slot": "compute-node-2:gpu0",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    },
+    "E_vggvox_aamsoftmax_en_matched_s42": {
+      "rc": 0,
+      "hours": 0.014,
+      "slot": "compute-node-2:gpu0",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    },
+    "E_resnetse34v2_aamsoftmax_en_matched_s42": {
+      "rc": 0,
+      "hours": 0.07,
+      "slot": "compute-node-2:gpu1",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    }
+  }
+}

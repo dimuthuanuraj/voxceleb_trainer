@@ -1,0 +1,56 @@
+[
+  {
+    "id": "E1",
+    "claim": "Any experimental result dated January-June 2026",
+    "pattern": null,
+    "status": "WITHDRAWN",
+    "reason": "Not reproducible from the repository; contradicted by the project audit of 2026-07-03.",
+    "source": "annual report 10.3 item 1, section 5",
+    "replacement": "None. This period has no citable experimental record."
+  },
+  {
+    "id": "E2",
+    "claim": "Nested learning: 9.84 % EER, validated for efficiency",
+    "pattern": "(?<![\\d.])9\\.84(?![\\d])",
+    "status": "WITHDRAWN",
+    "reason": "The measured record is three NaN collapses across three attempts.",
+    "source": "annual report 10.3 item 2, section 3.6",
+    "replacement": "NestedSpeakerNet failed: 3 attempts, NaN x2, 1.09x faster at best."
+  },
+  {
+    "id": "E3",
+    "claim": "Phase I MLP-Mixer student 10.32 % EER (headline)",
+    "pattern": "(?<![\\d.])10\\.32(?![\\d])",
+    "status": "UNDER REVIEW (G1)",
+    "reason": "Single seed, unreplicated, predates --deterministic; one log in the same record gives 14.62 %; a duplicated result set is suspected.",
+    "source": "annual report 10.3 item 3; audit item R7",
+    "replacement": "Pending G1: either 3 seeds with an interval, or formal retirement."
+  },
+  {
+    "id": "E4",
+    "claim": "ResNetSE34L is 34 layers / 6.8 M params / ~8-10 % EER",
+    "pattern": "6\\.8\\s*M|34 layers",
+    "status": "CORRECTED",
+    "reason": "The logs give 1.50 M parameters and 15.48 % EER.",
+    "source": "annual report 10.3 item 4",
+    "replacement": "ResNetSE34L: 1.50 M parameters, 15.48 % EER."
+  },
+  {
+    "id": "E5",
+    "claim": "Tamil speaker pool expanded 50 -> 752",
+    "pattern": "(?<![\\d.])752\\b(?!\\s*%)",
+    "status": "CORRECTED",
+    "reason": "The measured build is 706 speakers, 802 after QC corrections.",
+    "source": "annual report 10.3 item 5",
+    "replacement": "Tamil pool expanded 50 -> 706 (802 after QC correction)."
+  },
+  {
+    "id": "E6",
+    "claim": "Any v0 EER quoted without caveats",
+    "pattern": null,
+    "status": "CAVEAT REQUIRED",
+    "reason": "v0 lists were 100 % closed-set, and read speech is ~5x optimistic against genuine cross-session audio.",
+    "source": "annual report 10.3 item 6, sections 6.8.1 and 6.12",
+    "replacement": "Every v0 EER must carry both the closed-set caveat and the ~5x read-vs-wild optimism factor."
+  }
+]

@@ -1,0 +1,16 @@
+# Ephemeral scheduler scratch — recreated on every run, meaningless in history.
+02_STATE/.gpu_slot_index
+02_STATE/.gpu_slots
+02_STATE/.ledger.lock
+02_STATE/.trainer_guard.*
+01_SCRIPTS/__pycache__/
+01_SCRIPTS/**/__pycache__/
+
+# Kept deliberately, despite living alongside the above:
+#   02_STATE/ledger.json       what ran, when, with what outcome
+#   02_STATE/predictions.json  pre-registered predictions and their scoring
+#   02_STATE/preflight.json    the cluster state each run was launched against
+#   02_STATE/autopilot.json    the scheduler's last snapshot
+#   02_STATE/stop_snapshot.json checkpoint positions at the 2026-09-15 stop
+#   02_STATE/autopilot.log     the scheduler log
+#   03_RESULTS/**              per-task results, logs and attempt histories

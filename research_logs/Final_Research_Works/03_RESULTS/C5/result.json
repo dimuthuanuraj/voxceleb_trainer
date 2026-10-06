@@ -1,0 +1,40 @@
+{
+  "task": "C5",
+  "ok": true,
+  "verdict": "matched-staging",
+  "staging_matched": true,
+  "checked": "2026-09-12T08:19:47+00:00",
+  "n_runs_scanned": 74,
+  "fine_tuned_arms": {
+    "F_ssl_wavlm_ft_aamsoftmax_si_s42": false,
+    "F_ssl_wavlm_ft_aamsoftmax_ta_s42": false
+  },
+  "frozen_arms": {
+    "A_ssl_wavlm_aamsoftmax_si_celeb_s42": false,
+    "A_ssl_wavlm_aamsoftmax_si_pooled_s42": false,
+    "A_ssl_wavlm_aamsoftmax_si_s42": false,
+    "A_ssl_wavlm_aamsoftmax_ta_s42": false,
+    "E_ssl_wavlm_aamsoftmax_en_matched_s42": false,
+    "F_ssl_mhubert_lw_aamsoftmax_si_s42": false,
+    "F_ssl_mhubert_lw_aamsoftmax_ta_s42": false,
+    "F_ssl_wavlm_low_aamsoftmax_si_s42": false,
+    "F_ssl_wavlm_low_aamsoftmax_ta_s42": false,
+    "F_ssl_wavlm_lw_aamsoftmax_si_s42": false,
+    "F_ssl_wavlm_lw_aamsoftmax_ta_s42": false,
+    "F_ssl_wavlm_mid_aamsoftmax_si_s42": false,
+    "F_ssl_wavlm_mid_aamsoftmax_ta_s42": false,
+    "H_ssl_mhubert_ecapa_aamsoftmax_si_s42": false,
+    "H_ssl_mhubert_ecapa_aamsoftmax_ta_s42": false,
+    "H_ssl_wavlm_ecapa_aamsoftmax_si_s42": false,
+    "H_ssl_wavlm_ecapa_aamsoftmax_ta_s42": false
+  },
+  "lr_fine_tuned": [
+    "0.0001"
+  ],
+  "lr_frozen": [
+    "0.001"
+  ],
+  "lr_matched": false,
+  "consequence": "Prediction 9 'Falsified' stands on the staging axis.",
+  "source": "My_refered_papers/_deep_study/00_MASTER_SYNTHESIS.md section 6 risk 3"
+}

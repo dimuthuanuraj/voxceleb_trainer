@@ -1,0 +1,247 @@
+{
+  "slr52_sinhala": {
+    "corpus": "slr52_sinhala",
+    "language": "si",
+    "role": "primary",
+    "seed": 42,
+    "built_utc": "2026-08-12T11:46:24.862947+00:00",
+    "speakers": {
+      "total": 478,
+      "train": 336,
+      "val": 51,
+      "test": 91,
+      "disjoint": true,
+      "overlap_train_test": 0
+    },
+    "duration_hours": {
+      "train": 157.06,
+      "val": 23.95,
+      "test": 43.49
+    },
+    "utterances": {
+      "train": 129042
+    },
+    "trials": {
+      "val": {
+        "n_target": 4998,
+        "n_nontarget": 4998,
+        "n_speakers": 51,
+        "target_pairs_cross_session": 4998,
+        "cross_session_fraction": 1.0
+      },
+      "test": {
+        "n_target": 9919,
+        "n_nontarget": 9919,
+        "n_speakers": 91,
+        "target_pairs_cross_session": 9919,
+        "cross_session_fraction": 1.0
+      }
+    },
+    "cohort_utterances": 1008,
+    "test_mde_pp": 5.936,
+    "val_mde_pp": 7.931,
+    "test_n_eff_cap": 130.0,
+    "power_note": "test_mde_pp bounds a SINGLE system's absolute EER and is capped by speaker count (test_n_eff_cap = S/rho), not by trial count. Architecture ranking uses the paired speaker-level bootstrap on EER differences in experiments/tools/analyze.py, which resolves much finer differences because speaker difficulty cancels.",
+    "sha256": {
+      "train_list.txt": "ef1ae1a8e47a46b395cd33c93c43f731701c07cbca10f3e6103f33d51fedd6c2",
+      "val_trials.txt": "c9d60a30033f20d96a3c0729aa46c9952dd72120f625a14d0ea1f92befa302e2",
+      "test_trials.txt": "a52608f56e24cf627d57892a8f77fc97aa088b02401891979d7a3caacd2b9215",
+      "asnorm_cohort.txt": "0bf6a8ee547009dc52170790908aa3c41a0b0be90f51028178ebb2d8bdb84539"
+    },
+    "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr52_sinhala/wav"
+  },
+  "slr127_tamil": {
+    "corpus": "slr127_tamil",
+    "language": "ta",
+    "role": "primary",
+    "seed": 42,
+    "built_utc": "2026-08-12T11:46:25.591330+00:00",
+    "speakers": {
+      "total": 638,
+      "train": 446,
+      "val": 61,
+      "test": 131,
+      "disjoint": true,
+      "overlap_train_test": 0
+    },
+    "duration_hours": {
+      "train": 104.49,
+      "val": 14.5,
+      "test": 31.11
+    },
+    "utterances": {
+      "train": 63338
+    },
+    "trials": {
+      "val": {
+        "n_target": 4941,
+        "n_nontarget": 4941,
+        "n_speakers": 61,
+        "target_pairs_cross_session": 4941,
+        "cross_session_fraction": 1.0
+      },
+      "test": {
+        "n_target": 9956,
+        "n_nontarget": 9956,
+        "n_speakers": 131,
+        "target_pairs_cross_session": 9956,
+        "cross_session_fraction": 1.0
+      }
+    },
+    "cohort_utterances": 1338,
+    "test_mde_pp": 4.952,
+    "val_mde_pp": 7.255,
+    "test_n_eff_cap": 187.1,
+    "power_note": "test_mde_pp bounds a SINGLE system's absolute EER and is capped by speaker count (test_n_eff_cap = S/rho), not by trial count. Architecture ranking uses the paired speaker-level bootstrap on EER differences in experiments/tools/analyze.py, which resolves much finer differences because speaker difficulty cancels.",
+    "sha256": {
+      "train_list.txt": "2086307ad3007071862ba44dbed749bcf0fa3b20945b7ca6793f1b47b643e830",
+      "val_trials.txt": "dbbf50187533181c4bc252ea7a91cbcc17a4ae708c6b87a4f0790af1b1b7dd14",
+      "test_trials.txt": "ed139428b98cf63af24a4851888ff522153a89f3eb6f1665a2b33d7626efe792",
+      "asnorm_cohort.txt": "cb88831bb67f35f09cf672020aace774ae6cb6fa888dd7c9c66d90843981d7c2"
+    },
+    "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr127_tamil/wav"
+  },
+  "slceleb2026_sinhala": {
+    "corpus": "slceleb2026_sinhala",
+    "language": "si",
+    "role": "heldout_generalisation_probe",
+    "seed": 42,
+    "built_utc": "2026-08-12T11:46:25.857267+00:00",
+    "speakers": {
+      "total": 123,
+      "used_in_trials": 123
+    },
+    "duration_hours": {
+      "total": 85.07
+    },
+    "trials": {
+      "test": {
+        "n_target": 9963,
+        "n_nontarget": 9963,
+        "n_speakers": 123,
+        "target_pairs_cross_session": 5098,
+        "cross_session_fraction": 0.5117
+      }
+    },
+    "test_mde_pp": 5.109,
+    "test_n_eff_cap": 175.7,
+    "sha256": {
+      "test_trials.txt": "60040d3d6f00227037905fc3db045136823ef7911fb3628a59b2333f49f6bbcd"
+    },
+    "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+    "note": "No training partition: this corpus is never trained on."
+  },
+  "slr65_tamil": {
+    "corpus": "slr65_tamil",
+    "language": "ta",
+    "role": "heldout_generalisation_probe",
+    "seed": 42,
+    "built_utc": "2026-08-12T11:46:26.025255+00:00",
+    "speakers": {
+      "total": 50,
+      "used_in_trials": 50
+    },
+    "duration_hours": {
+      "total": 7.08
+    },
+    "trials": {
+      "test": {
+        "n_target": 9366,
+        "n_nontarget": 9366,
+        "n_speakers": 50,
+        "target_pairs_cross_session": 9366,
+        "cross_session_fraction": 1.0
+      }
+    },
+    "test_mde_pp": 8.002,
+    "test_n_eff_cap": 71.4,
+    "sha256": {
+      "test_trials.txt": "e0c2b70cb2bf3035ddb4634636a66729bfa3299e1a23c35d7fd8e9cb90819420"
+    },
+    "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slr65_tamil/wav",
+    "note": "No training partition: this corpus is never trained on."
+  },
+  "kathbath_tamil": {
+    "corpus": "kathbath_tamil",
+    "language": "ta",
+    "role": "heldout_generalisation_probe",
+    "seed": 42,
+    "built_utc": "2026-08-12T11:46:26.133083+00:00",
+    "speakers": {
+      "total": 60,
+      "used_in_trials": 60
+    },
+    "duration_hours": {
+      "total": 13.2
+    },
+    "trials": {
+      "test": {
+        "n_target": 9960,
+        "n_nontarget": 9960,
+        "n_speakers": 60,
+        "target_pairs_cross_session": 9960,
+        "cross_session_fraction": 1.0
+      }
+    },
+    "test_mde_pp": 7.306,
+    "test_n_eff_cap": 85.7,
+    "sha256": {
+      "test_trials.txt": "2dcd38f12c9fe8abfa1ca916320bf2aa30e784eb5a575d968572f3f121ef06a3"
+    },
+    "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/kathbath_tamil/wav",
+    "note": "No training partition: this corpus is never trained on."
+  },
+  "nisp_tamil": {
+    "corpus": "nisp_tamil",
+    "language": "ta",
+    "role": "heldout_generalisation_probe",
+    "seed": 42,
+    "built_utc": "2026-08-12T11:46:26.225811+00:00",
+    "speakers": {
+      "total": 65,
+      "used_in_trials": 65
+    },
+    "duration_hours": {
+      "total": 13.3
+    },
+    "trials": {
+      "test": {
+        "n_target": 9945,
+        "n_nontarget": 9945,
+        "n_speakers": 65,
+        "target_pairs_cross_session": 9945,
+        "cross_session_fraction": 1.0
+      }
+    },
+    "test_mde_pp": 7.02,
+    "test_n_eff_cap": 92.9,
+    "sha256": {
+      "test_trials.txt": "63bacf770876400b48cc9fdf96d9f2b1606761a9ddd1732f535478a244e439a9"
+    },
+    "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/nisp_tamil/wav",
+    "note": "No training partition: this corpus is never trained on."
+  },
+  "combined_si_ta": {
+    "corpus": "combined_si_ta",
+    "language": "si+ta",
+    "cohort_utterances": 1500,
+    "role": "primary_combined",
+    "seed": 42,
+    "built_utc": "2026-08-12T11:46:26.575574+00:00",
+    "sources": [
+      "slr127_tamil",
+      "slr52_sinhala"
+    ],
+    "speakers": {
+      "train": 782
+    },
+    "utterances": {
+      "train": 192380
+    },
+    "paths": "absolute (two corpus roots); use --train_path /",
+    "evaluation": "per-language on each source corpus's own test_trials.txt",
+    "sha256": {
+      "train_list.txt": "22e70058a77b906cce3d2f06d477c53c0f0b6aea5752e990c3e2c241973fe16f"
+    }
+  }
+}

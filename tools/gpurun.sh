@@ -22,7 +22,26 @@
 
 set -euo pipefail
 
-CANDIDATE_NODES=(compute-node-3 compute-node-4)
+# Cluster GPU inventory, re-probed 2026-08-15:
+#   compute-node-1 (10.222.1.119)  2x Tesla T4  15 GB  -- ADDED 2026-08-12, was idle
+#   compute-node-2 (10.222.1.118)  2x Tesla T4  15 GB  -- RE-ADDED 2026-08-15. Its
+#       driver was dead because Ubuntu stopped building the 535 branch after
+#       kernel 5.15.0-186 and the node had rebooted into -187; migrating it to
+#       the 580 branch restored both T4s. Verified computing correctly, not just
+#       enumerating (exact fp64 matmul, cuDNN, P2P, full-VRAM write+verify).
+#   compute-node-3 (10.222.1.120)  2x NVIDIA A10  23 GB -- DOWN as of 2026-08-15:
+#       does not ping, "No route to host". Left in the list deliberately: probes
+#       run in parallel and a dead node just contributes no slots, so it
+#       re-joins automatically if it comes back.
+#   compute-node-4 (10.222.1.121)  1x NVIDIA A40  46 GB
+#   compute-node-5 (10.222.1.125)  no GPU (dev node)   head-node: no GPU
+#
+# NOTE the T4s are 15 GB against the A10s' 23 GB and the A40's 46 GB, and are a
+# slower generation. experiments/tools/run_queue.py is memory-aware and will not
+# place a large SSL model on a card that cannot hold it; a plain `gpurun.sh`
+# invocation is not, so pick -n/-g yourself for the heavy models. With node-3
+# down, the 20 GB SSL/hybrid jobs have exactly one home: node-4's A40.
+CANDIDATE_NODES=(compute-node-1 compute-node-2 compute-node-3 compute-node-4)
 CONDA_ROOT="$HOME/anaconda2025"
 ENV_NAME="SL_SPV"
 MIN_FREE_MB=8000

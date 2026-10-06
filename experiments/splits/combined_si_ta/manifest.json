@@ -1,0 +1,23 @@
+{
+  "corpus": "combined_si_ta",
+  "language": "si+ta",
+  "cohort_utterances": 1500,
+  "role": "primary_combined",
+  "seed": 42,
+  "built_utc": "2026-08-12T11:46:26.575574+00:00",
+  "sources": [
+    "slr127_tamil",
+    "slr52_sinhala"
+  ],
+  "speakers": {
+    "train": 782
+  },
+  "utterances": {
+    "train": 192380
+  },
+  "paths": "absolute (two corpus roots); use --train_path /",
+  "evaluation": "per-language on each source corpus's own test_trials.txt",
+  "sha256": {
+    "train_list.txt": "22e70058a77b906cce3d2f06d477c53c0f0b6aea5752e990c3e2c241973fe16f"
+  }
+}

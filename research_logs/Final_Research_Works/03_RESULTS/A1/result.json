@@ -1,0 +1,50 @@
+{
+  "task": "A1",
+  "tag": "A7_pllw_combined_s42",
+  "files": [
+    "proposals/A7_pllw/out/A7_pllw_combined_s42.eval.json"
+  ],
+  "results": {
+    "A7_pllw_combined_s42.eval.json": {
+      "tag": "A7_pllw_combined_s42",
+      "checkpoint": "/mnt/ricproject3/2026/SL_SPV/proposals/A7_pllw/out/exps/A7_pllw_combined_s42/model/model_best.model",
+      "reference_experiment": "F_ssl_wavlm_lw_aamsoftmax_si_s42",
+      "condition": "si",
+      "tensors_loaded": 270,
+      "proposal": "A7_pllw",
+      "arm": "treatment"
+    }
+  },
+  "ok": true,
+  "scored": "2026-09-12T08:47:16+00:00",
+  "eval_set": "slr52_sinhala/test_trials.txt",
+  "a7_pllw": {
+    "eer_cosine": 3.024498437342474,
+    "eer_asnorm": 2.6313136404879534,
+    "mindcf": 0.1830829720737973,
+    "mindcf_asnorm": 0.15646738582518444,
+    "n_trials": 19838,
+    "train_condition": "combined_si_ta",
+    "n_classes": 782
+  },
+  "reference_baseline": {
+    "test_eer": 3.296703296703297,
+    "test_eer_asnorm": 2.9640084685956247,
+    "test_mindcf": 0.1784454078032069,
+    "test_mindcf_asnorm": 0.16544006452263407,
+    "n_trials": 19838,
+    "n_classes": 336,
+    "exp_id": "F_ssl_wavlm_lw_aamsoftmax_si_s42",
+    "train_condition": "si"
+  },
+  "raw_difference_pp": {
+    "cosine": -0.2722,
+    "as_norm": -0.3327
+  },
+  "identical_trials": true,
+  "INTERPRETABLE": false,
+  "confound": "A7 trained on combined_si_ta (782 speakers); its reference baseline trained on si only (336 speakers). The raw -0.27/-0.33 pp difference confounds the METHOD (per-language layer weighting) with 2.3x more training speakers. It must NOT be reported as a PLLW effect.",
+  "missing_control": "ssl_wavlm_lw (SHARED layer weights) trained on combined_si_ta, scored on the same si test trials. Verified 2026-09-12: there are ZERO combined-condition runs in the v1 results table, so this control does not exist anywhere in the project.",
+  "next_task": "A6 -- build the combined-condition shared-weight control (~8 GPU-h, fits a T4)",
+  "what_is_safe_now": "Only this: A7 PLLW reaches 3.024 % cosine / 2.631 % AS-Norm on the held-out si test set, on the same 19,838 trials as the v1 baselines. Whether per-language layer weighting caused any of it is UNRESOLVED until A6 lands."
+}

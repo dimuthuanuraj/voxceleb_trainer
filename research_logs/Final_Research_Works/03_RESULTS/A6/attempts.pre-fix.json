@@ -1,0 +1,16 @@
+{
+  "task": "A6",
+  "attempts": [
+    {
+      "n": 1,
+      "rc": 1,
+      "passed": false,
+      "exit_test": "missing 03_RESULTS/A6/result.json",
+      "log": "03_RESULTS/A6/autopilot_01_20260914-113115.log",
+      "started": "2026-09-14T06:01:15+00:00",
+      "finished": "2026-09-14T06:01:43+00:00",
+      "finished_epoch": 1789365703.9199982,
+      "elapsed_s": 28.6
+    }
+  ]
+}

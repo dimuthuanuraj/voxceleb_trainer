@@ -1,0 +1,1237 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""Declarative definition of every experiment in the Sinhala/Tamil study.
+
+This module is the single source of truth.  ``tools/gen_scripts.py`` turns each
+entry into a standalone runnable ``.py``; ``tools/run_queue.py`` schedules them;
+``tools/analyze.py`` reads their results back.  Nothing downstream re-derives an
+experiment's identity -- it always comes from here.
+
+THE DESIGN
+==========
+
+Five data conditions, all speaker-disjoint (see ``tools/build_splits.py`` and
+``tools/build_en_splits.py``):
+
+    si          slr52_sinhala          336 train speakers,   129,042 utterances
+    ta          slr127_tamil           446 train speakers,    63,338 utterances
+    combined    union                  782 train speakers,   192,380 utterances
+    en_full     VoxCeleb2 -> Vox1-O  5,871 train speakers, 1,065,152 utterances
+    en_matched  VoxCeleb2 subset       336 train speakers,    47,926 utterances
+
+The English pair does two different jobs. ``en_full`` keeps the canonical
+VoxCeleb1-O trial list, so its EER is comparable with the published literature
+and acts as a positive control on the whole harness; it is also the source
+checkpoint for Stage G's cross-lingual fine-tune. ``en_matched`` holds data
+volume constant against ``si`` (identical speaker count), which is what makes a
+cross-language comparison of the architecture RANKING meaningful rather than a
+measurement of how each architecture scales with data.
+
+Stages, each pruning the next so no GPU-hour is spent on a cell whose outcome is
+already determined:
+
+    A  architecture sweep   7 backbones x {si, ta}, loss fixed to AAM-softmax
+    B  loss sweep           top-2 backbones x 5 further losses x {si, ta}
+    C  combined-language    top configurations retrained on si+ta
+    D  seed replication     the winners at 3 seeds, for significance
+    E  English reference    the ranking on a language with a known answer
+    F  front-end sweep      MFCC vs log-mel vs SSL (single-layer / layer-weighted)
+    G  technique ablation   the repo's universal feature flags, one per run
+
+Stages B/C/D/G/M are *deferred*: their membership is resolved from the results
+of the preceding stage at generation time, not hard-coded here. A and F are
+fixed. See ``experiments/FEATURE_EXTRACTION.md`` for the reasoning behind E, F
+and G.
+
+NOTE on ``STAGE_A_ARCHS``: Stage F's front ends are registered into
+``ARCHITECTURES`` at import time so the shared machinery can treat them
+uniformly, but Stage A's membership is frozen before that happens. Iterating
+``ARCHITECTURES`` in ``stage_a()`` would silently pull every front end into the
+backbone sweep.
+
+CONTROLLED FACTORS
+==================
+
+For an architecture comparison to mean anything, everything except the
+architecture must be held fixed.  These are pinned across all of Stage A:
+
+    embedding dim   nOut = 256 for every backbone.  Backbone defaults differ
+                    (192 for ECAPA, 256 for ResNet, 512 for Mixer/VGGVox); left
+                    alone, embedding width would be confounded with topology,
+                    and embedding width alone moves EER.
+    frontend        n_mels = 80, log_input = True wherever a mel frontend
+                    applies.  RawNet3 (learned sinc filterbank) and the SSL
+                    models ignore it by construction -- that difference IS the
+                    hypothesis being tested, and is recorded as such.
+    input length    max_frames = 200 (2.0 s) train, eval_frames = 300 (3.0 s)
+    augmentation    MUSAN + RIR on, identical chain for every run
+    optimiser       Adam, lr 1e-3, step decay 0.95 per test interval, wd 2e-5
+    schedule        max_epoch 60, test_interval 2, patience 8 intervals
+    scoring         cosine on normalised embeddings, AS-Norm OFF during training
+
+AS-Norm is deliberately excluded from training-time evaluation: it is an
+inference-time score transform, and folding it in here would confound the
+backbone comparison with a calibration effect.  It is measured instead as an
+explicit on/off factor in the final held-out evaluation (``tools/evaluate.py``),
+which is the only place it can be attributed cleanly.
+
+MODEL SELECTION AND THE TEST SET
+================================
+
+Epoch-level selection uses the *validation* trials only.  The test trials are
+touched exactly once per experiment, by ``tools/evaluate.py``, at the checkpoint
+that validation already chose.  This keeps the test EER an honest held-out
+estimate rather than the minimum of 30 peeks at the test set.
+"""
+
+from __future__ import annotations
+
+import os
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SPLITS = os.path.join(REPO_ROOT, "experiments", "splits")
+DATA = os.path.join(REPO_ROOT, "data")
+
+MUSAN_PATH = os.path.join(DATA, "musan")
+RIR_PATH = os.path.join(DATA, "RIRS_NOISES", "simulated_rirs")
+
+# --------------------------------------------------------------------------
+# data conditions
+# --------------------------------------------------------------------------
+CONDITIONS = {
+    "si": {
+        "label": "Sinhala only",
+        "corpus": "slr52_sinhala",
+        "languages": ["si"],
+        "train_list": f"{SPLITS}/slr52_sinhala/train_list.txt",
+        "train_path": f"{DATA}/slr52_sinhala/wav",
+        "val_list": f"{SPLITS}/slr52_sinhala/val_trials.txt",
+        "test_list": f"{SPLITS}/slr52_sinhala/test_trials.txt",
+        "test_path": f"{DATA}/slr52_sinhala/wav",
+        "cohort_list": f"{SPLITS}/slr52_sinhala/asnorm_cohort.txt",
+        "cohort_path": f"{DATA}/slr52_sinhala/wav",
+        "n_classes": 336,
+    },
+    "ta": {
+        "label": "Tamil only",
+        "corpus": "slr127_tamil",
+        "languages": ["ta"],
+        "train_list": f"{SPLITS}/slr127_tamil/train_list.txt",
+        "train_path": f"{DATA}/slr127_tamil/wav",
+        "val_list": f"{SPLITS}/slr127_tamil/val_trials.txt",
+        "test_list": f"{SPLITS}/slr127_tamil/test_trials.txt",
+        "test_path": f"{DATA}/slr127_tamil/wav",
+        "cohort_list": f"{SPLITS}/slr127_tamil/asnorm_cohort.txt",
+        "cohort_path": f"{DATA}/slr127_tamil/wav",
+        "n_classes": 446,
+    },
+    "combined": {
+        "label": "Sinhala + Tamil jointly",
+        "corpus": "combined_si_ta",
+        "languages": ["si", "ta"],
+        "train_list": f"{SPLITS}/combined_si_ta/train_list.txt",
+        # The combined train list carries absolute paths because its two source
+        # corpora live under different roots; "/" makes the join a no-op.
+        "train_path": "/",
+        "val_list": None,  # replaced by per-language lists below
+        "per_lang_val_lists": (
+            f"si:{SPLITS}/slr52_sinhala/val_trials_abs.txt,"
+            f"ta:{SPLITS}/slr127_tamil/val_trials_abs.txt"
+        ),
+        "per_lang_test_lists": (
+            f"si:{SPLITS}/slr52_sinhala/test_trials_abs.txt,"
+            f"ta:{SPLITS}/slr127_tamil/test_trials_abs.txt"
+        ),
+        "test_path": "/",
+        # Bilingual cohort with absolute paths: an AS-Norm cohort should mirror
+        # the training distribution, and a si-only cohort would normalise Tamil
+        # trials against Sinhala statistics.
+        "cohort_list": f"{SPLITS}/combined_si_ta/asnorm_cohort.txt",
+        "cohort_path": "/",
+        "n_classes": 782,
+    },
+
+    # ---------------- in-the-wild Sinhala (added 2026-08-14) -------------
+    # slr52_sinhala has n_utts == n_sessions, so it carries no within-speaker
+    # session structure and its "cross-session" trials cannot be distinguished
+    # from cross-utterance ones. slceleb2026 is the only Sinhala corpus here with
+    # real sessions (session = YouTube video id), and its target trials are
+    # strictly cross-session, so its absolute EER is meaningful rather than
+    # optimistic. The cost is power: 123 speakers total, 24 usable multi-session
+    # test speakers, MDE ~11.5 pp -- read the paired contrasts, not the absolute.
+    "si_celeb": {
+        "label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+        "corpus": "slceleb2026_sinhala_split",
+        "languages": ["si"],
+        "train_list": f"{SPLITS}/slceleb2026_sinhala_split/train_list.txt",
+        "train_path": f"{DATA}/slceleb2026_sinhala/wav",
+        "val_list": f"{SPLITS}/slceleb2026_sinhala_split/val_trials.txt",
+        "test_list": f"{SPLITS}/slceleb2026_sinhala_split/test_trials.txt",
+        "test_path": f"{DATA}/slceleb2026_sinhala/wav",
+        "cohort_list": f"{SPLITS}/slceleb2026_sinhala_split/asnorm_cohort.txt",
+        "cohort_path": f"{DATA}/slceleb2026_sinhala/wav",
+        "n_classes": 82,
+        "auto_transfer": False,   # a different genre; not a transfer target
+        "role": "in-the-wild Sinhala with genuine cross-session trials; the "
+                "honest-protocol counterpart to the read-speech si condition",
+    },
+
+    # ---------------- pooled-domain Sinhala (added 2026-08-14) -----------
+    # The answer to "slceleb2026 alone is too small, slr52 alone is too clean".
+    # 336 read-speech speakers + 82 in-the-wild speakers = 418, across two
+    # recording domains. Evaluation stays PER DOMAIN so the trade is visible:
+    # what it costs on read speech, and what it buys on genuine cross-session
+    # trials, are separate numbers rather than one average.
+    #
+    # Reference points it is measured against, both already in hand:
+    #   slr52-only  ecapa1024: 4.40% own test, 17.70% on the slceleb probe
+    #   slceleb-only ecapa1024: did not generalise (85% train acc, ~25% val EER)
+    "si_pooled": {
+        "label": "Sinhala pooled (slr52 read + SLCeleb2026 in-the-wild)",
+        "corpus": "si_pooled",
+        "languages": ["si"],
+        "train_list": f"{SPLITS}/si_pooled/train_list.txt",
+        "train_path": "/",
+        "val_list": None,
+        "per_lang_val_lists": (
+            f"read:{SPLITS}/si_pooled/val_trials_read_abs.txt,"
+            f"wild:{SPLITS}/si_pooled/val_trials_wild_abs.txt"
+        ),
+        "per_lang_test_lists": (
+            f"read:{SPLITS}/si_pooled/test_trials_read_abs.txt,"
+            f"wild:{SPLITS}/si_pooled/test_trials_wild_abs.txt"
+        ),
+        "test_path": "/",
+        "cohort_list": f"{SPLITS}/si_pooled/asnorm_cohort.txt",
+        "cohort_path": "/",
+        "n_classes": 418,
+        "auto_transfer": False,
+        "role": "does adding 82 in-the-wild speakers buy more cross-session "
+                "robustness than it costs on read speech?",
+    },
+
+    # ---------------- English reference conditions ----------------------
+    # English is here so the architecture ranking found for Sinhala and Tamil
+    # can be compared against a language where the answer is already known from
+    # the literature. Two conditions, because one cannot do both jobs.
+    "en_full": {
+        "label": "English, standard VoxCeleb protocol",
+        "corpus": "en_full",
+        "languages": ["en"],
+        "train_list": f"{SPLITS}/en_full/train_list.txt",
+        "train_path": f"{DATA}/voxceleb_new/voxceleb2",
+        "val_list": f"{SPLITS}/en_full/val_trials.txt",
+        # en_full is the ONE condition whose validation and test sets live under
+        # different roots: validation is 120 held-out VoxCeleb2 speakers, while
+        # the final test is VoxCeleb1-O. Every other condition trains and tests
+        # on the same corpus, so `test_path` alone was enough for them and this
+        # split went unnoticed until the 2026-08-15 smoke run, where in-training
+        # validation resolved the VoxCeleb2 val trials against the VoxCeleb1
+        # root and every one of the 6,430 lookups missed.
+        "val_path": f"{DATA}/voxceleb_new/voxceleb2",
+        # Canonical VoxCeleb1-O, deliberately not regenerated: keeping it makes
+        # the number directly comparable with published results, which is the
+        # entire purpose of this condition.
+        "test_list": f"{DATA}/voxceleb_new/test_list.txt",
+        "test_path": f"{DATA}/voxceleb_new/voxceleb1",
+        "cohort_list": f"{SPLITS}/en_full/asnorm_cohort.txt",
+        "cohort_path": f"{DATA}/voxceleb_new/voxceleb2",
+        "n_classes": 5871,
+        # EPOCH CAP, measured rather than guessed. On a Tesla T4 this condition
+        # runs 891k utterances per epoch and took 270 / 301 / 451 minutes for its
+        # first three epochs -- about 341 hours for the full 60, on the cluster's
+        # scarcest resource.
+        #
+        # It does not need 60. en_full is a POSITIVE CONTROL: its job is to show
+        # the harness reaches the published ballpark on VoxCeleb1-O, not to be
+        # state of the art. It was already at 4.51% EER and still falling by
+        # epoch 3, which is the right trajectory for a recipe that lands near 1%.
+        # Ten epochs is enough to demonstrate that and costs days rather than a
+        # fortnight. patience is left high so the cap, not early stopping, is
+        # what ends it.
+        "param_overrides": {"max_epoch": 10, "patience": 20},
+        # Kept out of evaluate.py's automatic cross-language transfer loop.
+        # en_full is a CONTROL, not a transfer target: scoring every Sinhala and
+        # Tamil model against VoxCeleb1-O would add 37,720 trials plus a whole
+        # extra audio tree to each of ~28 experiments, for a measurement nobody
+        # asked for. Opt in explicitly with `evaluate.py --transfer-en`.
+        "auto_transfer": False,
+        "role": "positive control — validates the whole harness against a known "
+                "reference (~1% EER for ECAPA on VoxCeleb1-O)",
+    },
+    "en_matched": {
+        "label": "English, scale-matched to Sinhala",
+        "corpus": "en_matched",
+        "languages": ["en"],
+        "train_list": f"{SPLITS}/en_matched/train_list.txt",
+        "train_path": f"{DATA}/voxceleb_new/voxceleb2",
+        "val_list": f"{SPLITS}/en_matched/val_trials.txt",
+        "test_list": f"{SPLITS}/en_matched/test_trials.txt",
+        "test_path": f"{DATA}/voxceleb_new/voxceleb2",
+        "cohort_list": f"{SPLITS}/en_matched/asnorm_cohort.txt",
+        "cohort_path": f"{DATA}/voxceleb_new/voxceleb2",
+        "n_classes": 336,
+        "auto_transfer": False,   # see en_full
+        "role": "the condition that makes cross-language comparison valid: same "
+                "speaker count as si, so a ranking difference is about the "
+                "language and not about data volume",
+    },
+}
+
+# Held-out corpora: never trained on, evaluated only. These carry the
+# generalisation claim, because a model that wins in-corpus by exploiting
+# channel regularities will not survive a corpus change.
+HELDOUT_PROBES = {
+    "slceleb2026_sinhala": {
+        "lang": "si",
+        "trials": f"{SPLITS}/slceleb2026_sinhala/test_trials.txt",
+        "path": f"{DATA}/slceleb2026_sinhala/wav",
+        "note": "in-the-wild YouTube Sinhala; real session structure",
+    },
+    "slr65_tamil": {
+        "lang": "ta",
+        "trials": f"{SPLITS}/slr65_tamil/test_trials.txt",
+        "path": f"{DATA}/slr65_tamil/wav",
+        "note": "read Tamil, different collection to slr127",
+    },
+    "kathbath_tamil": {
+        "lang": "ta",
+        "trials": f"{SPLITS}/kathbath_tamil/test_trials.txt",
+        "path": f"{DATA}/kathbath_tamil/wav",
+        "note": "IndicSUPERB Tamil",
+    },
+    "nisp_tamil": {
+        "lang": "ta+en",
+        "trials": f"{SPLITS}/nisp_tamil/test_trials.txt",
+        "path": f"{DATA}/nisp_tamil/wav",
+        "note": "bilingual speakers; the only genuine cross-lingual trials",
+        "cross_lingual_trials": f"{DATA}/nisp_tamil/lists/test_list_cs.txt",
+    },
+}
+
+# --------------------------------------------------------------------------
+# architectures  (Stage A membership)
+# --------------------------------------------------------------------------
+EMBED_DIM = 256  # pinned across every backbone -- see module docstring
+
+# Minimum free GPU memory (MiB) a configuration needs, used by
+# tools/run_queue.py to place jobs. The cluster is heterogeneous -- 15 GB T4s on
+# compute-node-1, 23 GB A10s on node-3, a 46 GB A40 on node-4 -- so a scheduler
+# that ignores memory will happily send a 112M-parameter hybrid to a T4 and lose
+# the run to an OOM several minutes in. Defaults are deliberately conservative;
+# they cost a little placement flexibility and save whole runs.
+# MEASURED 2026-08-16 on a Tesla T4 (real fwd+bwd at the configured batch size,
+# torch.cuda.max_memory_allocated), replacing earlier guesses that were wrong by
+# more than 10x:
+#
+#     ssl_wavlm  batch 16        925 MiB      (guess had been 20,000)
+#     SSL_ECAPA  batch 32      1,512 MiB      (guess had been 20,000)
+#     SSL_ECAPA  batch 24      1,278 MiB
+#
+# The encoders are FROZEN, so they run under no_grad and store no activations --
+# parameter count says almost nothing about training memory here. The old 20 GB
+# figure stranded every SSL job on the single A40 while 15 GB T4s sat idle.
+#
+# The values below keep a ~4x margin over the measurement to cover the dataloader,
+# augmentation and the evaluation pass (num_eval=10 crops), and still fit a T4.
+MIN_GPU_MB_DEFAULT = 9000     # mel backbones at batch 150-200
+MIN_GPU_MB_SSL = 8000         # frozen 94M encoder; measured <1 GB
+MIN_GPU_MB_HYBRID = 8000      # 112M encoder + ECAPA backbone; measured 1.5 GB
+
+ARCHITECTURES = {
+    "ecapa1024": {
+        # ECAPA_TDNN's own default is channels=1024, so the width needs no flag.
+        "model": "ECAPA_TDNN",
+        "args": {"nOut": EMBED_DIM, "n_mels": 80, "log_input": True,
+                 "encoder_type": "ASP"},
+        "batch_size": 200,
+        "note": "reference strong baseline",
+    },
+    "ecapa512": {
+        # A dedicated module rather than --channels 512: the trainer has no
+        # such flag and drops unknown YAML keys, and it is not being modified.
+        # See models/ECAPA_TDNN_C512.py.
+        "model": "ECAPA_TDNN_C512",
+        "args": {"nOut": EMBED_DIM, "n_mels": 80, "log_input": True,
+                 "encoder_type": "ASP"},
+        "batch_size": 200,
+        "note": "capacity control against ecapa1024",
+    },
+    "resnetse34l": {
+        "model": "ResNetSE34L",
+        "args": {"nOut": EMBED_DIM, "n_mels": 80, "log_input": True,
+                 "encoder_type": "SAP"},
+        "batch_size": 200,
+        "note": "light 2-D CNN",
+    },
+    "resnetse34v2": {
+        "model": "ResNetSE34V2",
+        "args": {"nOut": EMBED_DIM, "n_mels": 80, "log_input": True,
+                 "encoder_type": "ASP"},
+        "batch_size": 150,
+        "note": "capacity control against resnetse34l",
+    },
+    # rawnet3 was removed from the study on request (2026-08-12). The module
+    # models/RawNet3.py and its ARCH_SPECS entry are left in place, so
+    # re-adding it here is all that is needed to bring it back.
+    "mlpmixer": {
+        "model": "MLPMixerSpeaker",
+        "args": {"nOut": EMBED_DIM, "n_mels": 80, "log_input": True},
+        "batch_size": 150,
+        "note": "low-inductive-bias control",
+    },
+    "vggvox": {
+        "model": "VGGVox",
+        # DEVIATION FROM THE PINNED FRONTEND, and the only one in Stage A.
+        # VGGVox's final Conv2d has kernel (4, 1) sized against a 40-bin mel
+        # axis and raises on any other value -- n_mels is architectural here,
+        # not a hyperparameter. The run therefore carries a 40-bin frontend
+        # while every other mel-based backbone carries 80. Recorded in
+        # `deviations` so the analysis quotes VGGVox with the caveat attached
+        # instead of treating it as a like-for-like comparison.
+        "args": {"nOut": EMBED_DIM, "n_mels": 40, "log_input": True,
+                 "encoder_type": "TAP"},
+        "batch_size": 200,
+        "note": "historical floor",
+        "deviations": {
+            "n_mels": "40 (architecturally fixed; all other mel backbones use 80)"
+        },
+    },
+    "ssl_wavlm": {
+        "model": "SSLFrontendSpeaker",
+        "args": {"nOut": EMBED_DIM},
+        # Local safetensors snapshot, not the hub id: the SL_SPV env runs torch
+        # 2.5.1 and transformers refuses to torch.load a .bin below torch 2.6
+        # (CVE-2025-32434), while the cached hub revision for this id carries
+        # only .bin. See models/weights/wavlm-base-plus/README.md.
+        "extra_cli": {"--ssl_encoder_name": os.path.join(
+            REPO_ROOT, "models", "weights", "wavlm-base-plus")},
+        "flags": ["--ssl_freeze"],
+        "batch_size": 48,  # 94M frozen encoder; activation memory dominates
+        "min_gpu_mb": MIN_GPU_MB_SSL,
+        "note": "frozen SSL frontend, English-only pretraining",
+    },
+}
+
+# Encoder variants for the pretraining-coverage question. Run only if the SSL
+# frontend places well in Stage A -- otherwise the comparison is moot.
+SSL_ENCODERS = {
+    "ssl_wavlm": ("microsoft/wavlm-base-plus", "English-only pretraining"),
+    "ssl_xlsr": ("facebook/wav2vec2-xls-r-300m", "128 languages incl. si + ta"),
+    "ssl_mhubert": ("utter-project/mHuBERT-147", "147 languages incl. si + ta"),
+}
+
+# --------------------------------------------------------------------------
+# losses  (Stage B membership)
+# --------------------------------------------------------------------------
+LOSSES = {
+    "aamsoftmax": {"trainfunc": "aamsoftmax", "margin": 0.2, "scale": 30, "n_per_speaker": 1},
+    "amsoftmax": {"trainfunc": "amsoftmax", "margin": 0.2, "scale": 30, "n_per_speaker": 1},
+    "softmax": {"trainfunc": "softmax", "n_per_speaker": 1},
+    "angleproto": {"trainfunc": "angleproto", "n_per_speaker": 2},
+    "softmaxproto": {"trainfunc": "softmaxproto", "n_per_speaker": 2},
+    "ge2e": {"trainfunc": "ge2e", "n_per_speaker": 2},
+    "proto": {"trainfunc": "proto", "n_per_speaker": 2},
+    "triplet": {"trainfunc": "triplet", "margin": 0.1, "hard_rank": 10,
+                "hard_prob": 0.5, "n_per_speaker": 2},
+}
+
+# --------------------------------------------------------------------------
+# FRONT ENDS  (Stage F) — what the network is actually fed
+# --------------------------------------------------------------------------
+# The backbone question ("which network") and the front-end question ("which
+# representation") are separate, and Stage A only answers the first. Stage F
+# fixes the backbone family and varies the input representation across the four
+# families that exist for speaker verification: cepstral (MFCC), filterbank
+# (log-mel), and self-supervised transformer features read either from one layer
+# or from a learned mixture of all of them.
+#
+# `mel80` and `ssl_wavlm_last` are the Stage A runs re-used rather than repeated:
+# they are already exactly the configurations Stage F would run.
+SSL_WEIGHTS_DIR = os.path.join(REPO_ROOT, "models", "weights")
+
+FRONTENDS = {
+    "mel80": {
+        "arch_key": "ecapa1024",
+        "reuse_stage_a": True,
+        "family": "filterbank",
+        "note": "80-bin log-mel — the study's baseline representation",
+    },
+    "mfcc80": {
+        "model": "ECAPA_TDNN_MFCC",
+        "args": {"nOut": EMBED_DIM, "n_mels": 80, "log_input": False,
+                 "encoder_type": "ASP"},
+        "batch_size": 200,
+        "family": "cepstral",
+        "note": "80 MFCCs, static only — same channel count as mel80, so the "
+                "contrast is purely the DCT",
+    },
+    "mfcc40d": {
+        "model": "ECAPA_TDNN_MFCC40D",
+        "args": {"nOut": EMBED_DIM, "n_mels": 80, "log_input": False,
+                 "encoder_type": "ASP"},
+        "batch_size": 200,
+        "family": "cepstral",
+        "note": "40 MFCCs + delta + delta-delta — the classical i-vector front end",
+    },
+    "ssl_wavlm_last": {
+        "arch_key": "ssl_wavlm",
+        "reuse_stage_a": True,
+        "family": "ssl_single_layer",
+        "note": "WavLM last layer — the trainer's current default",
+    },
+    "ssl_wavlm_mid": {
+        "model": "SSLFrontendSpeaker",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "wavlm-base-plus"),
+            # Layer 6 of 12. The original rationale was that speaker information
+            # should peak in the MIDDLE of the stack. The layer probe
+            # (tools/ssl_layer_probe.py, 2026-08-14) FALSIFIED that: on Sinhala
+            # the EER curve is monotonic in depth -- 22.3% at layer 0 rising to
+            # 40.3% at layer 12 -- with layer 6 at 36.5%, barely better than the
+            # last layer. This entry is kept anyway, as the mid-curve data point
+            # measured with a TRAINED head rather than the probe's mean pooling.
+            "--ssl_layer": 6,
+        },
+        "flags": ["--ssl_freeze"],
+        "batch_size": 48,
+        "min_gpu_mb": MIN_GPU_MB_SSL,
+        "family": "ssl_single_layer",
+        "note": "WavLM layer 6 — mid-stack control; the probe says this is NOT "
+                "the optimum, so it measures how far off the middle is",
+    },
+    "ssl_wavlm_low": {
+        "model": "SSLFrontendSpeaker",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "wavlm-base-plus"),
+            # Layer 0 = the convolutional feature extractor output, before any
+            # transformer block. Measured best by the layer probe: 22.30% EER
+            # against the last layer's 40.33%, i.e. the default reads features
+            # 1.81x worse. Every transformer block strips speaker identity
+            # further, which is what masked-prediction pretraining rewards.
+            "--ssl_layer": 0,
+        },
+        "flags": ["--ssl_freeze"],
+        "batch_size": 48,
+        "min_gpu_mb": MIN_GPU_MB_SSL,
+        "family": "ssl_single_layer",
+        "note": "WavLM layer 0 (CNN output) — the probe's measured optimum",
+    },
+    "ssl_wavlm_ft": {
+        "model": "SSLFrontendSpeaker",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "wavlm-base-plus"),
+        },
+        # UNFROZEN. In the frozen runs only 594,304 of 94,981,240 parameters
+        # train -- 0.63% -- so the head is asked to separate 336 speakers using
+        # features it cannot adapt. This is also what SL_SPV/voiceid actually
+        # deploys, and the P3 study found full fine-tuning beat LoRA
+        # (1.69/1.41 vs 3.73/3.10 EER), so it is the configuration with the
+        # strongest prior of the three SSL variants.
+        "flags": ["--no_ssl_freeze", "--llrd"],
+        # DEVIATION from the pinned optimiser, and a necessary one: 1e-3 on a
+        # pretrained transformer destroys it in the first epochs. Layer-wise
+        # decay keeps the lower layers -- the ones the probe shows carry the
+        # speaker information -- close to their pretrained values.
+        "overrides": {"lr": 1e-4, "llrd_decay": 0.9},
+        "batch_size": 24,      # backprop through 95M params, not just a head
+        "min_gpu_mb": 30000,   # UNFROZEN: real gradients through 94M params
+        "family": "ssl_finetuned",
+        "note": "WavLM fine-tuned end-to-end — tests the frozen-encoder ceiling",
+        "deviations": {
+            "lr": "1e-4 with LLRD 0.9 (pinned value 1e-3 is unusable for a "
+                  "pretrained transformer)",
+            "ssl_freeze": "False (all other SSL runs freeze the encoder)",
+        },
+    },
+    "ssl_wavlm_lw": {
+        "model": "SSLFrontendSpeakerLW",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "wavlm-base-plus"),
+        },
+        "flags": ["--ssl_freeze"],
+        "batch_size": 48,
+        "min_gpu_mb": MIN_GPU_MB_SSL,
+        "family": "ssl_layer_weighted",
+        "note": "WavLM with learned layer weights — the design the VoiceID "
+                "product deploys, never before measured against the alternatives",
+    },
+    # ----------------------------------------------------------------
+    # THE ARBITER RUN  [W0.5, added 2026-09-12]
+    #
+    # v1 measured layer-weighted+FROZEN (si 2.369) and last-layer+FINE-TUNED
+    # (si 5.404) but never both at once, so the two axes were never separated.
+    # The annual report of 2026-09-10 names this missing diagonal as open item
+    # #1 and notes that the P3 headline claim underpinning papers/ieee_spl
+    # rests on it.
+    #
+    # No new model code: SSLFrontendSpeakerLW subclasses SSLFrontendSpeaker and
+    # its _extract_ssl_features already has the unfrozen branch, keeping the 13
+    # layer weights trainable either way. Only the flags change.
+    #
+    # Deviations are inherited verbatim from ssl_wavlm_ft so the comparison is
+    # single-factor: same lr, same LLRD decay, same batch size, same memory
+    # class. The ONLY difference from ssl_wavlm_ft is reading all 13 hidden
+    # states through learned weights instead of the last one.
+    # ----------------------------------------------------------------
+    "ssl_wavlm_lw_ft": {
+        "model": "SSLFrontendSpeakerLW",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "wavlm-base-plus"),
+        },
+        "flags": ["--no_ssl_freeze", "--llrd"],
+        "overrides": {"lr": 1e-4, "llrd_decay": 0.9},
+        "batch_size": 24,
+        "min_gpu_mb": 30000,
+        "family": "ssl_layer_weighted_finetuned",
+        "note": "THE ARBITER: WavLM layer-weighted AND fine-tuned — the cell v1 "
+                "never measured, and the one P3's headline claim rests on",
+        "deviations": {
+            "lr": "1e-4 with LLRD 0.9 (inherited from ssl_wavlm_ft verbatim so "
+                  "the layer-weighting contrast is the single changed factor)",
+            "ssl_freeze": "False (as ssl_wavlm_ft)",
+        },
+    },
+    "ssl_mhubert_lw_ft": {
+        "model": "SSLFrontendSpeakerLW",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "mhubert-147"),
+        },
+        "flags": ["--no_ssl_freeze", "--llrd"],
+        "overrides": {"lr": 1e-4, "llrd_decay": 0.9},
+        "batch_size": 24,
+        "min_gpu_mb": 30000,
+        "family": "ssl_layer_weighted_finetuned",
+        "note": "The arbiter on the encoder that won v1 (mHuBERT-147 beat WavLM "
+                "on both languages at matched capacity, p = 0.000 / 0.005)",
+        "deviations": {
+            "lr": "1e-4 with LLRD 0.9 (inherited from ssl_wavlm_ft)",
+            "ssl_freeze": "False",
+        },
+    },
+    "ssl_mhubert_lw": {
+        "model": "SSLFrontendSpeakerLW",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "mhubert-147"),
+        },
+        "flags": ["--ssl_freeze"],
+        "batch_size": 48,
+        "min_gpu_mb": MIN_GPU_MB_SSL,
+        "family": "ssl_layer_weighted",
+        "note": "mHuBERT-147 (94M, covers si+ta) vs WavLM (94M, English only) — "
+                "same size, so this isolates PRETRAINING COVERAGE from capacity",
+    },
+}
+
+# --------------------------------------------------------------------------
+# TECHNIQUES  (Stage G) — the repo's universal feature flags, ablated
+# --------------------------------------------------------------------------
+# These are the FEATURE-002..008 flags already implemented in
+# trainSpeakerNet.py. They were previously exercised only by the closed-set
+# `configs/sl_feature_*.yaml` recipes; Stage G re-runs them on the
+# speaker-disjoint splits, individually and stacked, so each one's contribution
+# is separable.
+TECHNIQUES = {
+    "baseline": {
+        "flags": {},
+        "requires": [],
+        "predicted_effect": "reference row; every other technique is quoted "
+                            "against this one on identical trials",
+    },
+    "plda": {
+        "flags": {"--plda": True, "--plda_dim": 200},
+        "requires": ["plda_train_list"],
+        "predicted_effect": (
+            "PLDA models within- and between-speaker covariance explicitly, so "
+            "it should help most where the embedding space is anisotropic — "
+            "which is the low-resource regime. Expect a larger gain on ta "
+            "(63k utts) than on si (129k)."
+        ),
+    },
+    "finetune_en": {
+        "flags": {"--finetune": True, "--finetune_lr_multiplier": 0.1},
+        "requires": ["initial_model"],
+        "predicted_effect": (
+            "Cross-lingual transfer from the English checkpoint. The central "
+            "practical question for these languages: whether 5,871 English "
+            "speakers buy more than 336 Sinhala ones. Gain should be larger for "
+            "ta, which has the smaller corpus."
+        ),
+    },
+    "finetune_en_llrd": {
+        "flags": {"--finetune": True, "--finetune_lr_multiplier": 0.1,
+                  "--llrd": True, "--llrd_decay": 0.9},
+        "requires": ["initial_model"],
+        "predicted_effect": (
+            "Layer-wise LR decay preserves the general low-level features of "
+            "the source model while letting upper layers adapt. Should beat "
+            "plain fine-tuning when the source/target gap is large, which "
+            "English -> Sinhala certainly is."
+        ),
+    },
+    "lang_aux": {
+        "flags": {"--lang_aux": True, "--lang_aux_weight": 0.3,
+                  "--lang_aux_num_classes": 2},
+        "requires": ["lang_aux_label_file", "combined_only"],
+        "predicted_effect": (
+            "An auxiliary language-ID head makes the embedding language-AWARE. "
+            "Helps if language identity is a useful conditioning variable; "
+            "hurts if it encourages the encoder to spend capacity on language "
+            "rather than speaker."
+        ),
+    },
+    "dann_lang": {
+        "flags": {"--dann_lang": True, "--dann_lang_weight": 1.0,
+                  "--dann_lang_lambda": 0.1, "--dann_lang_num_classes": 2},
+        "requires": ["dann_lang_label_file", "combined_only"],
+        "predicted_effect": (
+            "The opposite hypothesis to lang_aux: a gradient-reversal head makes "
+            "the embedding language-INVARIANT. If bilingual enrolment/test "
+            "matters, invariance should win; the pair is a genuine fork and "
+            "running both is how the question gets settled rather than argued."
+        ),
+    },
+}
+
+# Register every non-reused front end as an architecture AT IMPORT TIME, so the
+# rest of the machinery (model cards, script generation, the harness drift
+# check) needs no special case for them.
+#
+# This must not happen inside stage_f(): a generated script imports this module
+# fresh and never calls the stage builder, so a front end registered as a
+# side-effect of stage_f() would be missing exactly when the script tries to
+# rebuild itself -- KeyError at launch, after the job has already been queued.
+#
+# Stage A's membership is frozen BEFORE this registration, so the front ends
+# joining ARCHITECTURES cannot silently enlarge the backbone sweep.
+STAGE_A_ARCHS = tuple(ARCHITECTURES)
+
+# --------------------------------------------------------------------------
+# HYBRIDS  (Stage H) — SSL front end x full backbone
+# --------------------------------------------------------------------------
+# Stage A varies the backbone with the front end fixed to log-mel; Stage F
+# varies the front end with the head fixed to attentive pooling. Neither
+# measures the INTERACTION, which is the question with real consequences:
+#
+#     once the features come from a pretrained SSL encoder, does the backbone
+#     still matter?
+#
+# Against the runs that already exist this completes the cell:
+#
+#     log-mel + ECAPA backbone      Stage A  ecapa1024
+#     WavLM   + pooling head        Stage F  ssl_wavlm_lw
+#     WavLM   + ECAPA backbone      Stage H  ssl_wavlm_ecapa
+#
+# A small backbone gain under SSL features but a large one under log-mel means
+# representation dominates architecture here -- spend effort on the front end,
+# not on backbone search. This is also the standard WavLM+ECAPA recipe in
+# current SV systems, so the study measures the known-strong arrangement rather
+# than an invention of its own.
+HYBRIDS = {
+    "ssl_wavlm_ecapa": {
+        "model": "SSL_ECAPA",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "wavlm-base-plus"),
+        },
+        "flags": ["--ssl_freeze"],
+        # 112M params and 25.3 GFLOPs: the encoder's activations dominate, so
+        # the batch has to come down further than for the pooling-head variant.
+        "batch_size": 32,
+        "min_gpu_mb": MIN_GPU_MB_HYBRID,
+        "note": "WavLM + full ECAPA backbone — the standard strong recipe",
+    },
+    "ssl_mhubert_ecapa": {
+        "model": "SSL_ECAPA",
+        "args": {"nOut": EMBED_DIM},
+        "extra_cli": {
+            "--ssl_encoder_name": os.path.join(SSL_WEIGHTS_DIR, "mhubert-147"),
+        },
+        "flags": ["--ssl_freeze"],
+        "batch_size": 32,
+        "min_gpu_mb": MIN_GPU_MB_HYBRID,
+        "note": "mHuBERT-147 + full ECAPA backbone — coverage x backbone",
+    },
+}
+
+for _h_key, _h in HYBRIDS.items():
+    ARCHITECTURES.setdefault(_h_key, dict(_h))
+
+for _fe_key, _fe in FRONTENDS.items():
+    if _fe.get("reuse_stage_a"):
+        continue
+    # Copy the whole entry rather than a hand-listed subset: an explicit key
+    # list silently drops any field added to FRONTENDS later, which is exactly
+    # how min_gpu_mb went missing and left a 95M SSL model eligible for a 15 GB
+    # T4. The extra descriptive keys (family, note) are harmless here.
+    ARCHITECTURES.setdefault(_fe_key, dict(_fe))
+
+STAGE_A_LOSS = "aamsoftmax"
+STAGE_B_LOSSES = ["softmax", "amsoftmax", "angleproto", "softmaxproto", "triplet"]
+
+# Margin/scale grid for the geometry study on the best classification loss.
+MARGIN_GRID = [0.1, 0.2, 0.3, 0.4]
+
+# --------------------------------------------------------------------------
+# shared training hyperparameters
+# --------------------------------------------------------------------------
+BASE_TRAIN = {
+    "max_frames": 200,
+    "eval_frames": 300,
+    "sample_rate": 16000,
+    "max_seg_per_spk": 300,
+    "n_data_loader_thread": 8,
+    "prefetch_factor": 2,
+    "persistent_workers": True,
+    "optimizer": "adam",
+    "scheduler": "steplr",
+    "lr": 0.001,
+    "lr_decay": 0.95,
+    "weight_decay": 2e-5,
+    "max_epoch": 60,
+    # EER on the validation trials after EVERY epoch (was 2).
+    #
+    # Two things are coupled to this and both were adjusted with it:
+    #
+    #   patience is counted in TEST INTERVALS, not epochs (trainSpeakerNet.py
+    #   "Number of test intervals to wait for EER improvement"). At
+    #   test_interval=2, patience=8 meant 16 epochs of tolerance; leaving
+    #   patience at 8 here would silently halve it to 8 epochs and stop runs
+    #   early. It is raised to 16 to keep the same behaviour.
+    #
+    #   checkpoints are also written every test_interval, so per-epoch
+    #   evaluation means a per-epoch checkpoint. That doubles the checkpoint
+    #   count (~58 MB per ECAPA-1024 epoch, ~380 MB for a 95M SSL model), which
+    #   the 5.9 TB free on /mnt/ricproject3 absorbs comfortably -- and it is
+    #   what makes an interrupted run resumable to within one epoch instead of
+    #   losing everything since the last even-numbered epoch.
+    #
+    # Cost: measured epoch time is ~13 min for ECAPA-1024 on si under 5-way
+    # cluster contention, against roughly 1-2 min for a 5,000-pair validation
+    # pass, so per-epoch evaluation adds on the order of 10% wall time and
+    # doubles the resolution of every learning curve.
+    "test_interval": 1,
+    "patience": 16,
+    "dcf_p_target": 0.05,
+    "dcf_c_miss": 1,
+    "dcf_c_fa": 1,
+    "seed": 42,
+}
+
+BASE_FLAGS = ["--mixedprec"]
+
+SCALES = {
+    "smoke": {"max_epoch": 2, "test_interval": 1, "patience": 0,
+              "max_seg_per_spk": 4, "n_data_loader_thread": 2,
+              "persistent_workers": False},
+    "dev": {"max_epoch": 12, "test_interval": 2, "patience": 3,
+            "max_seg_per_spk": 60},
+    "full": {},
+}
+
+
+# --------------------------------------------------------------------------
+class Experiment:
+    """One fully-resolved training run."""
+
+    def __init__(self, exp_id, stage, arch_key, loss_key, condition_key,
+                 seed=None, overrides=None, note="", extra_flags=None):
+        if arch_key not in ARCHITECTURES:
+            raise KeyError(f"unknown architecture {arch_key!r}")
+        if loss_key not in LOSSES:
+            raise KeyError(f"unknown loss {loss_key!r}")
+        if condition_key not in CONDITIONS:
+            raise KeyError(f"unknown condition {condition_key!r}")
+
+        self.exp_id = exp_id
+        self.stage = stage
+        self.arch_key = arch_key
+        self.loss_key = loss_key
+        self.condition_key = condition_key
+        self.note = note
+        self.arch = ARCHITECTURES[arch_key]
+        self.loss = LOSSES[loss_key]
+        self.condition = CONDITIONS[condition_key]
+        self.overrides = dict(overrides or {})
+        # Store-true flags contributed by a Stage G technique.
+        self.extra_flags = list(extra_flags or [])
+        self.seed = seed if seed is not None else BASE_TRAIN["seed"]
+
+    # -- resolution ----------------------------------------------------
+    def params(self, scale="full") -> dict:
+        p = dict(BASE_TRAIN)
+        p.update(SCALES.get(scale, {}))
+        p["seed"] = self.seed
+        p["model"] = self.arch["model"]
+        p.update(self.arch["args"])
+        p["batch_size"] = self.arch["batch_size"]
+        p["trainfunc"] = self.loss["trainfunc"]
+        for k in ("margin", "scale", "hard_rank", "hard_prob"):
+            if k in self.loss:
+                p[k] = self.loss[k]
+        p["n_per_speaker"] = self.loss["n_per_speaker"]
+        p["n_classes"] = self.condition["n_classes"]
+
+        # A batch is (batch_size speakers) x (n_per_speaker utterances), so the
+        # metric losses would otherwise silently double the memory footprint of
+        # the classification runs and change the effective step size along with
+        # the loss -- two factors moving at once.
+        if p["n_per_speaker"] > 1:
+            p["batch_size"] = max(8, self.arch["batch_size"] // p["n_per_speaker"])
+
+        # HARD SAMPLER CONSTRAINT: batch_size must not exceed the number of
+        # training speakers.
+        #
+        # train_dataset_sampler (DatasetLoader.py:420-424) refuses to place two
+        # segments of the same speaker in one batch, so a batch can hold at most
+        # one segment per speaker. It then keeps only whole batches:
+        # round_down(len(mixed_list), batch_size). With 82 speakers and
+        # batch_size 200 that is round_down(82, 200) = 0 -- the loader yields NO
+        # batches and training dies with a ZeroDivisionError in
+        # SpeakerNet.train_network (loss / counter). Observed on si_celeb, which
+        # has 82 training speakers.
+        #
+        # 0.75 rather than 1.0 leaves headroom: at batch_size == n_speakers every
+        # batch would have to contain every speaker exactly once, and a single
+        # rejection stalls the fill.
+        n_spk = int(self.condition["n_classes"])
+        cap = max(8, int(0.75 * n_spk))
+        if p["batch_size"] > cap:
+            p["batch_size"] = cap
+
+        p["train_list"] = self.condition["train_list"]
+        p["train_path"] = self.condition["train_path"]
+        # `test_path` here is the root for the trainer's IN-TRAINING validation,
+        # which reads `val_list` below -- so it must be the root the val trials
+        # live under, not necessarily the final test corpus. They differ only
+        # for en_full. evaluate.py scores the real test set separately and pairs
+        # condition["test_list"] with condition["test_path"] itself.
+        p["test_path"] = self.condition.get("val_path", self.condition["test_path"])
+        p["musan_path"] = MUSAN_PATH
+        p["rir_path"] = RIR_PATH
+        if self.condition.get("per_lang_val_lists"):
+            p["per_lang_test_lists"] = self.condition["per_lang_val_lists"]
+            p["test_list"] = self.condition["per_lang_val_lists"].split(":", 1)[1].split(",")[0]
+        else:
+            p["test_list"] = self.condition["val_list"]
+
+        p["save_path"] = os.path.join(REPO_ROOT, "exps", self.exp_id)
+        # Condition-level overrides come before the experiment's own, so a
+        # specific run can still override its condition if it needs to.
+        p.update(self.condition.get("param_overrides", {}))
+        p.update(self.overrides)
+        return p
+
+    def flags(self, scale="full"):
+        flags = list(BASE_FLAGS)
+        flags += self.arch.get("flags", [])
+        flags += self.extra_flags
+        # --augment is declared `type=bool` in the trainer, so a bare --augment
+        # is an argparse error and --augment False would evaluate to
+        # bool("False") == True. The only safe encodings are "--augment True"
+        # and omitting it entirely (the default is already False).
+        if scale != "smoke":
+            flags += ["--augment", "True"]
+        # Every parameter of a plain classification backbone is used in the
+        # forward pass, so DDP's unused-parameter search is pure overhead.
+        flags.append("--ddp_find_unused_parameters=False")
+        return flags
+
+    def extra_cli(self):
+        return dict(self.arch.get("extra_cli", {}))
+
+    # Trainer options declared `type=bool`. argparse applies bool() to the raw
+    # string, so bool("False") is True -- passing these as False is silently
+    # wrong. Both already default to False, so a False value is emitted by
+    # omitting the option entirely.
+    _BARE_BOOL_OPTS = {"log_input", "augment"}
+
+    def argv(self, python="python", scale="full"):
+        """The exact command line, which is also the reproducibility record."""
+        p = self.params(scale)
+        argv = [python, "trainSpeakerNet.py"]
+        for k, v in sorted(p.items()):
+            if v is None:
+                continue
+            if k in self._BARE_BOOL_OPTS and not v:
+                continue
+            argv += [f"--{k}", str(v)]
+        for k, v in self.extra_cli().items():
+            argv += [k, str(v)]
+        argv += self.flags(scale)
+        return argv
+
+    def min_gpu_mb(self) -> int:
+        """Free GPU memory this configuration needs, for scheduler placement."""
+        return int(self.arch.get("min_gpu_mb", MIN_GPU_MB_DEFAULT))
+
+    def describe(self) -> dict:
+        return {
+            "exp_id": self.exp_id,
+            "stage": self.stage,
+            "architecture": self.arch_key,
+            "model": self.arch["model"],
+            "loss": self.loss_key,
+            "condition": self.condition_key,
+            "condition_label": self.condition["label"],
+            "corpus": self.condition["corpus"],
+            "languages": self.condition["languages"],
+            "n_classes": self.condition["n_classes"],
+            "seed": self.seed,
+            "embedding_dim": EMBED_DIM,
+            "note": self.note or self.arch.get("note", ""),
+            "deviations_from_controlled_factors": self.arch.get("deviations", {}),
+            "extra_flags": self.extra_flags,
+            "overrides": self.overrides,
+            "min_gpu_mb": self.min_gpu_mb(),
+        }
+
+
+# --------------------------------------------------------------------------
+# stage construction
+# --------------------------------------------------------------------------
+def stage_a(conditions=("si", "ta")):
+    """Architecture sweep: every backbone on each language, loss fixed.
+
+    `conditions` is a parameter so the same sweep can be repeated on a different
+    corpus -- e.g. ("si_celeb",) for the in-the-wild Sinhala set. The condition
+    key is part of every exp_id, so results from different corpora are never
+    confusable in a table or a filename.
+    """
+    out = []
+    for arch in STAGE_A_ARCHS:
+        for cond in conditions:
+            out.append(
+                Experiment(
+                    exp_id=f"A_{arch}_{STAGE_A_LOSS}_{cond}_s42",
+                    stage="A",
+                    arch_key=arch,
+                    loss_key=STAGE_A_LOSS,
+                    condition_key=cond,
+                    note="Stage A architecture sweep",
+                )
+            )
+    return out
+
+
+def stage_b(top_archs):
+    """Loss sweep on the architectures Stage A selected."""
+    out = []
+    for arch in top_archs:
+        for loss in STAGE_B_LOSSES:
+            for cond in ("si", "ta"):
+                out.append(
+                    Experiment(
+                        exp_id=f"B_{arch}_{loss}_{cond}_s42",
+                        stage="B",
+                        arch_key=arch,
+                        loss_key=loss,
+                        condition_key=cond,
+                        note="Stage B loss sweep",
+                    )
+                )
+    return out
+
+
+def stage_c(pairs):
+    """Combined si+ta training for the best (arch, loss) pairs.
+
+    This is the stage that answers the combined-vs-individual question: the same
+    configuration is trained on the union and evaluated per language, so the
+    difference against its Stage A/B counterpart isolates the effect of adding
+    the other language's speakers.
+    """
+    out = []
+    for arch, loss in pairs:
+        out.append(
+            Experiment(
+                exp_id=f"C_{arch}_{loss}_combined_s42",
+                stage="C",
+                arch_key=arch,
+                loss_key=loss,
+                condition_key="combined",
+                note="Stage C combined-language training",
+            )
+        )
+    return out
+
+
+def stage_d(pairs, seeds=(123, 7)):
+    """Seed replication for the winners, across all three conditions."""
+    out = []
+    for arch, loss in pairs:
+        for cond in ("si", "ta", "combined"):
+            for seed in seeds:
+                out.append(
+                    Experiment(
+                        exp_id=f"D_{arch}_{loss}_{cond}_s{seed}",
+                        stage="D",
+                        arch_key=arch,
+                        loss_key=loss,
+                        condition_key=cond,
+                        seed=seed,
+                        note="Stage D seed replication",
+                    )
+                )
+    return out
+
+
+def stage_f(conditions=("si", "ta"), loss=None):
+    """Front-end sweep: what representation should the network be fed?
+
+    Entries flagged ``reuse_stage_a`` are skipped — those configurations are
+    already run by Stage A and re-running them would only add noise to the
+    comparison, since the paired bootstrap needs the *same* trained system, not
+    a second training of it.
+    """
+    loss = loss or STAGE_A_LOSS
+    out = []
+    for fe_key, fe in FRONTENDS.items():
+        if fe.get("reuse_stage_a"):
+            continue
+        for cond in conditions:
+            out.append(
+                Experiment(
+                    exp_id=f"F_{fe_key}_{loss}_{cond}_s42",
+                    stage="F",
+                    arch_key=fe_key,
+                    loss_key=loss,
+                    condition_key=cond,
+                    # Some front ends need optimiser overrides -- the fine-tuned
+                    # encoder cannot use the pinned 1e-3. Without forwarding
+                    # these the entry would silently run at the wrong LR.
+                    overrides=fe.get("overrides"),
+                    note=f"Stage F front-end sweep ({fe['family']}): {fe['note']}",
+                )
+            )
+    return out
+
+
+def stage_g(arch, loss, conditions=("si", "ta"), initial_model=None,
+            techniques=None):
+    """Technique ablation over the repo's universal feature flags.
+
+    Each technique is one run differing from `baseline` in exactly the flags
+    listed for it, so its contribution is isolated. Techniques whose
+    requirements are unmet in a given condition are skipped rather than run in a
+    degraded form -- a lang-adversarial head on a monolingual corpus would train
+    happily and mean nothing.
+    """
+    out = []
+    for tech_key in (techniques or TECHNIQUES):
+        tech = TECHNIQUES[tech_key]
+        reqs = tech.get("requires", [])
+        for cond in conditions:
+            if "combined_only" in reqs and cond != "combined":
+                continue
+            if "initial_model" in reqs and not initial_model:
+                continue
+
+            overrides = {}
+            flags_extra = []
+            for k, v in tech["flags"].items():
+                if v is True:
+                    flags_extra.append(k)
+                else:
+                    overrides[k.lstrip("-")] = v
+
+            if "plda_train_list" in reqs:
+                overrides["plda_train_list"] = CONDITIONS[cond]["train_list"]
+                overrides["plda_train_path"] = CONDITIONS[cond]["train_path"]
+            if "initial_model" in reqs:
+                overrides["initial_model"] = initial_model
+            if "lang_aux_label_file" in reqs:
+                overrides["lang_aux_label_file"] = (
+                    f"{SPLITS}/combined_si_ta/spk_lang_lookup.txt")
+            if "dann_lang_label_file" in reqs:
+                overrides["dann_lang_label_file"] = (
+                    f"{SPLITS}/combined_si_ta/spk_lang_lookup.txt")
+
+            out.append(
+                Experiment(
+                    exp_id=f"G_{tech_key}_{arch}_{loss}_{cond}_s42",
+                    stage="G",
+                    arch_key=arch,
+                    loss_key=loss,
+                    condition_key=cond,
+                    overrides=overrides,
+                    extra_flags=flags_extra,
+                    note=f"Stage G technique ablation: {tech_key}",
+                )
+            )
+    return out
+
+
+def stage_h(conditions=("si", "ta"), loss=None):
+    """SSL front end x full backbone — the interaction Stage A and F each miss."""
+    loss = loss or STAGE_A_LOSS
+    out = []
+    for h_key, h in HYBRIDS.items():
+        for cond in conditions:
+            out.append(
+                Experiment(
+                    exp_id=f"H_{h_key}_{loss}_{cond}_s42",
+                    stage="H",
+                    arch_key=h_key,
+                    loss_key=loss,
+                    condition_key=cond,
+                    note=f"Stage H front-end x backbone interaction: {h['note']}",
+                )
+            )
+    return out
+
+
+def stage_en(archs=None, loss=None, conditions=("en_matched",)):
+    """English reference runs, so the SL ranking has something to be compared to."""
+    loss = loss or STAGE_A_LOSS
+    archs = archs or list(STAGE_A_ARCHS)
+    out = []
+    for arch in archs:
+        for cond in conditions:
+            out.append(
+                Experiment(
+                    exp_id=f"E_{arch}_{loss}_{cond}_s42",
+                    stage="E",
+                    arch_key=arch,
+                    loss_key=loss,
+                    condition_key=cond,
+                    note="Stage E English reference",
+                )
+            )
+    return out
+
+
+def stage_margin(arch, loss, cond="si"):
+    """Margin geometry sweep -- the mathematical core of the loss analysis.
+
+    AAM-softmax must place C class centroids on the unit sphere in R^d with
+    pairwise angular separation of at least the margin m.  Whether that is
+    feasible depends on C, d and m together, so sweeping m at fixed (C, d) and
+    comparing the curve's optimum between the 336-class, 446-class and
+    782-class conditions tests the packing argument directly.
+    """
+    out = []
+    for m in MARGIN_GRID:
+        out.append(
+            Experiment(
+                exp_id=f"M_{arch}_{loss}_m{str(m).replace('.', '')}_{cond}_s42",
+                stage="M",
+                arch_key=arch,
+                loss_key=loss,
+                condition_key=cond,
+                overrides={"margin": m},
+                note=f"margin sweep m={m}",
+            )
+        )
+    return out
+
+
+def all_known_stage_a():
+    return {e.exp_id: e for e in stage_a()}

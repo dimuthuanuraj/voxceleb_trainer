@@ -1,0 +1,376 @@
+{
+  "experiment": {
+    "exp_id": "A_ssl_wavlm_aamsoftmax_si_celeb_s42",
+    "stage": "A",
+    "architecture": "ssl_wavlm",
+    "model": "SSLFrontendSpeaker",
+    "loss": "aamsoftmax",
+    "condition": "si_celeb",
+    "condition_label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+    "corpus": "slceleb2026_sinhala_split",
+    "languages": [
+      "si"
+    ],
+    "n_classes": 82,
+    "seed": 42,
+    "embedding_dim": 256,
+    "note": "Stage A architecture sweep",
+    "deviations_from_controlled_factors": {},
+    "extra_flags": [],
+    "overrides": {},
+    "min_gpu_mb": 20000
+  },
+  "scale": "full",
+  "resolved_parameters": {
+    "max_frames": 200,
+    "eval_frames": 300,
+    "sample_rate": 16000,
+    "max_seg_per_spk": 300,
+    "n_data_loader_thread": 8,
+    "prefetch_factor": 2,
+    "persistent_workers": true,
+    "optimizer": "adam",
+    "scheduler": "steplr",
+    "lr": 0.001,
+    "lr_decay": 0.95,
+    "weight_decay": 2e-05,
+    "max_epoch": 60,
+    "test_interval": 1,
+    "patience": 16,
+    "dcf_p_target": 0.05,
+    "dcf_c_miss": 1,
+    "dcf_c_fa": 1,
+    "seed": 42,
+    "model": "SSLFrontendSpeaker",
+    "nOut": 256,
+    "batch_size": 48,
+    "trainfunc": "aamsoftmax",
+    "margin": 0.2,
+    "scale": 30,
+    "n_per_speaker": 1,
+    "n_classes": 82,
+    "train_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/train_list.txt",
+    "train_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+    "test_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+    "musan_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/musan",
+    "rir_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/RIRS_NOISES/simulated_rirs",
+    "test_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/val_trials.txt",
+    "save_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/exps/A_ssl_wavlm_aamsoftmax_si_celeb_s42"
+  },
+  "flags": [
+    "--mixedprec",
+    "--ssl_freeze",
+    "--augment",
+    "True",
+    "--ddp_find_unused_parameters=False"
+  ],
+  "command": [
+    "/home/anuraj/anaconda2025/envs/SL_SPV/bin/python",
+    "trainSpeakerNet.py",
+    "--batch_size",
+    "48",
+    "--dcf_c_fa",
+    "1",
+    "--dcf_c_miss",
+    "1",
+    "--dcf_p_target",
+    "0.05",
+    "--eval_frames",
+    "300",
+    "--lr",
+    "0.001",
+    "--lr_decay",
+    "0.95",
+    "--margin",
+    "0.2",
+    "--max_epoch",
+    "60",
+    "--max_frames",
+    "200",
+    "--max_seg_per_spk",
+    "300",
+    "--model",
+    "SSLFrontendSpeaker",
+    "--musan_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/musan",
+    "--nOut",
+    "256",
+    "--n_classes",
+    "82",
+    "--n_data_loader_thread",
+    "8",
+    "--n_per_speaker",
+    "1",
+    "--optimizer",
+    "adam",
+    "--patience",
+    "16",
+    "--persistent_workers",
+    "True",
+    "--prefetch_factor",
+    "2",
+    "--rir_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/RIRS_NOISES/simulated_rirs",
+    "--sample_rate",
+    "16000",
+    "--save_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/exps/A_ssl_wavlm_aamsoftmax_si_celeb_s42",
+    "--scale",
+    "30",
+    "--scheduler",
+    "steplr",
+    "--seed",
+    "42",
+    "--test_interval",
+    "1",
+    "--test_list",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/val_trials.txt",
+    "--test_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+    "--train_list",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/train_list.txt",
+    "--train_path",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+    "--trainfunc",
+    "aamsoftmax",
+    "--weight_decay",
+    "2e-05",
+    "--ssl_encoder_name",
+    "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/models/weights/wavlm-base-plus",
+    "--mixedprec",
+    "--ssl_freeze",
+    "--augment",
+    "True",
+    "--ddp_find_unused_parameters=False"
+  ],
+  "architecture_spec": {
+    "display": "SSL frontend (WavLM / XLS-R / mHuBERT) + pooling head",
+    "family": "self-supervised transformer frontend",
+    "temporal_aggregation": "attentive statistics pooling over transformer states",
+    "structure": "A pretrained self-supervised transformer produces frame-level representations; a lightweight head pools them into a speaker embedding. The encoder is frozen by default (--ssl_freeze).",
+    "inductive_bias": "Imports representations learned from large multilingual unlabelled audio. The transfer question is whether Sinhala and Tamil are in-distribution for the pretraining corpus: XLS-R and mHuBERT-147 both cover them, WavLM does not (English-only pretraining), so the encoder comparison measures pretraining-language coverage directly.",
+    "params_scale_with": "encoder choice (94M base / 300M XLS-R)",
+    "predicted_effect": "Strong absolute numbers but at 10-50x the parameter count and inference cost. The interesting result is the frozen-encoder comparison: if XLS-R (which saw Tamil) beats WavLM (which did not) by more on Tamil than on Sinhala, that is direct evidence that pretraining coverage, not architecture, drives the transfer."
+  },
+  "model_card": {
+    "model": "SSLFrontendSpeaker",
+    "kwargs": {
+      "nOut": 256,
+      "ssl_encoder_name": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/models/weights/wavlm-base-plus"
+    },
+    "parameters_total": 94976240,
+    "parameters_trainable": 594304,
+    "parameters_frozen": 94381936,
+    "parameters_total_human": "94.98M",
+    "trainable_fraction": 0.006257,
+    "modules": {
+      "encoder": {
+        "parameters": 94381936,
+        "type": "WavLMModel"
+      },
+      "attention": {
+        "parameters": 197760,
+        "type": "Sequential"
+      },
+      "bn": {
+        "parameters": 3072,
+        "type": "BatchNorm1d"
+      },
+      "fc": {
+        "parameters": 393472,
+        "type": "Linear"
+      }
+    },
+    "parameters_by_tensor_rank": {
+      "1": 130272,
+      "2": 85731072,
+      "3": 9114752,
+      "4": 144
+    },
+    "embedding_dim": 256,
+    "probe_input": {
+      "seconds": 2.0,
+      "samples": 32000
+    },
+    "macs_per_2s_utterance": 11048078336,
+    "macs_human": "11.05G",
+    "gflops_per_2s_utterance": 22.0962
+  },
+  "loss_spec": {
+    "family": "classification",
+    "display": "Additive-angular-margin softmax (ArcFace)",
+    "objective": "\\mathcal{L} = -\\frac{1}{N}\\sum_i \\log \\frac{e^{s\\cos(\\theta_{y_i} + m)}}{e^{s\\cos(\\theta_{y_i}+m)} + \\sum_{j\\neq y_i} e^{s\\cos\\theta_j}}",
+    "geometry": "Adds the margin to the ANGLE, giving a constant geodesic margin on the unit hypersphere independent of theta. The maximum number of classes separable with angular margin m in dimension d is bounded by the hypersphere packing limit; when C grows past that bound the margin becomes unsatisfiable and gradients fight each other. This is the mechanism that makes the si-only (336 class) / ta-only (446) / combined (782) comparison informative rather than a data-volume effect.",
+    "hyperparams": [
+      "margin",
+      "scale"
+    ],
+    "n_classes_dep": true,
+    "batch_dep": false,
+    "test_normalize": true,
+    "predicted_effect": "Best single classification loss in the per-language conditions. In the combined condition the packing pressure at C=782 may erode the advantage unless nOut is raised or the margin lowered -- which is exactly what the Stage C margin sweep measures."
+  },
+  "data": {
+    "condition": {
+      "label": "Sinhala in-the-wild (SLCeleb2026, real sessions)",
+      "corpus": "slceleb2026_sinhala_split",
+      "languages": [
+        "si"
+      ],
+      "train_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/train_list.txt",
+      "train_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+      "val_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/val_trials.txt",
+      "test_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/test_trials.txt",
+      "test_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+      "cohort_list": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/asnorm_cohort.txt",
+      "cohort_path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+      "n_classes": 82,
+      "auto_transfer": false,
+      "role": "in-the-wild Sinhala with genuine cross-session trials; the honest-protocol counterpart to the read-speech si condition"
+    },
+    "fingerprints": {
+      "train_list": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/train_list.txt",
+        "exists": true,
+        "sha256": "914d82d7148eb091f255cc11ea1d89be2ead854e382b1a4bbf2c8ab028b49507",
+        "lines": 31284,
+        "bytes": 1282644,
+        "head": [
+          "ID00001 si/ID00001/AwD_PLNEqa8/00001.wav",
+          "ID00001 si/ID00001/AwD_PLNEqa8/00002.wav"
+        ]
+      },
+      "val_or_test_list": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/val_trials.txt",
+        "exists": true,
+        "sha256": "314bf350198bb3df9d823414c1b356a04773a8035c4bbe88a55f6fbc3f5a6851",
+        "lines": 9990,
+        "bytes": 679320,
+        "head": [
+          "1 si/ID00305/3p24buetOhk/00040.wav si/ID00305/M9CAtnTnLq8/00013.wav",
+          "1 si/ID00002/E_JPBBsMlqo/00004.wav si/ID00002/Hbkk-l7cF5A/00019.wav"
+        ]
+      },
+      "heldout_test_list": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/test_trials.txt",
+        "exists": true,
+        "sha256": "e0a162cceafd6b604ea3683cabcb3593b9b3ef30c234d2f81dd028593a92f971",
+        "lines": 19696,
+        "bytes": 1339328
+      },
+      "asnorm_cohort": {
+        "path": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/experiments/splits/slceleb2026_sinhala_split/asnorm_cohort.txt",
+        "exists": true,
+        "sha256": "dfe23fa131401abaa47b927c9381ecd983d9bc41d3bc02a3d8beba0518ceb87c",
+        "lines": 246,
+        "bytes": 8118
+      }
+    },
+    "split_manifest": {
+      "corpus": "slceleb2026_sinhala_split",
+      "language": "si",
+      "role": "primary_in_the_wild_sinhala",
+      "source": "slceleb2026_sinhala",
+      "seed": 42,
+      "built_utc": "2026-08-14T05:54:32.447284+00:00",
+      "speakers": {
+        "total": 123,
+        "train": 82,
+        "val": 10,
+        "test": 31,
+        "disjoint": true,
+        "overlap_train_test": 0
+      },
+      "duration_hours": {
+        "train": 55.96,
+        "test": 22.0
+      },
+      "utterances": {
+        "train": 31284
+      },
+      "trials": {
+        "val": {
+          "n_target": 4995,
+          "n_nontarget": 4995,
+          "n_speakers": 9,
+          "target_pairs_cross_session": 4995,
+          "cross_session_fraction": 1.0
+        },
+        "test": {
+          "n_target": 9848,
+          "n_nontarget": 9848,
+          "n_speakers": 24,
+          "target_pairs_cross_session": 9848,
+          "cross_session_fraction": 1.0
+        }
+      },
+      "cohort_utterances": 246,
+      "test_mde_pp": 11.542,
+      "test_n_eff_cap": 34.3,
+      "protocol": "target pairs are STRICTLY cross-session (session = YouTube video id, so a different session is a different day, studio, microphone and background)",
+      "why_it_matters": "slr52_sinhala has n_utts == n_sessions, so it has no within-speaker session structure and its cross-session trials are indistinguishable from cross-utterance ones. This corpus is the only Sinhala data here where a cross-session target trial is genuine.",
+      "caveat": "123 speakers total, so the test partition is small and the absolute EER is imprecise (see test_n_eff_cap). The protocol is honest; the precision is not. Use the paired contrasts.",
+      "sha256": {
+        "train_list.txt": "914d82d7148eb091f255cc11ea1d89be2ead854e382b1a4bbf2c8ab028b49507",
+        "val_trials.txt": "314bf350198bb3df9d823414c1b356a04773a8035c4bbe88a55f6fbc3f5a6851",
+        "test_trials.txt": "e0a162cceafd6b604ea3683cabcb3593b9b3ef30c234d2f81dd028593a92f971"
+      },
+      "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav"
+    }
+  },
+  "controlled_factors": {
+    "embedding_dim": 256,
+    "max_frames": 200,
+    "eval_frames": 300,
+    "optimizer": "adam",
+    "lr": 0.001,
+    "lr_decay": 0.95,
+    "weight_decay": 2e-05,
+    "augmentation": true,
+    "as_norm_during_training": false,
+    "model_selection": "validation trials only; test set touched once by evaluate.py"
+  },
+  "environment": {
+    "captured_utc": "2026-08-14T13:34:40.382624+00:00",
+    "hostname": "compute-node-4",
+    "user": "anuraj",
+    "platform": "Linux-5.15.0-187-generic-x86_64-with-glibc2.35",
+    "python": "3.11.15",
+    "python_executable": "/home/anuraj/anaconda2025/envs/SL_SPV/bin/python",
+    "cwd": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer",
+    "conda_env": null,
+    "cuda_visible_devices": "0",
+    "git": {
+      "commit": "73b7aedb527324a686987c16520b64d93c783e0c",
+      "branch": "master",
+      "dirty": true
+    },
+    "torch": {
+      "version": "2.5.1",
+      "cuda_available": true,
+      "cuda_version": "12.1",
+      "cudnn": 90100,
+      "device_count": 1,
+      "devices": [
+        {
+          "name": "NVIDIA A40",
+          "total_memory_gb": 47.7,
+          "capability": "8.6"
+        }
+      ]
+    },
+    "packages": {
+      "numpy": "2.4.6",
+      "scipy": "1.17.1",
+      "soundfile": "0.13.1",
+      "torchaudio": "2.5.1",
+      "transformers": "4.57.6",
+      "sklearn": "1.8.0"
+    },
+    "nvidia_smi": [
+      "NVIDIA A40, 46068 MiB, 580.173.02"
+    ],
+    "cpu_count": 80
+  },
+  "recorder_started_utc": "2026-08-14T13:34:41.078209+00:00"
+}

@@ -1,0 +1,30 @@
+{
+  "corpus": "nisp_tamil",
+  "language": "ta",
+  "role": "heldout_generalisation_probe",
+  "seed": 42,
+  "built_utc": "2026-08-12T11:46:26.225811+00:00",
+  "speakers": {
+    "total": 65,
+    "used_in_trials": 65
+  },
+  "duration_hours": {
+    "total": 13.3
+  },
+  "trials": {
+    "test": {
+      "n_target": 9945,
+      "n_nontarget": 9945,
+      "n_speakers": 65,
+      "target_pairs_cross_session": 9945,
+      "cross_session_fraction": 1.0
+    }
+  },
+  "test_mde_pp": 7.02,
+  "test_n_eff_cap": 92.9,
+  "sha256": {
+    "test_trials.txt": "63bacf770876400b48cc9fdf96d9f2b1606761a9ddd1732f535478a244e439a9"
+  },
+  "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/nisp_tamil/wav",
+  "note": "No training partition: this corpus is never trained on."
+}

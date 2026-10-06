@@ -1,0 +1,56 @@
+{
+  "corpus": "en_matched",
+  "language": "en",
+  "role": "scale_matched_control",
+  "seed": 42,
+  "built_utc": "2026-08-12T13:06:04.246505+00:00",
+  "matched_to": {
+    "condition": "si",
+    "corpus": "slr52_sinhala",
+    "matched_on": "speaker count (exact) and total speech hours (approx)",
+    "train_speakers": 336,
+    "reference_train_utterances": 129042,
+    "reference_train_hours": 157.06,
+    "en_mean_utterance_s": 8.042,
+    "en_utterances_per_speaker_cap": 209,
+    "en_estimated_train_hours": 107.06,
+    "hours_match_pct": 68.2,
+    "hours_ceiling_for_this_speaker_count": 1768.8,
+    "note": "utterance COUNTS differ by design \u2014 VoxCeleb utterances are longer, so equal counts would mean unequal audio. Duration is matched instead; it is what bounds how much distinct speech a speaker contributes under random-crop sampling."
+  },
+  "speakers": {
+    "train": 336,
+    "val": 40,
+    "test": 100,
+    "disjoint": true,
+    "overlap_train_test": 0
+  },
+  "utterances": {
+    "train": 47926
+  },
+  "trials": {
+    "val": {
+      "n_target": 5000,
+      "n_nontarget": 5000,
+      "n_speakers": 40,
+      "target_pairs_cross_session": 4445,
+      "cross_session_fraction": 0.889
+    },
+    "test": {
+      "n_target": 10000,
+      "n_nontarget": 10000,
+      "n_speakers": 100,
+      "target_pairs_cross_session": 8903,
+      "cross_session_fraction": 0.8903
+    }
+  },
+  "cohort_utterances": 1008,
+  "test_mde_pp": 5.664,
+  "test_n_eff_cap": 142.9,
+  "purpose": "holds data volume constant against the SL conditions so a difference in architecture RANKING is attributable to the language rather than to corpus size",
+  "sha256": {
+    "train_list.txt": "be0884a795b5ae7be888b5bb3dae48ffaca09cb88b064cb61b767d1105c7be36",
+    "val_trials.txt": "a9065090c8777acafa1cb8083b5448ee727946c457249673ebc88bdf88381fbe",
+    "test_trials.txt": "e1bf28b4067cddd53b4ef799bc37ffec8ef66e3dadb66406844a687a67d6a36d"
+  }
+}

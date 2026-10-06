@@ -1,0 +1,30 @@
+{
+  "corpus": "slceleb2026_sinhala",
+  "language": "si",
+  "role": "heldout_generalisation_probe",
+  "seed": 42,
+  "built_utc": "2026-08-12T11:46:25.857267+00:00",
+  "speakers": {
+    "total": 123,
+    "used_in_trials": 123
+  },
+  "duration_hours": {
+    "total": 85.07
+  },
+  "trials": {
+    "test": {
+      "n_target": 9963,
+      "n_nontarget": 9963,
+      "n_speakers": 123,
+      "target_pairs_cross_session": 5098,
+      "cross_session_fraction": 0.5117
+    }
+  },
+  "test_mde_pp": 5.109,
+  "test_n_eff_cap": 175.7,
+  "sha256": {
+    "test_trials.txt": "60040d3d6f00227037905fc3db045136823ef7911fb3628a59b2333f49f6bbcd"
+  },
+  "wav_root": "/mnt/ricproject3/2026/SL_SPV/voxceleb_trainer/data/slceleb2026_sinhala/wav",
+  "note": "No training partition: this corpus is never trained on."
+}

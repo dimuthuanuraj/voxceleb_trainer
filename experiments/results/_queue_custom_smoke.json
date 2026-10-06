@@ -1,0 +1,16 @@
+{
+  "stage": null,
+  "scale": "smoke",
+  "finished_utc": "2026-08-15T05:37:13.363802+00:00",
+  "wall_hours": 0.23,
+  "results": {
+    "E_ecapa1024_aamsoftmax_en_full_s42": {
+      "rc": 0,
+      "hours": 0.228,
+      "slot": "compute-node-2:gpu0",
+      "gpu_free_mb": 14912,
+      "gpu_required_mb": 9000,
+      "attempts": 1
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "task": "A2",
+  "results": {
+    "LSCAM_si_s42": {
+      "LSCAM_si_s42.eval.json": {}
+    },
+    "DKCAMPP_si_s42": {
+      "DKCAMPP_si_s42.eval.json": {}
+    }
+  }
+}

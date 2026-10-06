@@ -1,0 +1,20 @@
+{
+  "task": "W0.3",
+  "ok": true,
+  "checked": "2026-09-12T08:10:15+00:00",
+  "file": "proposals/A5_dk_campp/DK_CAMPP.py",
+  "status": "patched",
+  "verification": {
+    "device": "cuda",
+    "input_absmax": 8.0,
+    "fp32_finite": true,
+    "amp_dtype": "torch.float32",
+    "amp_finite": true,
+    "amp_nonfinite_count": 0,
+    "max_abs_diff_vs_fp32": 0.0,
+    "power_spec_peak": 46285.9609375,
+    "fp16_ceiling": 65504.0,
+    "headroom_x": 1.4152023350762912
+  },
+  "isolation_ok": true
+}

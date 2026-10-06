@@ -1,0 +1,402 @@
+[
+  {
+    "exp_id": "A_ecapa1024_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0064,
+      "eer": 0.8839
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0527,
+      "eer": 1.2982
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0433,
+      "eer": 0.4754
+    },
+    "channel_inflation_factor": 2.73
+  },
+  {
+    "exp_id": "A_ecapa512_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0042,
+      "eer": 1.0346
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0554,
+      "eer": 1.3377
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0507,
+      "eer": 0.5417
+    },
+    "channel_inflation_factor": 2.47
+  },
+  {
+    "exp_id": "A_mlpmixer_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0094,
+      "eer": 1.2555
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0653,
+      "eer": 1.6685
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0505,
+      "eer": 0.5367
+    },
+    "channel_inflation_factor": 3.11
+  },
+  {
+    "exp_id": "A_resnetse34l_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0081,
+      "eer": 1.7075
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0559,
+      "eer": 2.2707
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0431,
+      "eer": 0.7922
+    },
+    "channel_inflation_factor": 2.87
+  },
+  {
+    "exp_id": "A_resnetse34v2_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0266,
+      "eer": 1.366
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0658,
+      "eer": 1.787
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0154,
+      "eer": 0.644
+    },
+    "channel_inflation_factor": 2.77
+  },
+  {
+    "exp_id": "A_ssl_wavlm_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0936,
+      "eer": 4.6203
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.147,
+      "eer": 5.7064
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": 0.0364,
+      "eer": 3.2659
+    },
+    "channel_inflation_factor": 1.75
+  },
+  {
+    "exp_id": "A_vggvox_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0118,
+      "eer": 1.9486
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0551,
+      "eer": 2.567
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0346,
+      "eer": 0.8126
+    },
+    "channel_inflation_factor": 3.16
+  },
+  {
+    "exp_id": "F_mfcc40d_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0058,
+      "eer": 1.135
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0507,
+      "eer": 1.4957
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0422,
+      "eer": 0.5367
+    },
+    "channel_inflation_factor": 2.79
+  },
+  {
+    "exp_id": "F_mfcc80_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0049,
+      "eer": 1.1149
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.05,
+      "eer": 1.555
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0434,
+      "eer": 0.5826
+    },
+    "channel_inflation_factor": 2.67
+  },
+  {
+    "exp_id": "F_ssl_mhubert_lw_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.058,
+      "eer": 0.4219
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.092,
+      "eer": 0.5627
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": 0.0215,
+      "eer": 0.1891
+    },
+    "channel_inflation_factor": 2.98
+  },
+  {
+    "exp_id": "F_ssl_wavlm_ft_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0214,
+      "eer": 1.7879
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0384,
+      "eer": 2.2707
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": 0.0033,
+      "eer": 1.1653
+    },
+    "channel_inflation_factor": 1.95
+  },
+  {
+    "exp_id": "F_ssl_wavlm_low_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0381,
+      "eer": 1.1249
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0901,
+      "eer": 1.4957
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0177,
+      "eer": 0.5826
+    },
+    "channel_inflation_factor": 2.57
+  },
+  {
+    "exp_id": "F_ssl_wavlm_lw_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0859,
+      "eer": 0.6127
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.1337,
+      "eer": 0.8145
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": 0.0346,
+      "eer": 0.3322
+    },
+    "channel_inflation_factor": 2.45
+  },
+  {
+    "exp_id": "F_ssl_wavlm_mid_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.094,
+      "eer": 1.8984
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.1288,
+      "eer": 2.3447
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": 0.0568,
+      "eer": 1.3698
+    },
+    "channel_inflation_factor": 1.71
+  },
+  {
+    "exp_id": "H_ssl_mhubert_ecapa_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.038,
+      "eer": 0.3917
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.0735,
+      "eer": 0.5085
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0,
+      "eer": 0.2045
+    },
+    "channel_inflation_factor": 2.49
+  },
+  {
+    "exp_id": "H_ssl_wavlm_ecapa_aamsoftmax_ta_s42",
+    "eval_set": "test",
+    "batches": [
+      "ISTL",
+      "MICI",
+      "MILE"
+    ],
+    "all": {
+      "n_impostors": 9956,
+      "mean_impostor_score": 0.0377,
+      "eer": 0.3917
+    },
+    "same_batch": {
+      "n_impostors": 5151,
+      "mean_impostor_score": 0.073,
+      "eer": 0.5627
+    },
+    "cross_batch": {
+      "n_impostors": 4805,
+      "mean_impostor_score": -0.0002,
+      "eer": 0.1636
+    },
+    "channel_inflation_factor": 3.44
+  }
+]
